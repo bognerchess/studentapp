@@ -8,6 +8,7 @@ import 'package:bogner_chess/core/app_info.dart';
 import 'package:bogner_chess/core/auth/auth_state.dart';
 import 'package:bogner_chess/router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -46,7 +47,8 @@ const Size kIphone17Pro = Size(402, 874);
 /// Pumps the whole app (router, themes, l10n) the way `main.dart` runs it.
 ///
 /// [auth] defaults to what [env] implies: signed in with fake auth, signed
-/// out with real auth.
+/// out with real auth. [overrides] come last, for example
+/// `authRepositoryProvider.overrideWithValue(FakeAuthRepository(...))`.
 Future<void> pumpApp(
   WidgetTester tester, {
   Env? env,
@@ -55,6 +57,7 @@ Future<void> pumpApp(
   Brightness brightness = Brightness.light,
   double textScale = 1.0,
   Size screen = kIphone17Pro,
+  List<Override> overrides = const [],
 }) async {
   tester.view.devicePixelRatio = 3;
   tester.view.physicalSize = screen * 3;
@@ -73,6 +76,7 @@ Future<void> pumpApp(
         ),
         if (auth != null)
           authStateProvider.overrideWith(() => TestAuthNotifier(auth)),
+        ...overrides,
       ],
       child: const BognerChessApp(),
     ),

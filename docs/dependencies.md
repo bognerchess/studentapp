@@ -36,6 +36,9 @@ and `go_router`, `app_links`, `wakelock_plus` (Flutter >= 3.44).
 | `uuid` | `^4.6.0` | 4.6.0 (2026-07-15) | MIT | yuli.dev | Draft ids and `clientGameId` for idempotent game creation. Added by WP-13. |
 | `build_runner` | `^2.16.1` (dev) | 2.16.1 (2026-09-02) | BSD-3-Clause | tools.dart.dev | Runs the generators (`tool/gen.sh`). Added by WP-13, the first package that generates code. |
 | `drift_dev` | `^2.35.0` (dev) | 2.35.0 (2026-09-09) | MIT | simonbinder.eu | drift generator, schema dumps and migration test helpers. Added by WP-13. |
+| `flutter_appauth` | `^12.1.0` | 12.1.0 (2026-08-29) | BSD-3-Clause | dexterx.dev | OIDC authorization code flow with PKCE in `ASWebAuthenticationSession`, and the refresh token grant. Wrapped by `lib/core/auth/app_auth_oidc_client.dart`, its only importer. Needs Flutter >= 3.38.1. iOS: a Swift package (`ios/flutter_appauth/Package.swift`), which pulls the native library, see below. Added by WP-25. |
+| `flutter_secure_storage` | `^11.2.0` | 11.2.0 (2026-09-16) | BSD-3-Clause | steenbakker.dev | The token set in the Keychain with `first_unlock_this_device` (`lib/core/auth/token_store.dart`, its only importer). iOS part: `flutter_secure_storage_darwin` 0.4.3 (BSD-3-Clause, same publisher), a Swift package without further native dependencies. Added by WP-25. |
+| `shared_preferences_platform_interface` | `^2.4.2` (dev) | 2.4.2 (2026-03-25) | BSD-3-Clause | flutter.dev | Only for tests: `InMemorySharedPreferencesAsync` behind the install marker. Already a transitive dependency of `shared_preferences`; listed so that the test may import it. Added by WP-25. |
 
 Transitive, but worth knowing: **`sqlite3`** (MIT, simonbinder.eu; locked at
 3.5.2; 3.6.0 needs `hooks ^2.2.0` and with it `meta ^1.19.0`, and Flutter
@@ -44,6 +47,18 @@ library for the target platform from the package's GitHub release, verifies a
 sha256 that ships with the package, and bundles it (`sqlite3.framework` on
 iOS). SQLite is in the public domain. No system package, CocoaPods or Swift
 package is involved. `docs/storage.md` has the details.
+
+**Native, through Swift Package Manager** (WP-25): `flutter_appauth` depends on
+**AppAuth-iOS 2.1.0** (`https://github.com/openid/AppAuth-iOS`, Apache-2.0,
+OpenID Foundation; compatible with GPLv3), pinned `exact` in the plugin's
+`Package.swift` and by revision in the two committed `Package.resolved` files
+under `ios/Runner.xcworkspace/xcshareddata/swiftpm/` and
+`ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/`. Xcode fetches
+it from GitHub on the first build. Both auth plugins ship a `Package.swift`,
+the project still has no CocoaPods, and
+`flutter build ios --simulator --debug` was verified with them on 2026-09-19.
+Each brings its own privacy manifest (`flutter_appauth`, `AppAuth`,
+`AppAuthCore`, `flutter_secure_storage_darwin` bundles in `Runner.app`).
 
 `cupertino_icons`, which `flutter create` adds, was removed: nothing uses it.
 
@@ -54,8 +69,6 @@ package is involved. `docs/storage.md` has the details.
 | `graphql` | 5.2.4 (2026-03-14) | MIT | zino.company | GraphQL client and links. In-memory cache only. Pulls the unmaintained `hive` transitively (unused at runtime); fallback is `gql_http_link` with codegen. | WP-12 |
 | `gql` | 1.0.1 (2025-09-20) | MIT | gql-dart.dev | AST and `Link` types, used by the test `FixtureLink`. | WP-10 |
 | `gql_http_link` | 1.2.0 (2025-09-20) | MIT | gql-dart.dev | Fallback transport should `graphql` have to go. Not planned otherwise. | – |
-| `flutter_appauth` | 12.1.0 (2026-08-29) | BSD-3-Clause | dexterx.dev | OIDC authorization code flow with PKCE through ASWebAuthenticationSession. Needs Flutter >= 3.38.1. | WP-25 |
-| `flutter_secure_storage` | 11.2.0 (2026-09-16) | BSD-3-Clause | steenbakker.dev | Tokens in the Keychain (`first_unlock_this_device`). | WP-25 |
 | `fl_chart` | 1.2.0 (2026-03-13) | MIT | flchart.dev | Evaluation graph. | WP-29b |
 | `app_links` | 7.2.1 (2026-07-09) | Apache-2.0 | cow-level.ovh | Custom URL scheme and file URLs ("Open in Bogner Chess"). Apache-2.0 is compatible with GPLv3. Needs Flutter >= 3.44. | WP-23 |
 | `file_picker` | 13.1.0 (2026-09-15) | MIT | victorcarreras.dev | Pick a `.pgn` from Files. v13 made `length()` async. | WP-22 |

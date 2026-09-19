@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:bogner_chess/app.dart';
 import 'package:bogner_chess/config/env.dart';
+import 'package:bogner_chess/core/auth/auth_providers.dart';
 import 'package:bogner_chess/core/crash/crash_reporter.dart';
 import 'package:bogner_chess/core/log.dart';
 import 'package:flutter/foundation.dart';
@@ -46,12 +47,20 @@ void main() {
       final env = container.read(envProvider);
       _log.info('starting env=${env.envName} auth=${env.authMode.name}');
 
-      runApp(
-        UncontrolledProviderScope(
-          container: container,
-          child: const BognerChessApp(),
-        ),
-      );
+      // The router needs to know who is signed in before its first redirect.
+      // restore() reads the Keychain and makes no network request; it never
+      // throws. Still inside the guarded zone, as runApp has to be.
+      Future<void> start() async {
+        await container.read(authRepositoryProvider).restore();
+        runApp(
+          UncontrolledProviderScope(
+            container: container,
+            child: const BognerChessApp(),
+          ),
+        );
+      }
+
+      unawaited(start());
     },
     // Everything asynchronous that nobody caught.
     (error, stack) => report(error, stack, 'zone', true),

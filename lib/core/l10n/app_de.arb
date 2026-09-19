@@ -72,5 +72,21 @@
   "metadataTimeControlOther": "Andere",
   "metadataTimeControlDetail": "Minuten + Inkrement",
   "metadataTimeControlDetailHint": "z. B. 90+30",
-  "metadataRatingError": "{min}–{max}"
+  "metadataRatingError": "{min}–{max}",
+  "signInTagline": "Gib deine Partien ein oder importiere sie, lass sie analysieren und geh sie mit Trainerkommentaren durch.",
+  "signInPrimary": "Anmelden",
+  "signInRegister": "Konto erstellen",
+  "signInApple": "Mit Apple fortfahren",
+  "signInGoogle": "Mit Google fortfahren",
+  "signInOr": "oder",
+  "signInSameAccount": "Dasselbe Konto gilt auch auf bognerchess.com.",
+  "signInBusy": "Warte auf die Anmeldeseite …",
+  "signInErrorOfflineTitle": "Keine Verbindung",
+  "signInErrorOfflineMessage": "Die Anmeldeseite ist nicht erreichbar. Prüfe deine Internetverbindung und versuch es noch einmal.",
+  "signInErrorTitle": "Anmeldung hat nicht geklappt",
+  "signInErrorMessage": "Da ist bei uns etwas schiefgegangen. Bitte versuch es gleich noch einmal.",
+  "signInVerifyToggle": "E-Mail noch nicht bestätigt?",
+  "signInVerifyTitle": "Bestätige deine E-Mail-Adresse",
+  "signInVerifyBody": "Wir haben dir eine E-Mail mit einem Bestätigungslink geschickt. Öffne den Link (er darf sich in Safari öffnen), komm dann hierher zurück und melde dich an.",
+  "signInVerifyAction": "Ich habe bestätigt – anmelden"
 }

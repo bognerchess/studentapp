@@ -239,4 +239,56 @@ class AppLocalizationsEn extends AppLocalizations {
   String metadataRatingError(int min, int max) {
     return '$min–$max';
   }
+
+  @override
+  String get signInTagline =>
+      'Enter or import your games, have them analysed and review them with coach comments.';
+
+  @override
+  String get signInPrimary => 'Sign in';
+
+  @override
+  String get signInRegister => 'Create account';
+
+  @override
+  String get signInApple => 'Continue with Apple';
+
+  @override
+  String get signInGoogle => 'Continue with Google';
+
+  @override
+  String get signInOr => 'or';
+
+  @override
+  String get signInSameAccount => 'The same account works on bognerchess.com.';
+
+  @override
+  String get signInBusy => 'Waiting for the sign-in page …';
+
+  @override
+  String get signInErrorOfflineTitle => 'No connection';
+
+  @override
+  String get signInErrorOfflineMessage =>
+      'The sign-in page could not be reached. Check your internet connection and try again.';
+
+  @override
+  String get signInErrorTitle => 'Sign-in did not work';
+
+  @override
+  String get signInErrorMessage =>
+      'Something went wrong on our side. Please try again in a moment.';
+
+  @override
+  String get signInVerifyToggle => 'E-mail not confirmed yet?';
+
+  @override
+  String get signInVerifyTitle => 'Confirm your e-mail address';
+
+  @override
+  String get signInVerifyBody =>
+      'We sent you an e-mail with a confirmation link. Open the link (it may open in Safari, that is fine), then come back here and sign in.';
+
+  @override
+  String get signInVerifyAction => 'I have confirmed it – sign in';
 }

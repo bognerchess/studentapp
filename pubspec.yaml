@@ -35,6 +35,9 @@ dependencies:
   drift_flutter: ^0.3.1
   path_provider: ^2.1.6
   uuid: ^4.6.0
+  # WP-25: OIDC sign-in and the Keychain token store (lib/core/auth).
+  flutter_appauth: ^12.1.0
+  flutter_secure_storage: ^11.2.0
 
 dev_dependencies:
   flutter_test:
@@ -43,6 +46,8 @@ dev_dependencies:
   # WP-13: drift generator, schema tools and migration test helpers.
   build_runner: ^2.16.1
   drift_dev: ^2.35.0
+  # WP-25: in-memory preferences for tests.
+  shared_preferences_platform_interface: ^2.4.2
 
 flutter:
   uses-material-design: true
