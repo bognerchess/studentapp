@@ -2,42 +2,58 @@
 // Copyright (C) 2026 Bogner Chess
 // Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
 
-import 'package:flutter/material.dart';
+import 'dart:async';
+
+import 'package:bogner_chess/app.dart';
+import 'package:bogner_chess/config/env.dart';
+import 'package:bogner_chess/core/crash/crash_reporter.dart';
+import 'package:bogner_chess/core/log.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+const _log = Log('main');
 
 void main() {
-  runApp(const BognerChessApp());
-}
+  // One container for the whole process, created before the first frame so
+  // that errors during start-up already reach the crash reporter.
+  final container = ProviderContainer();
+  final crash = container.read(crashReporterProvider);
 
-/// Root widget. WP-03 replaces this with the real shell (Riverpod, go_router,
-/// theme, l10n); until then it only proves that the toolchain builds and runs.
-class BognerChessApp extends StatelessWidget {
-  const BognerChessApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Bogner Chess',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2E5E4E)),
-      ),
-      home: const PlaceholderHomeScreen(),
-    );
+  void report(Object error, StackTrace? stack, String reason, bool fatal) {
+    _log.error('uncaught ($reason)', error: error, stackTrace: stack);
+    crash.recordError(error, stack, fatal: fatal, reason: reason);
   }
-}
 
-/// Placeholder home screen for the scaffold.
-class PlaceholderHomeScreen extends StatelessWidget {
-  const PlaceholderHomeScreen({super.key});
+  runZonedGuarded(
+    () {
+      // Binding and runApp must share this zone.
+      WidgetsFlutterBinding.ensureInitialized();
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Text(
-          'Bogner Chess',
-          style: Theme.of(context).textTheme.headlineMedium,
+      // Errors thrown while building, laying out or painting.
+      FlutterError.onError = (details) {
+        FlutterError.presentError(details);
+        report(details.exception, details.stack, 'flutter', false);
+      };
+      // Errors from platform callbacks outside any Dart zone.
+      PlatformDispatcher.instance.onError = (error, stack) {
+        report(error, stack, 'platform', true);
+        return true;
+      };
+
+      // Reads the dart-defines; throws on a release build with fake auth or
+      // a plain-http API rather than letting such a build start.
+      final env = container.read(envProvider);
+      _log.info('starting env=${env.envName} auth=${env.authMode.name}');
+
+      runApp(
+        UncontrolledProviderScope(
+          container: container,
+          child: const BognerChessApp(),
         ),
-      ),
-    );
-  }
+      );
+    },
+    // Everything asynchronous that nobody caught.
+    (error, stack) => report(error, stack, 'zone', true),
+  );
 }

@@ -21,6 +21,13 @@ and `go_router`, `app_links`, `wakelock_plus` (Flutter >= 3.44).
 | --- | --- | --- | --- | --- | --- |
 | `flutter`, `flutter_test` | SDK | 3.47.5 | BSD-3-Clause | flutter.dev | Framework and test framework. |
 | `flutter_lints` | `^6.0.0` (dev) | 6.0.0 (2025-05-27) | BSD-3-Clause | flutter.dev | Base lint set; `analysis_options.yaml` tightens it. |
+| `flutter_localizations` | SDK | 3.47.5 | BSD-3-Clause | flutter.dev | Widgets-layer localisations and the date data behind `gen-l10n`. Added by WP-03. |
+| `flutter_riverpod` | `^3.4.3` | 3.4.3 (2026-09-03) | MIT | dash-overflow.net | State management. Plain Riverpod 3, without `riverpod_generator`. Added by WP-03. |
+| `go_router` | `^18.0.1` | 18.0.1 (2026-09-02) | BSD-3-Clause | flutter.dev | Routing, tab shell, redirects and deep links. Needs Flutter >= 3.44. **v18 builds its pages with `material_ui`**, see the next row. Added by WP-03. |
+| `material_ui` | `^1.3.0` | 1.3.0 (2026-09-15) | BSD-3-Clause | flutter.dev | The Material library, now a package of its own outside the framework. `go_router` 18 only recognises a `MaterialApp` from this package (with the framework's legacy `package:flutter/material.dart` it silently falls back to pages without transitions or swipe-back), so the whole app imports `package:material_ui/material_ui.dart`. It also carries the German and English Material strings (`GlobalMaterialLocalizations.delegates`). Pulls `cupertino_ui` (BSD-3-Clause, flutter.dev) transitively. Added by WP-03; was not in the plan. |
+| `intl` | `^0.20.3` | 0.20.3 (2026-06-25) | BSD-3-Clause | dart.dev | Placeholders, dates and plurals in the generated localisations. The version is dictated by `flutter_localizations`. Added by WP-03. |
+| `shared_preferences` | `^2.5.5` | 2.5.5 (2026-03-25) | BSD-3-Clause | flutter.dev | Small settings (`preferencesProvider`, the `SharedPreferencesAsync` API); WP-25 adds the first-launch marker for the Keychain wipe. Added by WP-03. |
+| `package_info_plus` | `^10.2.1` | 10.2.1 (2026-07-15) | BSD-3-Clause | fluttercommunity.dev | Version and build number (`appInfoProvider`): settings footer now, "source for this build" link and `registerDevice` later. Needs Flutter >= 3.38.1. Added by WP-03. |
 
 `cupertino_icons`, which `flutter create` adds, was removed: nothing uses it.
 
@@ -37,22 +44,16 @@ and `go_router`, `app_links`, `wakelock_plus` (Flutter >= 3.44).
 | `flutter_secure_storage` | 11.2.0 (2026-09-16) | BSD-3-Clause | steenbakker.dev | Tokens in the Keychain (`first_unlock_this_device`). | WP-25 |
 | `drift` | 2.35.0 (2026-09-09) | MIT | simonbinder.eu | Local database: drafts, cached games and analyses, pending jobs, outboxes. | WP-13 |
 | `drift_flutter` | 0.3.1 (2026-07-11) | MIT | simonbinder.eu | Opens the drift database on the device. Replaces `sqlite3_flutter_libs`, whose latest version is `0.6.0+eol` (end of life): SQLite now comes through the `sqlite3` package's build hooks. | WP-13 |
-| `flutter_riverpod` | 3.4.3 (2026-09-03) | MIT | dash-overflow.net | State management. Plain Riverpod 3 with freezed, without `riverpod_generator`. | WP-03 |
-| `go_router` | 18.0.1 (2026-09-02) | BSD-3-Clause | flutter.dev | Routing and deep links (push tap, shared PGN). Needs Flutter >= 3.44. | WP-03 |
-| `intl` | 0.20.3 (2026-06-25) | BSD-3-Clause | dart.dev | Dates and plurals for `flutter gen-l10n`. The version is dictated by `flutter_localizations` (SDK, `^0.20.3` in Flutter 3.47.5). | WP-03 |
-| `flutter_localizations` | SDK | BSD-3-Clause | flutter.dev | German and English framework strings. | WP-03 |
 | `fl_chart` | 1.2.0 (2026-03-13) | MIT | flchart.dev | Evaluation graph. | WP-29b |
 | `app_links` | 7.2.1 (2026-07-09) | Apache-2.0 | cow-level.ovh | Custom URL scheme and file URLs ("Open in Bogner Chess"). Apache-2.0 is compatible with GPLv3. Needs Flutter >= 3.44. | WP-23 |
 | `file_picker` | 13.1.0 (2026-09-15) | MIT | victorcarreras.dev | Pick a `.pgn` from Files. v13 made `length()` async. | WP-22 |
 | `sentry_flutter` | 9.30.0 (2026-09-10) | MIT | sentry.io | Crash reporting, consent-gated, PII off. The bundled sentry-cocoa is MIT too. | WP-34 |
 | `connectivity_plus` | 7.3.1 (2026-07-23) | BSD-3-Clause | fluttercommunity.dev | Trigger for the submit queue when the network returns. | WP-27 |
-| `package_info_plus` | 10.2.1 (2026-07-15) | BSD-3-Clause | fluttercommunity.dev | Version and build number for the "source for this build" link and `registerDevice`. | WP-31 |
 | `url_launcher` | 6.3.2 (2025-07-10) | BSD-3-Clause | flutter.dev | Open legal documents and the source link. | WP-30 |
-| `shared_preferences` | 2.5.5 (2026-03-25) | BSD-3-Clause | flutter.dev | Small settings and the first-launch marker for the Keychain wipe. | WP-25 |
 | `path_provider` | 2.1.6 (2026-06-15) | BSD-3-Clause | flutter.dev | Location of the database file. | WP-13 |
 | `wakelock_plus` | 1.8.0 (2026-09-01) | BSD-3-Clause | fluttercommunity.dev | Keep the screen on during move entry. Needs Flutter >= 3.44. | WP-20 |
 | `flutter_markdown_plus` | 1.0.12 (2026-07-10) | BSD-3-Clause | foresightmobile.com | Render legal documents and coach text. | WP-30 |
-| `freezed_annotation` | 3.1.0 (2025-07-02) | MIT | dash-overflow.net | Annotations for immutable domain models. | WP-03 |
+| `freezed_annotation` | 3.1.0 (2025-07-02) | MIT | dash-overflow.net | Annotations for immutable domain models. WP-03 did not need it (the shell has no domain models); the first WP with one adds it. | first user |
 | `json_annotation` | 4.12.0 (2026-05-15) | BSD-3-Clause | google.dev | Annotations for the analysis document model. | WP-14 |
 | `uuid` | 4.6.0 (2026-07-15) | MIT | yuli.dev | `clientGameId` for idempotent game creation. | WP-13 |
 | `http` | 1.6.0 (2025-11-10) | BSD-3-Clause | dart.dev | Transport under the GraphQL HTTP link; token revocation call. | WP-12 |
@@ -65,7 +66,7 @@ and `go_router`, `app_links`, `wakelock_plus` (Flutter >= 3.44).
 | `build_runner` | 2.16.1 (2026-09-02) | BSD-3-Clause | tools.dart.dev | Runs the generators (`tool/gen.sh`). | WP-02 |
 | `graphql_codegen` | 3.0.2 (2026-07-05) | MIT | heft.app | Typed operations, enum fallback for unknown values, `when`/`maybeWhen` on unions. | WP-10 |
 | `drift_dev` | 2.35.0 (2026-09-09) | MIT | simonbinder.eu | drift generator and migration test helpers. | WP-13 |
-| `freezed` | 4.0.2 (2026-09-18) | MIT | dash-overflow.net | Generator for immutable models. Needs Dart >= 3.13.0. Published one day before this check: confirm it has settled before pinning. | WP-03 |
+| `freezed` | 4.0.2 (2026-09-18) | MIT | dash-overflow.net | Generator for immutable models. Needs Dart >= 3.13.0. Published one day before this check: confirm it has settled before pinning. WP-03 did not need it. | first user |
 | `json_serializable` | 6.14.1 (2026-07-30) | BSD-3-Clause | google.dev | JSON for the analysis document model. | WP-14 |
 | `mocktail` | 1.0.5 (2026-04-10) | MIT | felangel.dev | Mocks without code generation. | WP-12 |
 | `fake_async` | 1.3.3 (2025-01-28) | Apache-2.0 | dart.dev | Deterministic time in submit-queue and poller tests. | WP-27 |

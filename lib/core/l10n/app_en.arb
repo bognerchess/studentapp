@@ -1,0 +1,149 @@
+{
+  "@@locale": "en",
+  "appTitle": "Bogner Chess",
+  "@appTitle": {
+    "description": "Name of the app, shown by the system in the app switcher."
+  },
+  "tabGames": "Games",
+  "@tabGames": {
+    "description": "Label of the first tab: the library of the player's games."
+  },
+  "tabNewGame": "New game",
+  "@tabNewGame": {
+    "description": "Label of the second tab: start entering or importing a game."
+  },
+  "tabSettings": "Settings",
+  "@tabSettings": {
+    "description": "Label of the third tab."
+  },
+  "commonRetry": "Try again",
+  "@commonRetry": {
+    "description": "Button that repeats a failed action."
+  },
+  "commonErrorTitle": "Something went wrong",
+  "@commonErrorTitle": {
+    "description": "Generic headline of the error view."
+  },
+  "commonErrorMessage": "Please check your connection and try again.",
+  "@commonErrorMessage": {
+    "description": "Generic body text of the error view."
+  },
+  "commonPlaceholderMessage": "This screen is not built yet.",
+  "@commonPlaceholderMessage": {
+    "description": "Body of a placeholder screen during development. Never visible in a release."
+  },
+  "notFoundTitle": "Page not found",
+  "@notFoundTitle": {
+    "description": "Headline when a link points to a screen that does not exist."
+  },
+  "notFoundMessage": "This link does not lead anywhere in the app.",
+  "@notFoundMessage": {
+    "description": "Body text when a link points to a screen that does not exist."
+  },
+  "notFoundAction": "Go to my games",
+  "@notFoundAction": {
+    "description": "Button on the not-found screen that opens the games tab."
+  },
+  "libraryTitle": "Games",
+  "@libraryTitle": {
+    "description": "Title of the games library screen."
+  },
+  "libraryEmptyTitle": "No games yet",
+  "@libraryEmptyTitle": {
+    "description": "Headline of the empty games library."
+  },
+  "libraryEmptyMessage": "Enter a game or import a PGN to have it analysed.",
+  "@libraryEmptyMessage": {
+    "description": "Body text of the empty games library."
+  },
+  "libraryEmptyAction": "New game",
+  "@libraryEmptyAction": {
+    "description": "Button in the empty games library that opens the new-game tab."
+  },
+  "libraryGameTitle": "Game",
+  "@libraryGameTitle": {
+    "description": "Title of the screen that shows one game."
+  },
+  "newGameTitle": "New game",
+  "@newGameTitle": {
+    "description": "Title of the screen where the player chooses how to add a game."
+  },
+  "newGameEnterMoves": "Enter moves",
+  "@newGameEnterMoves": {
+    "description": "Choice: enter the game move by move on the board."
+  },
+  "newGameEnterMovesHint": "Play through the game on the board, move by move.",
+  "@newGameEnterMovesHint": {
+    "description": "Explanation under the enter-moves choice."
+  },
+  "newGameImportPgn": "Import PGN",
+  "@newGameImportPgn": {
+    "description": "Choice: import a game from PGN text or a PGN file."
+  },
+  "newGameImportPgnHint": "Paste the text or open a PGN file.",
+  "@newGameImportPgnHint": {
+    "description": "Explanation under the import-PGN choice."
+  },
+  "entryTitle": "Enter moves",
+  "@entryTitle": {
+    "description": "Title of the move-entry screen."
+  },
+  "importTitle": "Import PGN",
+  "@importTitle": {
+    "description": "Title of the PGN import screen."
+  },
+  "reviewTitle": "Review",
+  "@reviewTitle": {
+    "description": "Title of the screen that shows the analysed game."
+  },
+  "settingsTitle": "Settings",
+  "@settingsTitle": {
+    "description": "Title of the settings screen."
+  },
+  "settingsAccount": "Account",
+  "@settingsAccount": {
+    "description": "Settings entry that opens the account screen."
+  },
+  "settingsLegal": "Privacy and terms",
+  "@settingsLegal": {
+    "description": "Settings entry that opens the legal documents."
+  },
+  "settingsAbout": "About and licences",
+  "@settingsAbout": {
+    "description": "Settings entry that opens the about screen."
+  },
+  "settingsVersion": "Version {version} ({build})",
+  "@settingsVersion": {
+    "description": "App version and build number at the bottom of the settings.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "0.1.0"
+      },
+      "build": {
+        "type": "String",
+        "example": "1"
+      }
+    }
+  },
+  "accountTitle": "Account",
+  "@accountTitle": {
+    "description": "Title of the account screen."
+  },
+  "legalTitle": "Privacy and terms",
+  "@legalTitle": {
+    "description": "Title of the legal documents screen."
+  },
+  "aboutTitle": "About and licences",
+  "@aboutTitle": {
+    "description": "Title of the about screen."
+  },
+  "consentAiTitle": "AI coach",
+  "@consentAiTitle": {
+    "description": "Title of the one-time consent screen shown before the first analysis."
+  },
+  "signInTitle": "Sign in",
+  "@signInTitle": {
+    "description": "Title of the sign-in screen."
+  }
+}

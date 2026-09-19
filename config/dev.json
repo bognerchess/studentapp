@@ -1,0 +1,10 @@
+{
+  "ENV_NAME": "dev",
+  "API_URL": "http://localhost:5200/graphql",
+  "TENANT_SLUG": "htytedif",
+  "OIDC_ISSUER": "https://id.bognerchess.com/realms/bognerchess",
+  "OIDC_CLIENT_ID": "bognerchess-mobile",
+  "OIDC_REDIRECT": "com.bognerchess.mobile:/oauthredirect",
+  "SENTRY_DSN": "",
+  "AUTH_MODE": "real"
+}
