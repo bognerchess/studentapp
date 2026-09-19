@@ -1,0 +1,9 @@
+# Options for the generators behind tool/gen.sh. See docs/storage.md.
+targets:
+  $default:
+    builders:
+      drift_dev:
+        # Only the storage layer contains drift code; this keeps the generator
+        # away from everything else (tool/test_fixtures/ does not even compile).
+        generate_for:
+          - lib/core/storage/**
