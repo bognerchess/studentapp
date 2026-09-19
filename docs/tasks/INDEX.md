@@ -16,7 +16,7 @@ Scope, dependencies and acceptance for every WP are in `../product-hub/docs/mobi
 | WP-14 | Analysis document model + mapper | M | WP-10, chess-ai C-01 | todo | – |
 | WP-20 | Board entry (IN-1) | L | WP-04, WP-13 | todo | – |
 | WP-21 | Metadata form (IN-2) | S | WP-03 | review | [WP-21](WP-21-metadata-form.md) |
-| WP-22 | PGN paste, file picker, multi-game chooser (IN-3) | M | WP-04 | todo | – |
+| WP-22 | PGN paste, file picker, multi-game chooser (IN-3) | M | WP-04 | review | [WP-22](WP-22-pgn-import.md) |
 | WP-23 | "Open in" document types (IN-3) | M | WP-22, WP-01 | todo | – |
 | WP-24 | Share Extension + App Group (IN-3) | M | WP-23, H5 | todo | – |
 | WP-25 | Auth: PKCE, single-flight refresh, fake auth (AC-1) | L | WP-12 | todo | – |

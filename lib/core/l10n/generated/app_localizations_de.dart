@@ -293,4 +293,168 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get aboutDocumentLoadFailed =>
       'Dieser Text konnte nicht geladen werden. Er ist auch Teil des Quellcodes dieser App.';
+
+  @override
+  String get importPasteButton => 'Aus Zwischenablage einfügen';
+
+  @override
+  String get importOpenFileButton => 'Datei öffnen …';
+
+  @override
+  String get importFieldLabel => 'PGN oder Züge';
+
+  @override
+  String get importFieldHint => '1. e4 e5 2. Sf3 Sc6 3. Lb5 …';
+
+  @override
+  String get importClear => 'Leeren';
+
+  @override
+  String get importEmptyHint =>
+      'Füge eine Partie aus einer anderen Schach-App ein, öffne eine PGN-Datei oder tippe die Züge. Angaben wie [White \"…\"] sind freiwillig.';
+
+  @override
+  String get importChecking => 'Züge werden geprüft …';
+
+  @override
+  String get importClipboardEmpty => 'In der Zwischenablage ist kein Text.';
+
+  @override
+  String get importFileUnreadable => 'Diese Datei konnte nicht gelesen werden.';
+
+  @override
+  String get importErrorTitleGame =>
+      'Diese Partie kann nicht importiert werden';
+
+  @override
+  String get importErrorTitleText => 'Dieser Text kann nicht importiert werden';
+
+  @override
+  String get importErrorTooLarge =>
+      'Der Text ist zu gross. Es können höchstens 2 MB auf einmal importiert werden.';
+
+  @override
+  String importErrorTooManyGames(int max) {
+    return 'In diesem Text sind mehr als $max Partien. Bitte importiere eine kleinere Datei.';
+  }
+
+  @override
+  String get importErrorNoGames =>
+      'In diesem Text wurde keine Schachpartie gefunden. Eine Partie sieht so aus: 1. e4 e5 2. Nf3 Nc6';
+
+  @override
+  String get importErrorNoMoves => 'Diese Partie enthält keine Züge.';
+
+  @override
+  String get importErrorCustomStart =>
+      'Diese Partie beginnt in einer aufgebauten Stellung (FEN). Im Moment können nur Partien importiert werden, die in der Grundstellung beginnen.';
+
+  @override
+  String importErrorVariant(String variant) {
+    return 'Das ist eine Partie in der Variante $variant. Es kann nur normales Schach importiert werden.';
+  }
+
+  @override
+  String importErrorIllegalMove(String move) {
+    return '$move ist in dieser Stellung kein erlaubter Zug.';
+  }
+
+  @override
+  String importErrorAmbiguousMove(String move) {
+    return '$move ist mehrdeutig: Mehr als eine Figur kann diesen Zug machen. Ergänze die Linie oder Reihe, von der sie kommt, wie in Nbd7.';
+  }
+
+  @override
+  String importErrorUnreadable(String token) {
+    return '«$token» ist kein Schachzug.';
+  }
+
+  @override
+  String get importErrorUnreadableHint =>
+      'Züge brauchen die englischen Figurenbuchstaben K, Q, R, B und N.';
+
+  @override
+  String get importErrorUnterminatedComment =>
+      'Ein Kommentar in geschweiften Klammern wird nie geschlossen.';
+
+  @override
+  String get importErrorUnterminatedVariation =>
+      'Eine Variante in runden Klammern wird nie geschlossen.';
+
+  @override
+  String importErrorWhereLine(int line) {
+    return 'Zeile $line';
+  }
+
+  @override
+  String importErrorWhereLineMove(int line, int number) {
+    return 'Zeile $line, bei Zug $number';
+  }
+
+  @override
+  String get importErrorFixHint =>
+      'Korrigiere den Text oben. Er wird beim Tippen neu geprüft.';
+
+  @override
+  String importGamesFound(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Partien gefunden',
+      one: '1 Partie gefunden',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importChooseGame =>
+      'Wähle die Partie, die du importieren möchtest.';
+
+  @override
+  String get importGameNotImportable => 'Kann nicht importiert werden';
+
+  @override
+  String get importChooseAnother => 'Andere Partie wählen';
+
+  @override
+  String get importPreviewTitle => 'Bereit zum Import';
+
+  @override
+  String importPlayers(String white, String black) {
+    return '$white – $black';
+  }
+
+  @override
+  String get importPlayerWhite => 'Weiss';
+
+  @override
+  String get importPlayerBlack => 'Schwarz';
+
+  @override
+  String importMoves(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Züge',
+      one: '1 Zug',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importResultOpen => 'Ohne Ergebnis';
+
+  @override
+  String get importFinalPosition => 'Schlussstellung';
+
+  @override
+  String get importWarningVariations =>
+      'Varianten wurden entfernt. Nur die Hauptvariante wird importiert.';
+
+  @override
+  String get importWarningComments =>
+      'Kommentare und Bewertungszeichen wurden entfernt.';
+
+  @override
+  String get importContinue => 'Weiter';
 }

@@ -22,6 +22,8 @@ dependencies:
   chessground:
     path: third_party/chessground
   dartchess: ^0.13.1
+  # "Open file…" on the PGN import screen; builds with Swift Package Manager.
+  file_picker: ^13.1.0
   flutter_localizations:
     sdk: flutter
   flutter_riverpod: ^3.4.3

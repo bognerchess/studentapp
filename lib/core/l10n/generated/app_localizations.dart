@@ -629,6 +629,246 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This text could not be loaded. It is also part of the source code of this app.'**
   String get aboutDocumentLoadFailed;
+
+  /// Button that puts the clipboard text into the PGN field.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste from clipboard'**
+  String get importPasteButton;
+
+  /// Button that opens the system file picker for a PGN or text file.
+  ///
+  /// In en, this message translates to:
+  /// **'Open file…'**
+  String get importOpenFileButton;
+
+  /// Label of the large text field on the import screen.
+  ///
+  /// In en, this message translates to:
+  /// **'PGN or moves'**
+  String get importFieldLabel;
+
+  /// Example shown inside the empty PGN field. The German example is only an illustration; the field itself needs English piece letters.
+  ///
+  /// In en, this message translates to:
+  /// **'1. e4 e5 2. Nf3 Nc6 3. Bb5 …'**
+  String get importFieldHint;
+
+  /// Tooltip of the button that empties the PGN field.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get importClear;
+
+  /// Help text under the empty PGN field.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a game from another chess app, open a PGN file, or type the moves. Tags such as [White \"…\"] are optional.'**
+  String get importEmptyHint;
+
+  /// Shown while a large PGN text is being validated.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking the moves…'**
+  String get importChecking;
+
+  /// Snackbar after tapping paste with an empty clipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'There is no text on the clipboard.'**
+  String get importClipboardEmpty;
+
+  /// Snackbar when the picked file cannot be read.
+  ///
+  /// In en, this message translates to:
+  /// **'This file could not be read.'**
+  String get importFileUnreadable;
+
+  /// Headline of the error panel when one game is invalid.
+  ///
+  /// In en, this message translates to:
+  /// **'This game can\'t be imported'**
+  String get importErrorTitleGame;
+
+  /// Headline of the error panel when the whole text is refused.
+  ///
+  /// In en, this message translates to:
+  /// **'This text can\'t be imported'**
+  String get importErrorTitleText;
+
+  /// Error: the pasted text or the file exceeds the size limit.
+  ///
+  /// In en, this message translates to:
+  /// **'The text is too large. At most 2 MB can be imported at once.'**
+  String get importErrorTooLarge;
+
+  /// Error: more games than the limit.
+  ///
+  /// In en, this message translates to:
+  /// **'There are more than {max} games in this text. Please import a smaller file.'**
+  String importErrorTooManyGames(int max);
+
+  /// Error: the text contains neither tags nor moves.
+  ///
+  /// In en, this message translates to:
+  /// **'No chess game was found in this text. A game looks like this: 1. e4 e5 2. Nf3 Nc6'**
+  String get importErrorNoGames;
+
+  /// Error: a game with tags but without moves.
+  ///
+  /// In en, this message translates to:
+  /// **'This game has no moves.'**
+  String get importErrorNoMoves;
+
+  /// Error: the PGN has a FEN or SetUp tag.
+  ///
+  /// In en, this message translates to:
+  /// **'This game starts from a set-up position (FEN). For now, only games that start from the normal starting position can be imported.'**
+  String get importErrorCustomStart;
+
+  /// Error: the PGN has a Variant tag other than standard chess.
+  ///
+  /// In en, this message translates to:
+  /// **'This is a game of {variant}. Only standard chess can be imported.'**
+  String importErrorVariant(String variant);
+
+  /// Error: a move of the main line is illegal. The placeholder is the numbered move as written.
+  ///
+  /// In en, this message translates to:
+  /// **'{move} is not a legal move in this position.'**
+  String importErrorIllegalMove(String move);
+
+  /// Error: a SAN move fits several legal moves.
+  ///
+  /// In en, this message translates to:
+  /// **'{move} is ambiguous: more than one piece can make this move. Add the file or rank it starts from, as in Nbd7.'**
+  String importErrorAmbiguousMove(String move);
+
+  /// Error: a word in the movetext is not a move. Moves use English piece letters (K, Q, R, B, N).
+  ///
+  /// In en, this message translates to:
+  /// **'“{token}” is not a chess move.'**
+  String importErrorUnreadable(String token);
+
+  /// Second sentence of the unreadable-move error.
+  ///
+  /// In en, this message translates to:
+  /// **'Moves need the English piece letters K, Q, R, B and N.'**
+  String get importErrorUnreadableHint;
+
+  /// Error: unterminated brace comment.
+  ///
+  /// In en, this message translates to:
+  /// **'A comment that opens with a curly bracket is never closed.'**
+  String get importErrorUnterminatedComment;
+
+  /// Error: unterminated variation.
+  ///
+  /// In en, this message translates to:
+  /// **'A variation that opens with a round bracket is never closed.'**
+  String get importErrorUnterminatedVariation;
+
+  /// Where in the text the error is.
+  ///
+  /// In en, this message translates to:
+  /// **'Line {line}'**
+  String importErrorWhereLine(int line);
+
+  /// Where in the text the error is, with the move number.
+  ///
+  /// In en, this message translates to:
+  /// **'Line {line}, at move {number}'**
+  String importErrorWhereLineMove(int line, int number);
+
+  /// Closing line of the error panel.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct the text above. It is checked again as you type.'**
+  String get importErrorFixHint;
+
+  /// Headline above the list of games found in the text.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 game found} other{{count} games found}}'**
+  String importGamesFound(int count);
+
+  /// Instruction above the list of games.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the game you want to import.'**
+  String get importChooseGame;
+
+  /// Marks a game in the list that failed validation.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t be imported'**
+  String get importGameNotImportable;
+
+  /// Button that returns from the preview to the list of games.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose another game'**
+  String get importChooseAnother;
+
+  /// Headline of the preview card of a valid game.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to import'**
+  String get importPreviewTitle;
+
+  /// The two players of a game, White first.
+  ///
+  /// In en, this message translates to:
+  /// **'{white} – {black}'**
+  String importPlayers(String white, String black);
+
+  /// Stands in for a missing name of the player with the white pieces.
+  ///
+  /// In en, this message translates to:
+  /// **'White'**
+  String get importPlayerWhite;
+
+  /// Stands in for a missing name of the player with the black pieces.
+  ///
+  /// In en, this message translates to:
+  /// **'Black'**
+  String get importPlayerBlack;
+
+  /// Length of the game in full moves.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 move} other{{count} moves}}'**
+  String importMoves(int count);
+
+  /// Shown when the PGN has no result or the result *.
+  ///
+  /// In en, this message translates to:
+  /// **'No result'**
+  String get importResultOpen;
+
+  /// Accessibility label of the small board on the preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Final position'**
+  String get importFinalPosition;
+
+  /// Warning on the preview: the PGN contained variations.
+  ///
+  /// In en, this message translates to:
+  /// **'Variations were removed. Only the main line is imported.'**
+  String get importWarningVariations;
+
+  /// Warning on the preview: the PGN contained comments, NAGs or glyphs.
+  ///
+  /// In en, this message translates to:
+  /// **'Comments and annotation symbols were removed.'**
+  String get importWarningComments;
+
+  /// Primary button: hand the chosen game to the next step.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get importContinue;
 }
 
 class _AppLocalizationsDelegate

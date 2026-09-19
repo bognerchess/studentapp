@@ -1,0 +1,29 @@
+[Event "Schulschach-Turnier"]
+[Site "Basel"]
+[Date "2026.05.02"]
+[Round "1"]
+[White "Carla Probe"]
+[Black "David Test"]
+[Result "1-0"]
+
+1. e4 e5 2. Bc4 Nc6 3. Qh5 Nf6 4. Qxf7# 1-0
+
+[Event "Schulschach-Turnier"]
+[Site "Basel"]
+[Date "2026.05.02"]
+[Round "2"]
+[White "Emil Exempel"]
+[Black "Carla Probe"]
+[Result "1-0"]
+
+1. e4 e5 2. Nf3 d6 3. Bc4 Bg4 4. Nc3 g6 5. Nxe5 Bxd1 6. Bxf7+ Ke7 7. Nd5# 1-0
+
+[Event "Schulschach-Turnier"]
+[Site "Basel"]
+[Date "2026.05.02"]
+[Round "3"]
+[White "Carla Probe"]
+[Black "Fiona Muster"]
+[Result "*"]
+
+1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Bg5 Be7 5. e3 O-O 6. Nf3 h6 7. Bh4 b6 *

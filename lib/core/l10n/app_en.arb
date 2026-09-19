@@ -371,5 +371,233 @@
   "aboutDocumentLoadFailed": "This text could not be loaded. It is also part of the source code of this app.",
   "@aboutDocumentLoadFailed": {
     "description": "Body of the error view when a bundled licence text cannot be read."
+  },
+  "importPasteButton": "Paste from clipboard",
+  "@importPasteButton": {
+    "description": "Button that puts the clipboard text into the PGN field."
+  },
+  "importOpenFileButton": "Open file…",
+  "@importOpenFileButton": {
+    "description": "Button that opens the system file picker for a PGN or text file."
+  },
+  "importFieldLabel": "PGN or moves",
+  "@importFieldLabel": {
+    "description": "Label of the large text field on the import screen."
+  },
+  "importFieldHint": "1. e4 e5 2. Nf3 Nc6 3. Bb5 …",
+  "@importFieldHint": {
+    "description": "Example shown inside the empty PGN field. The German example is only an illustration; the field itself needs English piece letters."
+  },
+  "importClear": "Clear",
+  "@importClear": {
+    "description": "Tooltip of the button that empties the PGN field."
+  },
+  "importEmptyHint": "Paste a game from another chess app, open a PGN file, or type the moves. Tags such as [White \"…\"] are optional.",
+  "@importEmptyHint": {
+    "description": "Help text under the empty PGN field."
+  },
+  "importChecking": "Checking the moves…",
+  "@importChecking": {
+    "description": "Shown while a large PGN text is being validated."
+  },
+  "importClipboardEmpty": "There is no text on the clipboard.",
+  "@importClipboardEmpty": {
+    "description": "Snackbar after tapping paste with an empty clipboard."
+  },
+  "importFileUnreadable": "This file could not be read.",
+  "@importFileUnreadable": {
+    "description": "Snackbar when the picked file cannot be read."
+  },
+  "importErrorTitleGame": "This game can't be imported",
+  "@importErrorTitleGame": {
+    "description": "Headline of the error panel when one game is invalid."
+  },
+  "importErrorTitleText": "This text can't be imported",
+  "@importErrorTitleText": {
+    "description": "Headline of the error panel when the whole text is refused."
+  },
+  "importErrorTooLarge": "The text is too large. At most 2 MB can be imported at once.",
+  "@importErrorTooLarge": {
+    "description": "Error: the pasted text or the file exceeds the size limit."
+  },
+  "importErrorTooManyGames": "There are more than {max} games in this text. Please import a smaller file.",
+  "@importErrorTooManyGames": {
+    "description": "Error: more games than the limit.",
+    "placeholders": {
+      "max": {
+        "type": "int",
+        "example": "500"
+      }
+    }
+  },
+  "importErrorNoGames": "No chess game was found in this text. A game looks like this: 1. e4 e5 2. Nf3 Nc6",
+  "@importErrorNoGames": {
+    "description": "Error: the text contains neither tags nor moves."
+  },
+  "importErrorNoMoves": "This game has no moves.",
+  "@importErrorNoMoves": {
+    "description": "Error: a game with tags but without moves."
+  },
+  "importErrorCustomStart": "This game starts from a set-up position (FEN). For now, only games that start from the normal starting position can be imported.",
+  "@importErrorCustomStart": {
+    "description": "Error: the PGN has a FEN or SetUp tag."
+  },
+  "importErrorVariant": "This is a game of {variant}. Only standard chess can be imported.",
+  "@importErrorVariant": {
+    "description": "Error: the PGN has a Variant tag other than standard chess.",
+    "placeholders": {
+      "variant": {
+        "type": "String",
+        "example": "Chess960"
+      }
+    }
+  },
+  "importErrorIllegalMove": "{move} is not a legal move in this position.",
+  "@importErrorIllegalMove": {
+    "description": "Error: a move of the main line is illegal. The placeholder is the numbered move as written.",
+    "placeholders": {
+      "move": {
+        "type": "String",
+        "example": "13. Rh5"
+      }
+    }
+  },
+  "importErrorAmbiguousMove": "{move} is ambiguous: more than one piece can make this move. Add the file or rank it starts from, as in Nbd7.",
+  "@importErrorAmbiguousMove": {
+    "description": "Error: a SAN move fits several legal moves.",
+    "placeholders": {
+      "move": {
+        "type": "String",
+        "example": "10... Nd7"
+      }
+    }
+  },
+  "importErrorUnreadable": "“{token}” is not a chess move.",
+  "@importErrorUnreadable": {
+    "description": "Error: a word in the movetext is not a move. Moves use English piece letters (K, Q, R, B, N).",
+    "placeholders": {
+      "token": {
+        "type": "String",
+        "example": "Nf9"
+      }
+    }
+  },
+  "importErrorUnreadableHint": "Moves need the English piece letters K, Q, R, B and N.",
+  "@importErrorUnreadableHint": {
+    "description": "Second sentence of the unreadable-move error."
+  },
+  "importErrorUnterminatedComment": "A comment that opens with a curly bracket is never closed.",
+  "@importErrorUnterminatedComment": {
+    "description": "Error: unterminated brace comment."
+  },
+  "importErrorUnterminatedVariation": "A variation that opens with a round bracket is never closed.",
+  "@importErrorUnterminatedVariation": {
+    "description": "Error: unterminated variation."
+  },
+  "importErrorWhereLine": "Line {line}",
+  "@importErrorWhereLine": {
+    "description": "Where in the text the error is.",
+    "placeholders": {
+      "line": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "importErrorWhereLineMove": "Line {line}, at move {number}",
+  "@importErrorWhereLineMove": {
+    "description": "Where in the text the error is, with the move number.",
+    "placeholders": {
+      "line": {
+        "type": "int",
+        "example": "12"
+      },
+      "number": {
+        "type": "int",
+        "example": "13"
+      }
+    }
+  },
+  "importErrorFixHint": "Correct the text above. It is checked again as you type.",
+  "@importErrorFixHint": {
+    "description": "Closing line of the error panel."
+  },
+  "importGamesFound": "{count, plural, =1{1 game found} other{{count} games found}}",
+  "@importGamesFound": {
+    "description": "Headline above the list of games found in the text.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "importChooseGame": "Choose the game you want to import.",
+  "@importChooseGame": {
+    "description": "Instruction above the list of games."
+  },
+  "importGameNotImportable": "Can't be imported",
+  "@importGameNotImportable": {
+    "description": "Marks a game in the list that failed validation."
+  },
+  "importChooseAnother": "Choose another game",
+  "@importChooseAnother": {
+    "description": "Button that returns from the preview to the list of games."
+  },
+  "importPreviewTitle": "Ready to import",
+  "@importPreviewTitle": {
+    "description": "Headline of the preview card of a valid game."
+  },
+  "importPlayers": "{white} – {black}",
+  "@importPlayers": {
+    "description": "The two players of a game, White first.",
+    "placeholders": {
+      "white": {
+        "type": "String",
+        "example": "Anna"
+      },
+      "black": {
+        "type": "String",
+        "example": "Bruno"
+      }
+    }
+  },
+  "importPlayerWhite": "White",
+  "@importPlayerWhite": {
+    "description": "Stands in for a missing name of the player with the white pieces."
+  },
+  "importPlayerBlack": "Black",
+  "@importPlayerBlack": {
+    "description": "Stands in for a missing name of the player with the black pieces."
+  },
+  "importMoves": "{count, plural, =1{1 move} other{{count} moves}}",
+  "@importMoves": {
+    "description": "Length of the game in full moves.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "34"
+      }
+    }
+  },
+  "importResultOpen": "No result",
+  "@importResultOpen": {
+    "description": "Shown when the PGN has no result or the result *."
+  },
+  "importFinalPosition": "Final position",
+  "@importFinalPosition": {
+    "description": "Accessibility label of the small board on the preview."
+  },
+  "importWarningVariations": "Variations were removed. Only the main line is imported.",
+  "@importWarningVariations": {
+    "description": "Warning on the preview: the PGN contained variations."
+  },
+  "importWarningComments": "Comments and annotation symbols were removed.",
+  "@importWarningComments": {
+    "description": "Warning on the preview: the PGN contained comments, NAGs or glyphs."
+  },
+  "importContinue": "Continue",
+  "@importContinue": {
+    "description": "Primary button: hand the chosen game to the next step."
   }
 }
