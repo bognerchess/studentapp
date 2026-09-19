@@ -1,0 +1,11 @@
+{
+  "ENV_NAME": "staging",
+  "API_URL": "https://staging.invalid/graphql",
+  "TENANT_SLUG": "htytedif",
+  "OIDC_ISSUER": "https://id.bognerchess.com/realms/bognerchess",
+  "OIDC_CLIENT_ID": "bognerchess-mobile",
+  "OIDC_REDIRECT": "com.bognerchess.mobile:/oauthredirect",
+  "SENTRY_DSN": "",
+  "AUTH_MODE": "real",
+  "TODO": "API_URL is a placeholder (.invalid never resolves). Replace it when the staging host exists."
+}
