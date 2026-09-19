@@ -1,0 +1,227 @@
+# Testing and the gate
+
+Most of the code in this repository is written by coding agents, several of
+them at the same time on different branches. That only works if "is this
+change acceptable?" has one mechanical answer that is the same on every
+machine. The answer is `tool/check.sh`. CI runs that script and nothing else
+for the gate, so a change that is green locally is green in CI, and the other
+way round. A work package is not done until it is green.
+
+This document explains what the gate checks and why, the small tools behind
+it, and how golden tests fit in.
+
+## The gate: `tool/check.sh`
+
+    tool/check.sh                 # everything, a few seconds today
+    tool/check.sh --fast          # without codegen and tests, for quick iterations
+    tool/check.sh --format        # rewrite the files the format section would complain about
+    tool/check.sh --strict-swift  # Swift files without a licence header are errors
+    tool/check.sh --help
+
+The script stops at the first section that fails, names the section and prints
+one line on how to fix it. The sections run from cheap to expensive:
+
+1. **Dependencies.** `flutter pub get --enforce-lockfile`. `pubspec.lock` is
+   committed, because this is an app, and this step fails when it no longer
+   matches `pubspec.yaml`. Without it CI would quietly resolve different
+   versions from the ones the developer tested. If it fails: run
+   `flutter pub get` and commit the lock file (and remember the row in
+   `docs/dependencies.md`).
+2. **Format.** `dart format --output=none --set-exit-if-changed` over the
+   hand-written Dart files in `lib/`, `test/`, `tool/` and
+   `integration_test/`. Generated files (`*.g.dart`, `*.freezed.dart`,
+   `*.graphql.dart`, anything in a `generated/` directory) and `third_party/`
+   are left out: their formatting belongs to the generator or to upstream. The
+   gate only reports; `tool/check.sh --format` rewrites exactly the same set of
+   files. Plain `dart format .` would also touch generated code and then trip
+   section 6.
+3. **Analyze.** `flutter analyze --fatal-infos`. The lint set in
+   `analysis_options.yaml` is strict on purpose and an info is a failure: the
+   analyzer is the cheapest reviewer there is.
+4. **Licence headers.** `tool/check_headers.dart`, see below.
+5. **Layer imports.** `tool/check_layers.dart`, see below.
+6. **Codegen is clean.** Runs `tool/gen.sh` and compares the working tree
+   before and after. Generated code is committed, so that the app builds from a
+   clone without running generators and so that a review shows what a schema
+   change really did. The price is that it can go stale; this section is what
+   catches that. In CI the tree is clean, so the comparison amounts to
+   `git diff --exit-code` plus a look for new untracked files. Locally it also
+   works with uncommitted changes, which a bare `git diff --exit-code` could
+   not. If it fails, `tool/gen.sh` has just brought the files up to date:
+   review and commit them.
+7. **Tests.** `flutter test --exclude-tags golden`: unit and widget tests.
+   Goldens are separate, see below.
+
+`--fast` skips sections 6 and 7. Use it while iterating; run the full script
+before you hand a branch over.
+
+## `tool/gen.sh`
+
+Runs every generator the project is set up for: `flutter gen-l10n` when there
+is an `l10n.yaml`, and `dart run build_runner build --delete-conflicting-outputs`
+when `build_runner` is a dependency in `pubspec.yaml` (GraphQL operations,
+drift, freezed, json_serializable). When neither applies it says so and exits
+successfully, which is the state of the project at the time of writing. Run it
+after changing a `.graphql` file, a drift table, a freezed model or an ARB
+file, and commit what it produced.
+
+## `tool/check_headers.dart`
+
+    dart tool/check_headers.dart [--strict-swift] [--root <dir>]
+
+The app is GPL, contains some code adapted from other GPL projects, and
+carries an additional permission for app-store distribution that only the
+copyright holder of a file can give. So every file has to say which of the two
+kinds it is, and the check makes sure none forgets:
+
+- **Own code** starts, on line 1, with
+  `// SPDX-License-Identifier: GPL-3.0-or-later` and names
+  `LICENSE-APP-STORE-PERMISSION.md` within the first five lines. Copy the three
+  lines at the top of `lib/main.dart`.
+- **Code adapted from lichess** starts with
+  `// SPDX-License-Identifier: GPL-3.0-only`, keeps the original copyright
+  line, and has a provenance line within the first ten lines:
+  `// Adapted from <repo>/<path>@<commit sha>`. It must *not* name the
+  app-store permission, because that permission is not ours to give for
+  somebody else's code. A provenance line without a commit sha is a warning.
+  Such a file also needs a row in `NOTICE`.
+
+Checked: every `*.dart` under `lib/`, `test/`, `tool/` and `integration_test/`,
+and every `*.swift` under `ios/Runner/` and `ios/ShareExtension/`. Skipped:
+generated files, `third_party/`, and the fixture trees in
+`tool/test_fixtures/`. The file list comes from git (tracked files plus new
+files that are not ignored), so a file is checked before it is committed and
+build output never is.
+
+**`--strict-swift`.** The Swift files that `flutter create` wrote have no
+header yet; the iOS hardening work package (WP-01) adds them. Until that is
+merged a Swift finding is printed as a warning and does not fail the gate.
+With `--strict-swift` it is an error. When WP-01 is on `main`, change
+`strict_swift=0` to `strict_swift=1` near the top of `tool/check.sh`. That one
+line turns it on for everybody and for CI at once, which is better than a flag
+only the workflow passes, because then local and CI would differ.
+
+## `tool/check_layers.dart`
+
+    dart tool/check_layers.dart [--root <dir>]
+
+The architecture rules from `CLAUDE.md` that can be read off an import
+statement. Each violation is printed as `file:line: error: [rule] ...`.
+
+| Rule | What it says | Why |
+| --- | --- | --- |
+| `chessground` | Only `lib/core/chess/` imports `package:chessground/`. | The board package changes its API between major versions. One directory wraps it, so an upgrade touches one directory. |
+| `graphql` | Only `lib/core/api/` imports `package:graphql/` or a `package:gql*` package. | Transport is a detail of the API layer. Features see repositories and domain models. |
+| `generated-graphql` | Nothing in `lib/features/*/ui/` or `lib/core/ui/` imports a `*.graphql.dart` file. | Generated types follow the server schema. If widgets used them, every schema change would ripple into the UI. `data/*_mapper.dart` converts them to domain models. |
+| `cross-feature` | A feature does not import another feature's `ui/` or `data/`. Its `domain/` is fine. | Features stay separable, and parallel work packages do not reach into each other's internals. Code outside `lib/features/` (the router, for example) may import any feature. |
+
+Only `lib/` is checked. Tests are exempt on purpose: a widget test builds a
+`gql` link to serve fixtures. Generated files are not checked as sources
+either; a generated `*.graphql.dart` next to a mapper does import `gql`.
+Relative imports are resolved, so `../../library/ui/x.dart` is caught just like
+the `package:` form.
+
+The tool is a line scanner over the directive section of a file, not a Dart
+parser, so it needs no package and runs in milliseconds. It understands
+comments and directives that span several lines, and it stops at the first
+declaration.
+
+Both check tools are themselves tested: `test/tool/` runs them against small
+good and bad trees in `tool/test_fixtures/`. Those trees are excluded from the
+analyzer (they import packages that do not exist here) but not from the
+formatter.
+
+## `tool/check_bundled_assets.sh`
+
+    flutter build ios --simulator --debug
+    tool/check_bundled_assets.sh [path/to/Runner.app]
+
+`pubspec.yaml` says what we asked for; the built bundle says what we ship.
+Flutter copies every asset a package declares into the app, used or not, and
+upstream `chessground` declares about forty piece sets with mixed licences and
+a directory of board images. This app depends on a trimmed fork for that
+reason, and this script is the proof that the trimming worked. It looks into
+`Runner.app/Frameworks/App.framework/flutter_assets` and fails when
+
+- a directory below any `piece_sets/` directory is not named in
+  `tool/asset_allowlist.txt` (one name per line, `#` for comments; every name
+  there also needs its row in `NOTICE`),
+- any board image is bundled (board themes are colour schemes in code, so
+  there is no allow-list for them), or
+- any path in the whole bundle contains "firebase".
+
+It passes trivially while `chessground` is not a dependency. It needs a built
+app, so it is not part of `tool/check.sh`; CI runs it in the `ios` job after
+the simulator build.
+
+## Golden tests
+
+A golden test renders a widget and compares the pixels with a committed PNG.
+They are valuable for the few widgets where looks are the point (the board
+with arrows and glyphs, the eval graph, a coach card) and expensive
+everywhere else, so keep them to a handful.
+
+**Goldens are macOS-only.** Flutter rasterises text and anti-aliases shapes
+slightly differently per platform. A golden made on Linux never matches on a
+Mac and the other way round. Every developer machine for an iOS app is a Mac,
+so the reference platform is macOS: goldens are created on macOS, compared on
+macOS, and the Linux `check` job excludes them with `--exclude-tags golden`.
+Never run `--update-goldens` on Linux. `tool/golden.sh` refuses to run
+anywhere but macOS for that reason.
+
+    tool/golden.sh            # compare
+    tool/golden.sh --update   # rewrite the PNGs
+
+To add a golden:
+
+1. Put the test under `test/`, next to the other tests of its feature, and tag
+   it. Either the whole file, as its first line after the header,
+   `@Tags(['golden'])` followed by `library;`, or a single test with
+   `testWidgets('...', tags: 'golden', (tester) async { ... })`.
+2. Make it deterministic: fixed surface size, fixed locale, fixed text scale,
+   no clock, no network, no animation in flight (`pumpAndSettle`). Load a
+   bundled, OFL-licensed font in `test/flutter_test_config.dart` (the first
+   work package with a golden adds it, with a row in `NOTICE`); without a
+   real font Flutter draws every glyph as a box, and with a system font the
+   image depends on the OS version.
+3. Create the image on a Mac with `tool/golden.sh --update` and look at it.
+   A golden nobody looked at only proves that the output did not change.
+4. Commit the PNG together with the test.
+
+To change a golden on purpose, run `tool/golden.sh --update` and commit the
+new images **in their own commit**, with before and after shown in the pull
+request. An unexplained golden change in a feature commit is a review stop.
+
+When a comparison fails, Flutter writes the expected image, the actual image
+and two diffs to a `failures/` directory next to the test. CI uploads those as
+the `golden-failures` artifact.
+
+While there are no golden tests, `flutter test --tags golden` exits with 79
+("no tests ran"). `tool/golden.sh` accepts that only as long as no file under
+`test/` mentions the tag, so that a typo in a selector cannot turn the golden
+job into a silent no-op later.
+
+## CI
+
+`.github/workflows/pr.yml` runs on every pull request and on pushes to `main`.
+A newer push to a pull request cancels the run of the older one. The workflow
+has read access to the repository contents and uses no secrets.
+
+- **`check`**, on `ubuntu-latest`: installs the Flutter version pinned in
+  `pubspec.yaml` (`environment.flutter`) and runs `tool/check.sh`. Linux,
+  because it is the fast and cheap runner and nothing in the gate needs a Mac.
+- **`ios`**, on macOS: `flutter build ios --simulator --debug` (with
+  `config/fake.json` once that exists), `tool/check_bundled_assets.sh` on the
+  result, then `tool/golden.sh`. The runner is `macos-latest`; a comment in the
+  workflow says what to do when GitHub's image and the Xcode that the pinned
+  Flutter expects drift apart.
+
+`.github/workflows/integration.yml` is for the slow tests that drive the app
+in a simulator (`flutter test integration_test`). It runs nightly, on manual
+dispatch, and on pull requests labelled `integration`. It is a placeholder
+today: while there is no `integration_test/` directory it does nothing and
+says so.
+
+Workflow files are linted with `actionlint` (`brew install actionlint`), which
+also runs `shellcheck` over the inline scripts. The shell scripts in `tool/`
+pass `shellcheck` and work with the bash 3.2 that macOS ships.
