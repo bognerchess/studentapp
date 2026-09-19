@@ -1,0 +1,4 @@
+73ea5d7a7f1c304562c1cde3c615c998a9ae2c19d2482a27f8337eff13f17f3d  game-analysis.v1.schema.json
+82fda3391ce6b0e96a77922ec4a097b615e6e30bd5f6f6a0a431682283e8abaa  fixtures/game-analysis.v1/fallback-case.json
+f34ec5d1db9ca3a216d9614d6b9a5ba597234fb464535ba2edbb0adc9476a0c4  fixtures/game-analysis.v1/forty-move-game.json
+2429b74a6ab2f4385a0ff0b0f0636d6d1e2ff02a67627348a5f6b962cdb05d95  fixtures/game-analysis.v1/short-game.json
