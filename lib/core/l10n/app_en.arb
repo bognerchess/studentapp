@@ -599,5 +599,161 @@
   "importContinue": "Continue",
   "@importContinue": {
     "description": "Primary button: hand the chosen game to the next step."
+  },
+  "entryFlipBoard": "Flip board",
+  "@entryFlipBoard": {
+    "description": "Tooltip and screen-reader label of the button that turns the board around on the move-entry screen."
+  },
+  "entryMoreOptions": "More options",
+  "@entryMoreOptions": {
+    "description": "Tooltip of the overflow menu on the move-entry screen."
+  },
+  "entryAutoQueen": "Always promote to queen",
+  "@entryAutoQueen": {
+    "description": "Checkable menu item: when on, a pawn reaching the last rank becomes a queen without showing the promotion picker."
+  },
+  "entryUndo": "Undo",
+  "@entryUndo": {
+    "description": "Large button that takes back the move shown on the board."
+  },
+  "entryRedo": "Forward",
+  "@entryRedo": {
+    "description": "Tooltip and screen-reader label of the button that steps one move forward or restores a move that was just undone."
+  },
+  "entryDone": "Done",
+  "@entryDone": {
+    "description": "Button that finishes move entry."
+  },
+  "entryMoveListEmpty": "Play the first move on the board.",
+  "@entryMoveListEmpty": {
+    "description": "Hint shown in place of the move list while no move has been entered."
+  },
+  "entryMoveListStart": "Start",
+  "@entryMoveListStart": {
+    "description": "Screen-reader label of the first item of the move list, which jumps back to the starting position."
+  },
+  "entryMoveSemantics": "{number}. {side, select, white{White} other{Black}}, {san}",
+  "@entryMoveSemantics": {
+    "description": "Screen-reader label of one move in the move list; activating it jumps to that move.",
+    "placeholders": {
+      "number": {
+        "type": "int",
+        "example": "12"
+      },
+      "side": {
+        "type": "String",
+        "example": "white"
+      },
+      "san": {
+        "type": "String",
+        "example": "Nf3"
+      }
+    }
+  },
+  "entryStatusToMove": "Move {number} · {side, select, white{White to move} other{Black to move}}",
+  "@entryStatusToMove": {
+    "description": "Status line under the board while the game goes on.",
+    "placeholders": {
+      "number": {
+        "type": "int",
+        "example": "12"
+      },
+      "side": {
+        "type": "String",
+        "example": "white"
+      }
+    }
+  },
+  "entryStatusCheckmate": "Checkmate · {winner, select, white{White wins} other{Black wins}}",
+  "@entryStatusCheckmate": {
+    "description": "Status line under the board when the position shown is checkmate.",
+    "placeholders": {
+      "winner": {
+        "type": "String",
+        "example": "white"
+      }
+    }
+  },
+  "entryStatusStalemate": "Stalemate · draw",
+  "@entryStatusStalemate": {
+    "description": "Status line under the board when the position shown is stalemate."
+  },
+  "entryStatusInsufficientMaterial": "Draw · insufficient material",
+  "@entryStatusInsufficientMaterial": {
+    "description": "Status line under the board when neither side can checkmate any more."
+  },
+  "entryOverwriteTitle": "{count, plural, =1{Replace the following move?} other{Replace the following {count} moves?}}",
+  "@entryOverwriteTitle": {
+    "description": "Title of the confirmation shown when a different move is played in the middle of the entered game.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "entryOverwriteMessage": "{newSan} is not the move you entered here before ({oldSan}). Everything from {oldSan} on will be removed.",
+  "@entryOverwriteMessage": {
+    "description": "Body of the overwrite confirmation.",
+    "placeholders": {
+      "newSan": {
+        "type": "String",
+        "example": "Nf6"
+      },
+      "oldSan": {
+        "type": "String",
+        "example": "Nc6"
+      }
+    }
+  },
+  "entryOverwriteConfirm": "Replace",
+  "@entryOverwriteConfirm": {
+    "description": "Confirms the overwrite: the new move replaces the rest of the game."
+  },
+  "entryOverwriteCancel": "Keep moves",
+  "@entryOverwriteCancel": {
+    "description": "Dismisses the overwrite confirmation; nothing changes."
+  },
+  "entrySavedAsDraft": "Saved as draft",
+  "@entrySavedAsDraft": {
+    "description": "Confirmation after tapping Done while the next step of the flow is not available."
+  },
+  "boardSquareEmpty": "{square}, empty",
+  "@boardSquareEmpty": {
+    "description": "Screen-reader label of an empty board square.",
+    "placeholders": {
+      "square": {
+        "type": "String",
+        "example": "e5"
+      }
+    }
+  },
+  "boardSquarePiece": "{square}, {piece, select, whiteKing{white king} whiteQueen{white queen} whiteRook{white rook} whiteBishop{white bishop} whiteKnight{white knight} whitePawn{white pawn} blackKing{black king} blackQueen{black queen} blackRook{black rook} blackBishop{black bishop} blackKnight{black knight} other{black pawn}}",
+  "@boardSquarePiece": {
+    "description": "Screen-reader label of an occupied board square.",
+    "placeholders": {
+      "square": {
+        "type": "String",
+        "example": "e4"
+      },
+      "piece": {
+        "type": "String",
+        "example": "whitePawn"
+      }
+    }
+  },
+  "boardPromoteTo": "Promote to {role, select, queen{queen} rook{rook} bishop{bishop} other{knight}}",
+  "@boardPromoteTo": {
+    "description": "Screen-reader label of a choice in the promotion picker.",
+    "placeholders": {
+      "role": {
+        "type": "String",
+        "example": "queen"
+      }
+    }
+  },
+  "boardCancelPromotion": "Cancel promotion",
+  "@boardCancelPromotion": {
+    "description": "Screen-reader label of every square outside the promotion picker while it is open."
   }
 }
