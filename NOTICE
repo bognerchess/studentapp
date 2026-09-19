@@ -1,0 +1,87 @@
+Bogner Chess for iOS
+====================
+
+Copyright (C) 2026 Bogner Chess
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version. See LICENSE. Files written for this app additionally refer to
+LICENSE-APP-STORE-PERMISSION.md, which is a DRAFT and grants nothing yet.
+
+Bogner Chess is not affiliated with or endorsed by Lichess. It uses free
+software that the Lichess project publishes, under the licences that project
+chose, and it uses neither the Lichess name nor its logo.
+
+This file is the allow-list. An asset or an adapted source file that is not
+recorded here must not be in the repository or in the built app. The tables are
+empty on purpose where nothing has been added yet: the work package that adds
+the first row is named next to each table.
+
+
+Adapted source code
+-------------------
+
+Files adapted from other GPL projects. They keep the original copyright notice,
+start with "Adapted from <repo>/<path>@<commit sha>", stay under GPL-3.0 as
+published upstream, and do NOT carry the app-store permission.
+
+  File in this repository | Adapted from (repo/path@sha) | Copyright | Licence
+  ------------------------+------------------------------+-----------+--------
+  (none yet)              |                              |           |
+
+Expected sources: lichess-org/mobile (move list, evaluation chart, PGN share
+handling, iOS share extension) and lichess-org/flutter-chessground.
+
+
+Piece artwork
+-------------
+
+Only the sets listed here may be bundled. The upstream chessground package
+declares about forty piece sets as Flutter assets, and Flutter cannot leave out
+a dependency's assets, so depending on it directly would ship all of them.
+Most are CC BY-NC-SA, "free for personal use" or of unknown origin, none of
+which is compatible with a GPL app on a store. That is why this app depends on
+a trimmed fork, and why the built bundle is checked against this table.
+
+  Set        | Author | Licence | Source | Added in
+  -----------+--------+---------+--------+---------
+  (none yet) |        |         |        | WP-04
+
+Candidates whose licences were checked against lila's COPYING.md at planning
+time: cburnett (GPLv2+), merida (GPLv2+), chessnut (Apache-2.0), rhosgfx (CC0),
+fantasy / spatial / celtic (MIT). The final choice is recorded above by WP-04.
+
+
+Board themes
+------------
+
+Board themes are colour schemes defined in code. No board images are bundled:
+the image boards in lila are AGPLv3+, which this app does not take on.
+
+
+Fonts
+-----
+
+  Font       | Licence | Source | Used for | Added in
+  -----------+---------+--------+----------+---------
+  (none yet) |         |        |          |
+
+A bundled font, if one is added for golden tests or for the UI, must be under
+the SIL Open Font License or an equally permissive licence.
+
+
+Sound
+-----
+
+No sounds are shipped. If that changes, each file is recorded here with its
+licence, and none of them will be Lichess's, whose sound set is AGPLv3+ or of
+unspecified origin.
+
+
+Third-party packages
+--------------------
+
+Dart and Flutter packages are listed with version, licence and purpose in
+docs/dependencies.md. Their licence texts are shown in the app (About ->
+Licences), which Flutter collects from the packages themselves.

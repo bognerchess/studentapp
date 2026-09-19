@@ -1,0 +1,26 @@
+name: bogner_chess
+description: "Bogner Chess for iOS: enter or import a game, have it analysed, review it with coach comments."
+publish_to: "none"
+
+# <name>+<build>; release tags follow v<name>+<build>.
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.4
+  # Exact Flutter version. CI reads it from here (flutter-version-file), and
+  # docs/building.md names the same one. Change both together.
+  flutter: 3.47.5
+
+# Every dependency needs a row in docs/dependencies.md (version, licence, why)
+# before it is added here.
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

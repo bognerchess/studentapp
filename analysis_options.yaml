@@ -1,0 +1,40 @@
+# Strict on purpose: most of this code is written by agents, and the analyzer
+# is the cheapest reviewer there is. `flutter analyze --fatal-infos` is part of
+# the gate, so an info is a failure.
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+  errors:
+    # A missing required argument or return is a bug, not a hint.
+    missing_required_param: error
+    missing_return: error
+  exclude:
+    - build/**
+    - ios/**
+    # Generated code is checked by the codegen-clean step, not by lints.
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "**/*.graphql.dart"
+
+linter:
+  rules:
+    always_declare_return_types: true
+    avoid_dynamic_calls: true
+    avoid_print: true
+    avoid_void_async: true
+    cancel_subscriptions: true
+    close_sinks: true
+    directives_ordering: true
+    discarded_futures: true
+    only_throw_errors: true
+    prefer_final_in_for_each: true
+    prefer_final_locals: true
+    prefer_single_quotes: true
+    require_trailing_commas: true
+    unawaited_futures: true
+    unnecessary_lambdas: true
+    use_super_parameters: true
