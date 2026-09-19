@@ -19,6 +19,9 @@ analyzer:
     - "**/*.g.dart"
     - "**/*.freezed.dart"
     - "**/*.graphql.dart"
+    # Deliberately broken trees for the tests of tool/check_headers.dart and
+    # tool/check_layers.dart. They import packages that do not exist here.
+    - tool/test_fixtures/**
 
 linter:
   rules:

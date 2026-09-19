@@ -1,0 +1,13 @@
+# Piece sets the built app may contain, one directory name per line.
+# Read by tool/check_bundled_assets.sh; '#' starts a comment, blank lines are
+# ignored. A name here must also have a row (source, licence) in NOTICE.
+#
+# Provisional list from the planning documents. WP-04 (chessground fork)
+# finalises it together with NOTICE.
+#
+# There is no allow-list for board images: boards are code-defined colour
+# schemes, and any bundled board image fails the check.
+cburnett
+merida
+chessnut
+rhosgfx
