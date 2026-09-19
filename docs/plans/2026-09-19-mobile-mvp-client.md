@@ -31,7 +31,7 @@ architecture:
 
 | Concern | Choice | Why |
 | --- | --- | --- |
-| Board | `chessground` (GPL-3.0), through a trimmed fork | The best Flutter chess board there is. The published package declares about 40 piece sets as assets and Flutter cannot exclude a dependency's assets; most of those sets are not under a licence this app can ship. The fork carries one commit that trims the asset list, and is pinned by git ref. |
+| Board | `chessground` (GPL-3.0), as a vendored trimmed copy | The best Flutter chess board there is. The published package declares about 40 piece sets as assets and Flutter cannot exclude a dependency's assets; most of those sets are not under a licence this app can ship. A trimmed copy is vendored in `third_party/chessground/` and used as a path dependency, so this repository alone builds the shipped client; `BOGNER_CHANGES.md` in that directory names the upstream commit and lists every change. |
 | Rules and PGN | `dartchess` (GPL-3.0) | Legal moves, SAN, FEN, PGN in and out. |
 | API | `graphql` + `graphql_codegen` | Typed operations; enum fallback values and exhaustive `when` on unions make unknown server values harmless. `ferry` was rejected as unmaintained. |
 | Auth | `flutter_appauth`, `flutter_secure_storage` | OIDC authorization code flow with PKCE in the system browser session; tokens in the Keychain. |
@@ -43,7 +43,7 @@ architecture:
 
 `chessground` is on its v10 API: a `Chessboard` widget driven by a
 `ChessboardController` that holds a `GameData` (FEN, side to move, legal moves,
-last move, check square). Code must be written against the fork's
+last move, check square). Code must be written against the vendored copy's
 `MIGRATION.md`, not against older examples.
 
 ## 3. Architecture
@@ -82,7 +82,7 @@ Each rule is enforced by the check script, not by convention:
 - UI code never imports generated GraphQL types. `data/*_mapper.dart` turns
   them into domain models, so a schema change touches mappers, not screens.
 - Only `lib/core/chess` imports `chessground`. The rest of the app talks to
-  `BoardView`, which keeps the fork, its API version and the asset question in
+  `BoardView`, which keeps the vendored copy, its API version and the asset question in
   one place.
 - Only `lib/core/api` imports `graphql`.
 
@@ -242,9 +242,9 @@ code is up to date", and the tests.
 
 ## 6. Risks
 
-1. **The chessground fork** has a maintenance cost while v10 moves quickly.
-   One trim commit, pinned refs and a CI check on the built bundle keep it
-   small; the long-term fix is an upstream change that makes assets opt-in.
+1. **The vendored chessground copy** has a maintenance cost while v10 moves
+   quickly. A scripted trim (`third_party/sync_chessground.py`), a recorded
+   upstream commit and a CI check on the built bundle keep it small; the long-term fix is an upstream change that makes assets opt-in.
 2. **Sign in with Apple inside a web-based login** may ask for the Apple ID
    instead of showing the native sheet, and shared versus ephemeral browser
    sessions trade single sign-on against sticky cookies. Both are tried before
@@ -269,7 +269,7 @@ code is up to date", and the tests.
 The work is split into packages small enough for one branch and one pull
 request each; they are listed with their status in
 [`../tasks/INDEX.md`](../tasks/INDEX.md). Bootstrap (toolchain, iOS project,
-CI, app shell, board fork) is sequential, the contract layer (schema,
+CI, app shell, vendored board) is sequential, the contract layer (schema,
 operations, fixtures, mock server, API client, database, analysis model) comes
 next, and the features after that are largely parallel because each owns one
 directory under `lib/features/`.

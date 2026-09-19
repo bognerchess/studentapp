@@ -21,6 +21,8 @@ and `go_router`, `app_links`, `wakelock_plus` (Flutter >= 3.44).
 | --- | --- | --- | --- | --- | --- |
 | `flutter`, `flutter_test` | SDK | 3.47.5 | BSD-3-Clause | flutter.dev | Framework and test framework. |
 | `flutter_lints` | `^6.0.0` (dev) | 6.0.0 (2025-05-27) | BSD-3-Clause | flutter.dev | Base lint set; `analysis_options.yaml` tightens it. |
+| `chessground` | `path: third_party/chessground` | 10.2.0 (2026-09-16), upstream commit `4b4f1d4` | GPL-3.0 | lichess.org | The board, behind `lib/core/chess/BoardView`. **A vendored trimmed copy, never from pub.dev**: the published package bundles about 40 piece sets with mixed licences. The copy keeps cburnett, merida and rhosgfx and no board images; see `third_party/chessground/BOGNER_CHANGES.md`. v10 API (`ChessboardController`, `GameData`). Needs Flutter >= 3.29. Added by WP-04. |
+| `dartchess` | `^0.13.1` | 0.13.1 (2026-05-25) | GPL-3.0 | lichess.org | Rules, legal moves, SAN, FEN, PGN reading and writing, replay of engine lines. The version chessground 10.2.0 requires (`^0.13.1`). Its only dependency is `meta`. Added by WP-04. |
 | `flutter_localizations` | SDK | 3.47.5 | BSD-3-Clause | flutter.dev | Widgets-layer localisations and the date data behind `gen-l10n`. Added by WP-03. |
 | `flutter_riverpod` | `^3.4.3` | 3.4.3 (2026-09-03) | MIT | dash-overflow.net | State management. Plain Riverpod 3, without `riverpod_generator`. Added by WP-03. |
 | `go_router` | `^18.0.1` | 18.0.1 (2026-09-02) | BSD-3-Clause | flutter.dev | Routing, tab shell, redirects and deep links. Needs Flutter >= 3.44. **v18 builds its pages with `material_ui`**, see the next row. Added by WP-03. |
@@ -35,8 +37,6 @@ and `go_router`, `app_links`, `wakelock_plus` (Flutter >= 3.44).
 
 | Package | Latest (published) | Licence | Publisher | Purpose | Added by |
 | --- | --- | --- | --- | --- | --- |
-| `chessground` | 10.2.0 (2026-09-16) | GPL-3.0 | lichess.org | The board. **Only through the trimmed fork pinned by git ref, never from pub.dev**: the published package bundles about 40 piece sets with mixed licences. v10 API (`ChessboardController`, `GameData`). Needs Flutter >= 3.29. | WP-04 |
-| `dartchess` | 0.13.1 (2026-05-25) | GPL-3.0 | lichess.org | Rules, legal moves, SAN, FEN, PGN reading and writing, replay of engine lines. | WP-04 |
 | `graphql` | 5.2.4 (2026-03-14) | MIT | zino.company | GraphQL client and links. In-memory cache only. Pulls the unmaintained `hive` transitively (unused at runtime); fallback is `gql_http_link` with codegen. | WP-12 |
 | `gql` | 1.0.1 (2025-09-20) | MIT | gql-dart.dev | AST and `Link` types, used by the test `FixtureLink`. | WP-10 |
 | `gql_http_link` | 1.2.0 (2025-09-20) | MIT | gql-dart.dev | Fallback transport should `graphql` have to go. Not planned otherwise. | – |
@@ -77,7 +77,7 @@ and `go_router`, `app_links`, `wakelock_plus` (Flutter >= 3.44).
 
 | Package | State on 2026-09-19 | Why not |
 | --- | --- | --- |
-| `chessground` from pub.dev | 10.2.0 | Bundles every piece set as a Flutter asset; most are CC BY-NC-SA or of unknown licence. Use the trimmed fork. |
+| `chessground` from pub.dev | 10.2.0 | Bundles every piece set as a Flutter asset; most are CC BY-NC-SA or of unknown licence. Use the vendored trimmed copy in `third_party/chessground/`. |
 | `ferry` | 0.16.1+2 (2025-01-06), MIT | Last stable release is 20 months old. |
 | `isar` | 3.1.0+1 (2023-04-25), Apache-2.0 | Unmaintained, Dart 2 constraint. |
 | `hive` | 2.2.3 (2022-06-30) | Unmaintained; pub.dev cannot even detect its licence. Only tolerated as an unused transitive dependency of `graphql`. |

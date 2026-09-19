@@ -16,6 +16,12 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # The board. A trimmed copy vendored in this repository (three piece sets, no
+  # board images); see third_party/chessground/BOGNER_CHANGES.md. Never from
+  # pub.dev: the published package bundles about 40 piece sets.
+  chessground:
+    path: third_party/chessground
+  dartchess: ^0.13.1
   flutter_localizations:
     sdk: flutter
   flutter_riverpod: ^3.4.3

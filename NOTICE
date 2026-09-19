@@ -31,7 +31,25 @@ published upstream, and do NOT carry the app-store permission.
   (none yet)              |                              |           |
 
 Expected sources: lichess-org/mobile (move list, evaluation chart, PGN share
-handling, iOS share extension) and lichess-org/flutter-chessground.
+handling, iOS share extension). lib/core/chess wraps chessground through its
+public API and adapts none of its source.
+
+
+Vendored source code
+--------------------
+
+third_party/chessground/ is a trimmed copy of the chessground Flutter package,
+used as a path dependency. It is not a fork with its own history: the files
+are upstream's, unchanged except for the removals listed in
+third_party/chessground/BOGNER_CHANGES.md, and they stay under GPL-3.0 as
+published upstream. They do NOT carry the app-store permission.
+
+  Directory                | Upstream                                   | Version / commit                                   | Copyright                   | Licence
+  -------------------------+--------------------------------------------+----------------------------------------------------+-----------------------------+--------
+  third_party/chessground/ | github.com/lichess-org/flutter-chessground | 10.2.0 / 4b4f1d4734a453cfbe43a37cac95be09d8d1b0bc | the flutter-chessground authors | GPL-3.0
+
+dartchess (chess rules, FEN, SAN, PGN; GPL-3.0, github.com/lichess-org/dartchess)
+is an ordinary pub.dev dependency, version 0.13.1; see docs/dependencies.md.
 
 
 Piece artwork
@@ -41,16 +59,30 @@ Only the sets listed here may be bundled. The upstream chessground package
 declares about forty piece sets as Flutter assets, and Flutter cannot leave out
 a dependency's assets, so depending on it directly would ship all of them.
 Most are CC BY-NC-SA, "free for personal use" or of unknown origin, none of
-which is compatible with a GPL app on a store. That is why this app depends on
-a trimmed fork, and why the built bundle is checked against this table.
+which is compatible with a GPL app on a store. That is why this app uses a
+vendored trimmed copy (above), and why the built bundle is checked against this
+table. tool/asset_allowlist.txt is the machine-readable form of the first
+column.
 
-  Set        | Author | Licence | Source | Added in
-  -----------+--------+---------+--------+---------
-  (none yet) |        |         |        | WP-04
+  Set      | Author                     | Licence | Source                                                          | Added in
+  ---------+----------------------------+---------+-----------------------------------------------------------------+---------
+  cburnett | Colin M. L. Burnett        | GPLv2+  | github.com/lichess-org/lila/tree/master/public/piece/cburnett   | WP-04
+           |                            |         | (originally en.wikipedia.org/wiki/User:Cburnett)                |
+  merida   | Armando Hernandez Marroquin | GPLv2+  | github.com/lichess-org/lila/tree/master/public/piece/merida     | WP-04
+  rhosgfx  | RhosGFX                    | CC0 1.0 | github.com/lichess-org/lila/tree/master/public/piece/rhosgfx    | WP-04
+           |                            |         | (originally rhosgfx.itch.io)                                    |
 
-Candidates whose licences were checked against lila's COPYING.md at planning
-time: cburnett (GPLv2+), merida (GPLv2+), chessnut (Apache-2.0), rhosgfx (CC0),
-fantasy / spatial / celtic (MIT). The final choice is recorded above by WP-04.
+The licences are those stated in lila's COPYING.md
+(github.com/lichess-org/lila/blob/master/COPYING.md), read on 2026-09-19. The
+files in this repository are the WebP renderings (1x to 4x) that
+flutter-chessground makes from lila's SVGs, taken from the commit named above.
+"GPLv2+" means version 2 or any later version, so these two sets are used here
+under GPL-3.0. CC0 asks for nothing; the credit is given anyway.
+
+Checked and compatible, but not bundled: chessnut (Apache-2.0), fantasy /
+spatial / celtic (MIT), mpchess (GPLv3+). Adding one means a row here, a line
+in tool/asset_allowlist.txt, a value in BoardPieceSet, and a re-run of
+third_party/sync_chessground.py.
 
 
 Board themes
