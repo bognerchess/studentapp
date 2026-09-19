@@ -92,13 +92,23 @@ contain no secrets.
 | Dart package | `bogner_chess` |
 
 `flutter create` derives the bundle id from the project name and would produce
-`com.bognerchess.bognerChess`; it was changed in
+`com.bognerchess.bognerChess`. The bundle id of the app is set in
+`ios/Config/Shared.xcconfig`, that of the test target in
 `ios/Runner.xcodeproj/project.pbxproj`. Do not re-run `flutter create .`
-without checking that it did not come back.
+without checking `git diff ios/` afterwards: it may write build settings back
+into the project file, where they override the xcconfig files.
+
+The minimum iOS version is 16.0, and the app is iPhone only. How the Xcode
+project is organised, and what each `Info.plist` key is for, is described in
+`docs/ios-project.md`.
 
 ## Device and release builds
 
-Not set up yet. Signing settings will live in an untracked
-`ios/Config/Local.xcconfig` (already in `.gitignore`), and TestFlight delivery
-goes through fastlane in CI. Release builds are made without `--obfuscate`, so
+An unsigned release build needs nothing beyond the toolchain:
+
+    flutter build ios --release --no-codesign
+
+Signed builds (a real device, an archive) need your Apple developer team in an
+untracked `ios/Config/Local.xcconfig`; `docs/ios-project.md` says how. TestFlight
+delivery will go through fastlane in CI and is not set up yet. Release builds are made without `--obfuscate`, so
 that the published source reproduces the shipped client.

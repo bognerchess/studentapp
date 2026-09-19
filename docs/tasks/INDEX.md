@@ -5,7 +5,7 @@ Scope, dependencies and acceptance for every WP are in `../product-hub/docs/mobi
 | ID | Title | Size | Depends on | Status | Task file |
 | --- | --- | --- | --- | --- | --- |
 | WP-00 | Toolchain and scaffold | M | H0, H1 | review | [WP-00](WP-00-toolchain-and-scaffold.md) |
-| WP-01 | iOS project hardening | M | WP-00 | in-progress | [WP-01](WP-01-ios-project-hardening.md) |
+| WP-01 | iOS project hardening | M | WP-00 | review | [WP-01](WP-01-ios-project-hardening.md) |
 | WP-02 | CI and check script | S | WP-00 | todo | – |
 | WP-03 | App shell | M | WP-00 | todo | – |
 | WP-04 | chessground fork, asset allow-list, `BoardView` | M | WP-00, H1 | todo | – |
