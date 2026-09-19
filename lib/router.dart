@@ -15,6 +15,7 @@ import 'package:bogner_chess/features/legal/ui/about_screen.dart';
 import 'package:bogner_chess/features/legal/ui/legal_screen.dart';
 import 'package:bogner_chess/features/library/ui/game_screen.dart';
 import 'package:bogner_chess/features/library/ui/library_screen.dart';
+import 'package:bogner_chess/features/metadata/ui/metadata_screen.dart';
 import 'package:bogner_chess/features/new_game/ui/new_game_screen.dart';
 import 'package:bogner_chess/features/review/ui/review_screen.dart';
 import 'package:bogner_chess/features/settings/ui/settings_screen.dart';
@@ -35,6 +36,7 @@ abstract final class AppRoutes {
   static const String newGame = '/new';
   static const String newGameEntry = '/new/entry';
   static const String newGameImport = '/new/import';
+  static const String newGameMetadata = '/new/metadata';
   static const String settings = '/settings';
   static const String settingsAbout = '/settings/about';
   static const String settingsAccount = '/settings/account';
@@ -65,6 +67,7 @@ abstract final class AppRouteNames {
   static const String newGame = 'new-game';
   static const String newGameEntry = 'new-game-entry';
   static const String newGameImport = 'new-game-import';
+  static const String newGameMetadata = 'new-game-metadata';
   static const String settings = 'settings';
   static const String settingsAbout = 'settings-about';
   static const String settingsAccount = 'settings-account';
@@ -210,6 +213,20 @@ final routerProvider = Provider<GoRouter>((ref) {
                     name: AppRouteNames.newGameImport,
                     parentNavigatorKey: rootNavigatorKey,
                     builder: (context, state) => const ImportScreen(),
+                  ),
+                  GoRoute(
+                    path: 'metadata',
+                    name: AppRouteNames.newGameMetadata,
+                    parentNavigatorKey: rootNavigatorKey,
+                    // Push it with `extra: MetadataScreenArgs(...)` and await
+                    // the GameMetadata it pops with. A cold deep link has no
+                    // extra and gets the empty form.
+                    builder: (context, state) => MetadataScreen(
+                      args: switch (state.extra) {
+                        final MetadataScreenArgs args => args,
+                        _ => const MetadataScreenArgs(),
+                      },
+                    ),
                   ),
                 ],
               ),

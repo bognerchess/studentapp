@@ -121,4 +121,124 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get signInTitle => 'Anmelden';
+
+  @override
+  String get metadataTitle => 'Angaben zur Partie';
+
+  @override
+  String get metadataSave => 'Speichern';
+
+  @override
+  String get metadataSaveNeedsColor => 'Wähle die Farbe, die du hattest.';
+
+  @override
+  String get metadataSaveNeedsFix => 'Prüfe die markierten Felder.';
+
+  @override
+  String get metadataColorLabel => 'Ich hatte';
+
+  @override
+  String get metadataColorWhite => 'Weiß';
+
+  @override
+  String get metadataColorBlack => 'Schwarz';
+
+  @override
+  String get metadataResultLabel => 'Ergebnis';
+
+  @override
+  String get metadataResultUnknown => 'Unbekannt';
+
+  @override
+  String get metadataResultWhiteWinsA11y => 'Weiß gewann, 1-0';
+
+  @override
+  String get metadataResultBlackWinsA11y => 'Schwarz gewann, 0-1';
+
+  @override
+  String get metadataResultDrawA11y => 'Remis, je ein halber Punkt';
+
+  @override
+  String get metadataOutcomeWin => 'Du hast gewonnen.';
+
+  @override
+  String get metadataOutcomeLoss => 'Du hast verloren.';
+
+  @override
+  String get metadataOutcomeDraw => 'Remis.';
+
+  @override
+  String get metadataPlayersLabel => 'Spieler';
+
+  @override
+  String get metadataOpponentName => 'Gegner';
+
+  @override
+  String get metadataPlayerName => 'Dein Name';
+
+  @override
+  String get metadataRatingLabel => 'Elo';
+
+  @override
+  String get metadataPlayerRatingA11y => 'Deine Wertungszahl';
+
+  @override
+  String get metadataOpponentRatingA11y => 'Wertungszahl des Gegners';
+
+  @override
+  String get metadataWhiteRatingA11y => 'Wertungszahl von Weiß';
+
+  @override
+  String get metadataBlackRatingA11y => 'Wertungszahl von Schwarz';
+
+  @override
+  String get metadataRatingHint =>
+      'Mit deiner Wertungszahl erklärt der Coach auf deinem Niveau. Eine Online-Wertung oder eine grobe Schätzung genügt.';
+
+  @override
+  String get metadataDateLabel => 'Datum';
+
+  @override
+  String get metadataDateUnknown => 'Unbekannt';
+
+  @override
+  String get metadataDateClear => 'Datum löschen';
+
+  @override
+  String get metadataDateFuture => 'Dieses Datum liegt in der Zukunft.';
+
+  @override
+  String get metadataEventLabel => 'Turnier oder Anlass';
+
+  @override
+  String get metadataEventHint => 'z. B. Vereinsmeisterschaft';
+
+  @override
+  String get metadataTimeControlLabel => 'Bedenkzeit';
+
+  @override
+  String get metadataTimeControlClassical => 'Klassisch';
+
+  @override
+  String get metadataTimeControlRapid => 'Schnellschach';
+
+  @override
+  String get metadataTimeControlBlitz => 'Blitz';
+
+  @override
+  String get metadataTimeControlBullet => 'Bullet';
+
+  @override
+  String get metadataTimeControlOther => 'Andere';
+
+  @override
+  String get metadataTimeControlDetail => 'Minuten + Inkrement';
+
+  @override
+  String get metadataTimeControlDetailHint => 'z. B. 90+30';
+
+  @override
+  String metadataRatingError(int min, int max) {
+    return '$min–$max';
+  }
 }

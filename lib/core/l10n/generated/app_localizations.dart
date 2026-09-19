@@ -305,6 +305,240 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sign in'**
   String get signInTitle;
+
+  /// Title of the game metadata screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Game details'**
+  String get metadataTitle;
+
+  /// Primary button of the game metadata screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get metadataSave;
+
+  /// Shown above the disabled Save button while the colour played is not chosen.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the colour you played.'**
+  String get metadataSaveNeedsColor;
+
+  /// Shown above the disabled Save button while a field is invalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the marked fields.'**
+  String get metadataSaveNeedsFix;
+
+  /// Heading above the White/Black choice: which colour the user played. Read together with the choice: 'I played White'.
+  ///
+  /// In en, this message translates to:
+  /// **'I played'**
+  String get metadataColorLabel;
+
+  /// The white side: a choice in the colour control and a label for White's name.
+  ///
+  /// In en, this message translates to:
+  /// **'White'**
+  String get metadataColorWhite;
+
+  /// The black side: a choice in the colour control and a label for Black's name.
+  ///
+  /// In en, this message translates to:
+  /// **'Black'**
+  String get metadataColorBlack;
+
+  /// Heading above the result chips.
+  ///
+  /// In en, this message translates to:
+  /// **'Result'**
+  String get metadataResultLabel;
+
+  /// Result chip for a game whose result is not known or that was not finished.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get metadataResultUnknown;
+
+  /// Screen-reader label of the 1-0 result chip.
+  ///
+  /// In en, this message translates to:
+  /// **'White won, 1-0'**
+  String get metadataResultWhiteWinsA11y;
+
+  /// Screen-reader label of the 0-1 result chip.
+  ///
+  /// In en, this message translates to:
+  /// **'Black won, 0-1'**
+  String get metadataResultBlackWinsA11y;
+
+  /// Screen-reader label of the draw result chip.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw, one half each'**
+  String get metadataResultDrawA11y;
+
+  /// Shown under the result chips when the chosen result is a win for the user's colour.
+  ///
+  /// In en, this message translates to:
+  /// **'You won.'**
+  String get metadataOutcomeWin;
+
+  /// Shown under the result chips when the chosen result is a loss for the user's colour.
+  ///
+  /// In en, this message translates to:
+  /// **'You lost.'**
+  String get metadataOutcomeLoss;
+
+  /// Shown under the result chips when the chosen result is a draw.
+  ///
+  /// In en, this message translates to:
+  /// **'A draw.'**
+  String get metadataOutcomeDraw;
+
+  /// Heading above the name and rating fields.
+  ///
+  /// In en, this message translates to:
+  /// **'Players'**
+  String get metadataPlayersLabel;
+
+  /// Label of the opponent's name field.
+  ///
+  /// In en, this message translates to:
+  /// **'Opponent'**
+  String get metadataOpponentName;
+
+  /// Label of the user's own name field.
+  ///
+  /// In en, this message translates to:
+  /// **'Your name'**
+  String get metadataPlayerName;
+
+  /// Short label of a rating field next to a name. German players say Elo for any rating number.
+  ///
+  /// In en, this message translates to:
+  /// **'Rating'**
+  String get metadataRatingLabel;
+
+  /// Screen-reader label of the user's own rating field.
+  ///
+  /// In en, this message translates to:
+  /// **'Your rating'**
+  String get metadataPlayerRatingA11y;
+
+  /// Screen-reader label of the opponent's rating field.
+  ///
+  /// In en, this message translates to:
+  /// **'Opponent\'s rating'**
+  String get metadataOpponentRatingA11y;
+
+  /// Screen-reader label of White's rating field, used while the colour played is not known.
+  ///
+  /// In en, this message translates to:
+  /// **'White\'s rating'**
+  String get metadataWhiteRatingA11y;
+
+  /// Screen-reader label of Black's rating field, used while the colour played is not known.
+  ///
+  /// In en, this message translates to:
+  /// **'Black\'s rating'**
+  String get metadataBlackRatingA11y;
+
+  /// Gentle encouragement shown while the user's own rating is empty.
+  ///
+  /// In en, this message translates to:
+  /// **'With your rating the coach explains at your level. An online rating or a rough guess is fine.'**
+  String get metadataRatingHint;
+
+  /// Label of the date field: the day the game was played.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get metadataDateLabel;
+
+  /// Text of the date field when no date is set.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get metadataDateUnknown;
+
+  /// Tooltip of the button that removes the date.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear date'**
+  String get metadataDateClear;
+
+  /// Error under the date field.
+  ///
+  /// In en, this message translates to:
+  /// **'This date is in the future.'**
+  String get metadataDateFuture;
+
+  /// Label of the event field: the tournament, league or occasion.
+  ///
+  /// In en, this message translates to:
+  /// **'Event'**
+  String get metadataEventLabel;
+
+  /// Placeholder inside the empty event field.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Club championship'**
+  String get metadataEventHint;
+
+  /// Heading above the time-control chips.
+  ///
+  /// In en, this message translates to:
+  /// **'Time control'**
+  String get metadataTimeControlLabel;
+
+  /// Time-control chip: long games, an hour or more each.
+  ///
+  /// In en, this message translates to:
+  /// **'Classical'**
+  String get metadataTimeControlClassical;
+
+  /// Time-control chip: more than 10 and less than 60 minutes each.
+  ///
+  /// In en, this message translates to:
+  /// **'Rapid'**
+  String get metadataTimeControlRapid;
+
+  /// Time-control chip: 3 to 10 minutes each.
+  ///
+  /// In en, this message translates to:
+  /// **'Blitz'**
+  String get metadataTimeControlBlitz;
+
+  /// Time-control chip: less than 3 minutes each.
+  ///
+  /// In en, this message translates to:
+  /// **'Bullet'**
+  String get metadataTimeControlBullet;
+
+  /// Time-control chip: anything else, such as correspondence or no clock.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get metadataTimeControlOther;
+
+  /// Label of the optional free-text field for the exact time control.
+  ///
+  /// In en, this message translates to:
+  /// **'Minutes + increment'**
+  String get metadataTimeControlDetail;
+
+  /// Placeholder inside the empty time-control detail field: 90 minutes plus 30 seconds per move.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 90+30'**
+  String get metadataTimeControlDetailHint;
+
+  /// Error under a rating field: the accepted range, kept short because the field is narrow.
+  ///
+  /// In en, this message translates to:
+  /// **'{min}–{max}'**
+  String metadataRatingError(int min, int max);
 }
 
 class _AppLocalizationsDelegate

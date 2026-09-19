@@ -119,4 +119,124 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get signInTitle => 'Sign in';
+
+  @override
+  String get metadataTitle => 'Game details';
+
+  @override
+  String get metadataSave => 'Save';
+
+  @override
+  String get metadataSaveNeedsColor => 'Choose the colour you played.';
+
+  @override
+  String get metadataSaveNeedsFix => 'Check the marked fields.';
+
+  @override
+  String get metadataColorLabel => 'I played';
+
+  @override
+  String get metadataColorWhite => 'White';
+
+  @override
+  String get metadataColorBlack => 'Black';
+
+  @override
+  String get metadataResultLabel => 'Result';
+
+  @override
+  String get metadataResultUnknown => 'Unknown';
+
+  @override
+  String get metadataResultWhiteWinsA11y => 'White won, 1-0';
+
+  @override
+  String get metadataResultBlackWinsA11y => 'Black won, 0-1';
+
+  @override
+  String get metadataResultDrawA11y => 'Draw, one half each';
+
+  @override
+  String get metadataOutcomeWin => 'You won.';
+
+  @override
+  String get metadataOutcomeLoss => 'You lost.';
+
+  @override
+  String get metadataOutcomeDraw => 'A draw.';
+
+  @override
+  String get metadataPlayersLabel => 'Players';
+
+  @override
+  String get metadataOpponentName => 'Opponent';
+
+  @override
+  String get metadataPlayerName => 'Your name';
+
+  @override
+  String get metadataRatingLabel => 'Rating';
+
+  @override
+  String get metadataPlayerRatingA11y => 'Your rating';
+
+  @override
+  String get metadataOpponentRatingA11y => 'Opponent\'s rating';
+
+  @override
+  String get metadataWhiteRatingA11y => 'White\'s rating';
+
+  @override
+  String get metadataBlackRatingA11y => 'Black\'s rating';
+
+  @override
+  String get metadataRatingHint =>
+      'With your rating the coach explains at your level. An online rating or a rough guess is fine.';
+
+  @override
+  String get metadataDateLabel => 'Date';
+
+  @override
+  String get metadataDateUnknown => 'Unknown';
+
+  @override
+  String get metadataDateClear => 'Clear date';
+
+  @override
+  String get metadataDateFuture => 'This date is in the future.';
+
+  @override
+  String get metadataEventLabel => 'Event';
+
+  @override
+  String get metadataEventHint => 'e.g. Club championship';
+
+  @override
+  String get metadataTimeControlLabel => 'Time control';
+
+  @override
+  String get metadataTimeControlClassical => 'Classical';
+
+  @override
+  String get metadataTimeControlRapid => 'Rapid';
+
+  @override
+  String get metadataTimeControlBlitz => 'Blitz';
+
+  @override
+  String get metadataTimeControlBullet => 'Bullet';
+
+  @override
+  String get metadataTimeControlOther => 'Other';
+
+  @override
+  String get metadataTimeControlDetail => 'Minutes + increment';
+
+  @override
+  String get metadataTimeControlDetailHint => 'e.g. 90+30';
+
+  @override
+  String metadataRatingError(int min, int max) {
+    return '$min–$max';
+  }
 }
