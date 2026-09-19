@@ -12,7 +12,7 @@ Scope, dependencies and acceptance for every WP are in `../product-hub/docs/mobi
 | WP-10 | Schema, operations, codegen, fixtures | M | WP-02, backend C-03 | todo | – |
 | WP-11 | shelf mock server + scenarios | M | WP-10 | todo | – |
 | WP-12 | API client layer | M | WP-10 | todo | – |
-| WP-13 | drift database | M | WP-02 | todo | – |
+| WP-13 | drift database | M | WP-02 | review | [WP-13](WP-13-drift-database.md) |
 | WP-14 | Analysis document model + mapper | M | WP-10, chess-ai C-01 | todo | – |
 | WP-20 | Board entry (IN-1) | L | WP-04, WP-13 | todo | – |
 | WP-21 | Metadata form (IN-2) | S | WP-03 | todo | – |

@@ -36,6 +36,12 @@ case "${1:-}" in
 esac
 
 app="${1:-$repo_root/build/ios/iphonesimulator/Runner.app}"
+# Make the path absolute: the script changes directory below, and a relative
+# path would silently skip the later checks.
+case "$app" in
+  /*) ;;
+  *) app="$PWD/$app" ;;
+esac
 assets="$app/Frameworks/App.framework/flutter_assets"
 
 if [ ! -d "$app" ]; then
