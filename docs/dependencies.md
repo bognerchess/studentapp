@@ -30,6 +30,8 @@ and `go_router`, `app_links`, `wakelock_plus` (Flutter >= 3.44).
 | `intl` | `^0.20.3` | 0.20.3 (2026-06-25) | BSD-3-Clause | dart.dev | Placeholders, dates and plurals in the generated localisations. The version is dictated by `flutter_localizations`. Added by WP-03. |
 | `shared_preferences` | `^2.5.5` | 2.5.5 (2026-03-25) | BSD-3-Clause | flutter.dev | Small settings (`preferencesProvider`, the `SharedPreferencesAsync` API); WP-25 adds the first-launch marker for the Keychain wipe. Added by WP-03. |
 | `package_info_plus` | `^10.2.1` | 10.2.1 (2026-07-15) | BSD-3-Clause | fluttercommunity.dev | Version and build number (`appInfoProvider`): settings footer now, "source for this build" link and `registerDevice` later. Needs Flutter >= 3.38.1. Added by WP-03. |
+| `wakelock_plus` | `^1.8.0` | 1.8.0 (2026-09-01) | BSD-3-Clause | fluttercommunity.dev | Keeps the screen on while the move-entry screen is open (`screenWakelockProvider` in `lib/features/entry/data/screen_wakelock.dart`, its only importer). Needs Flutter >= 3.44. On iOS it is a Swift Package Manager plugin with no third-party native code. Its Dart dependencies come along in the lock file: `wakelock_plus_platform_interface` (BSD-3-Clause), `dbus` (MPL-2.0, GPL-compatible; used by the Linux implementation only and tree-shaken out of the iOS build), `xml` and `petitparser` (MIT, behind `dbus`), `args` (BSD-3-Clause); `win32` was in the lock file already. Re-verified on pub.dev on 2026-09-19. Added by WP-20. |
+| `fake_async` | `^1.3.3` (dev) | 1.3.3 (2025-01-28) | BSD-3-Clause | dart.dev | Virtual time in unit tests of timers: the entry autosave debounce now, the submit queue and the job poller later. Already in the lock file through `flutter_test`, which pins the version; listed only because a test may not import a transitive package. Added by WP-20. |
 
 `cupertino_icons`, which `flutter create` adds, was removed: nothing uses it.
 
@@ -51,7 +53,6 @@ and `go_router`, `app_links`, `wakelock_plus` (Flutter >= 3.44).
 | `connectivity_plus` | 7.3.1 (2026-07-23) | BSD-3-Clause | fluttercommunity.dev | Trigger for the submit queue when the network returns. | WP-27 |
 | `url_launcher` | 6.3.2 (2025-07-10) | BSD-3-Clause | flutter.dev | Open legal documents and the source link. | WP-30 |
 | `path_provider` | 2.1.6 (2026-06-15) | BSD-3-Clause | flutter.dev | Location of the database file. | WP-13 |
-| `wakelock_plus` | 1.8.0 (2026-09-01) | BSD-3-Clause | fluttercommunity.dev | Keep the screen on during move entry. Needs Flutter >= 3.44. | WP-20 |
 | `flutter_markdown_plus` | 1.0.12 (2026-07-10) | BSD-3-Clause | foresightmobile.com | Render legal documents and coach text. | WP-30 |
 | `freezed_annotation` | 3.1.0 (2025-07-02) | MIT | dash-overflow.net | Annotations for immutable domain models. WP-03 did not need it (the shell has no domain models); the first WP with one adds it. | first user |
 | `json_annotation` | 4.12.0 (2026-05-15) | BSD-3-Clause | google.dev | Annotations for the analysis document model. | WP-14 |

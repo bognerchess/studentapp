@@ -305,6 +305,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sign in'**
   String get signInTitle;
+
+  /// Tooltip and screen-reader label of the button that turns the board around on the move-entry screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Flip board'**
+  String get entryFlipBoard;
+
+  /// Tooltip of the overflow menu on the move-entry screen.
+  ///
+  /// In en, this message translates to:
+  /// **'More options'**
+  String get entryMoreOptions;
+
+  /// Checkable menu item: when on, a pawn reaching the last rank becomes a queen without showing the promotion picker.
+  ///
+  /// In en, this message translates to:
+  /// **'Always promote to queen'**
+  String get entryAutoQueen;
+
+  /// Large button that takes back the move shown on the board.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get entryUndo;
+
+  /// Tooltip and screen-reader label of the button that steps one move forward or restores a move that was just undone.
+  ///
+  /// In en, this message translates to:
+  /// **'Forward'**
+  String get entryRedo;
+
+  /// Button that finishes move entry.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get entryDone;
+
+  /// Hint shown in place of the move list while no move has been entered.
+  ///
+  /// In en, this message translates to:
+  /// **'Play the first move on the board.'**
+  String get entryMoveListEmpty;
+
+  /// Screen-reader label of the first item of the move list, which jumps back to the starting position.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get entryMoveListStart;
+
+  /// Screen-reader label of one move in the move list; activating it jumps to that move.
+  ///
+  /// In en, this message translates to:
+  /// **'{number}. {side, select, white{White} other{Black}}, {san}'**
+  String entryMoveSemantics(int number, String side, String san);
+
+  /// Status line under the board while the game goes on.
+  ///
+  /// In en, this message translates to:
+  /// **'Move {number} · {side, select, white{White to move} other{Black to move}}'**
+  String entryStatusToMove(int number, String side);
+
+  /// Status line under the board when the position shown is checkmate.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkmate · {winner, select, white{White wins} other{Black wins}}'**
+  String entryStatusCheckmate(String winner);
+
+  /// Status line under the board when the position shown is stalemate.
+  ///
+  /// In en, this message translates to:
+  /// **'Stalemate · draw'**
+  String get entryStatusStalemate;
+
+  /// Status line under the board when neither side can checkmate any more.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw · insufficient material'**
+  String get entryStatusInsufficientMaterial;
+
+  /// Title of the confirmation shown when a different move is played in the middle of the entered game.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Replace the following move?} other{Replace the following {count} moves?}}'**
+  String entryOverwriteTitle(int count);
+
+  /// Body of the overwrite confirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'{newSan} is not the move you entered here before ({oldSan}). Everything from {oldSan} on will be removed.'**
+  String entryOverwriteMessage(String newSan, String oldSan);
+
+  /// Confirms the overwrite: the new move replaces the rest of the game.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace'**
+  String get entryOverwriteConfirm;
+
+  /// Dismisses the overwrite confirmation; nothing changes.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep moves'**
+  String get entryOverwriteCancel;
+
+  /// Confirmation after tapping Done while the next step of the flow is not available.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved as draft'**
+  String get entrySavedAsDraft;
+
+  /// Screen-reader label of an empty board square.
+  ///
+  /// In en, this message translates to:
+  /// **'{square}, empty'**
+  String boardSquareEmpty(String square);
+
+  /// Screen-reader label of an occupied board square.
+  ///
+  /// In en, this message translates to:
+  /// **'{square}, {piece, select, whiteKing{white king} whiteQueen{white queen} whiteRook{white rook} whiteBishop{white bishop} whiteKnight{white knight} whitePawn{white pawn} blackKing{black king} blackQueen{black queen} blackRook{black rook} blackBishop{black bishop} blackKnight{black knight} other{black pawn}}'**
+  String boardSquarePiece(String square, String piece);
+
+  /// Screen-reader label of a choice in the promotion picker.
+  ///
+  /// In en, this message translates to:
+  /// **'Promote to {role, select, queen{queen} rook{rook} bishop{bishop} other{knight}}'**
+  String boardPromoteTo(String role);
+
+  /// Screen-reader label of every square outside the promotion picker while it is open.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel promotion'**
+  String get boardCancelPromotion;
 }
 
 class _AppLocalizationsDelegate

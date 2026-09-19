@@ -53,6 +53,15 @@ abstract final class AppRoutes {
 
   /// Path parameter of [game] and [gameReview].
   static const String gameIdParam = 'id';
+
+  /// Query parameter of [newGameEntry]: the draft to resume.
+  static const String draftIdParam = 'draftId';
+
+  /// [newGameEntry], resuming the draft with [draftId].
+  static String newGameEntryResume(String draftId) => Uri(
+    path: newGameEntry,
+    queryParameters: {draftIdParam: draftId},
+  ).toString();
 }
 
 /// Route names, for `context.goNamed` and for analytics screen names.
@@ -203,7 +212,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                     path: 'entry',
                     name: AppRouteNames.newGameEntry,
                     parentNavigatorKey: rootNavigatorKey,
-                    builder: (context, state) => const EntryScreen(),
+                    builder: (context, state) => EntryScreen(
+                      draftId:
+                          state.uri.queryParameters[AppRoutes.draftIdParam],
+                    ),
                   ),
                   GoRoute(
                     path: 'import',

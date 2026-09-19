@@ -119,4 +119,124 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get signInTitle => 'Sign in';
+
+  @override
+  String get entryFlipBoard => 'Flip board';
+
+  @override
+  String get entryMoreOptions => 'More options';
+
+  @override
+  String get entryAutoQueen => 'Always promote to queen';
+
+  @override
+  String get entryUndo => 'Undo';
+
+  @override
+  String get entryRedo => 'Forward';
+
+  @override
+  String get entryDone => 'Done';
+
+  @override
+  String get entryMoveListEmpty => 'Play the first move on the board.';
+
+  @override
+  String get entryMoveListStart => 'Start';
+
+  @override
+  String entryMoveSemantics(int number, String side, String san) {
+    String _temp0 = intl.Intl.selectLogic(side, {
+      'white': 'White',
+      'other': 'Black',
+    });
+    return '$number. $_temp0, $san';
+  }
+
+  @override
+  String entryStatusToMove(int number, String side) {
+    String _temp0 = intl.Intl.selectLogic(side, {
+      'white': 'White to move',
+      'other': 'Black to move',
+    });
+    return 'Move $number · $_temp0';
+  }
+
+  @override
+  String entryStatusCheckmate(String winner) {
+    String _temp0 = intl.Intl.selectLogic(winner, {
+      'white': 'White wins',
+      'other': 'Black wins',
+    });
+    return 'Checkmate · $_temp0';
+  }
+
+  @override
+  String get entryStatusStalemate => 'Stalemate · draw';
+
+  @override
+  String get entryStatusInsufficientMaterial => 'Draw · insufficient material';
+
+  @override
+  String entryOverwriteTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Replace the following $count moves?',
+      one: 'Replace the following move?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String entryOverwriteMessage(String newSan, String oldSan) {
+    return '$newSan is not the move you entered here before ($oldSan). Everything from $oldSan on will be removed.';
+  }
+
+  @override
+  String get entryOverwriteConfirm => 'Replace';
+
+  @override
+  String get entryOverwriteCancel => 'Keep moves';
+
+  @override
+  String get entrySavedAsDraft => 'Saved as draft';
+
+  @override
+  String boardSquareEmpty(String square) {
+    return '$square, empty';
+  }
+
+  @override
+  String boardSquarePiece(String square, String piece) {
+    String _temp0 = intl.Intl.selectLogic(piece, {
+      'whiteKing': 'white king',
+      'whiteQueen': 'white queen',
+      'whiteRook': 'white rook',
+      'whiteBishop': 'white bishop',
+      'whiteKnight': 'white knight',
+      'whitePawn': 'white pawn',
+      'blackKing': 'black king',
+      'blackQueen': 'black queen',
+      'blackRook': 'black rook',
+      'blackBishop': 'black bishop',
+      'blackKnight': 'black knight',
+      'other': 'black pawn',
+    });
+    return '$square, $_temp0';
+  }
+
+  @override
+  String boardPromoteTo(String role) {
+    String _temp0 = intl.Intl.selectLogic(role, {
+      'queen': 'queen',
+      'rook': 'rook',
+      'bishop': 'bishop',
+      'other': 'knight',
+    });
+    return 'Promote to $_temp0';
+  }
+
+  @override
+  String get boardCancelPromotion => 'Cancel promotion';
 }
