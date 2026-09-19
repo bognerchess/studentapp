@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:bogner_chess/app.dart';
 import 'package:bogner_chess/config/env.dart';
 import 'package:bogner_chess/core/crash/crash_reporter.dart';
+import 'package:bogner_chess/core/links/incoming_link_service.dart';
 import 'package:bogner_chess/core/log.dart';
 import 'package:bogner_chess/features/about/domain/additional_licenses.dart';
 import 'package:flutter/foundation.dart';
@@ -50,6 +51,10 @@ void main() {
       // Artwork and vendored source that Flutter's licence collector cannot
       // see (About -> Open-source licences).
       registerAdditionalLicenses();
+
+      // Links and documents from outside the app ("Open in Bogner Chess").
+      // What arrived before this line, on a cold start, is delivered first.
+      container.read(incomingLinkServiceProvider).start();
 
       runApp(
         UncontrolledProviderScope(

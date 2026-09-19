@@ -15,6 +15,12 @@ import UIKit
   }
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
+    // Before the generated plugins: scene URLs are offered in registration
+    // order until somebody claims one, and this handler claims only what is
+    // ours (documents and app links, never the OIDC redirect).
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "IncomingLinkHandler") {
+      IncomingLinkHandler.register(with: registrar)
+    }
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
   }
 }
