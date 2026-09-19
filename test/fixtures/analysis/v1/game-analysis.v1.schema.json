@@ -1,0 +1,497 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bognerchess.com/contracts/game-analysis.v1.schema.json",
+  "title": "Bogner Chess game analysis document v1 (annotated move tree)",
+  "description": "Produced by chess-ai, stored unchanged as jsonb by the backend, parsed by the mobile app. Objects accept additional properties. Fields marked with x-known-values are OPEN enums: consumers must ignore or degrade gracefully on values they do not know. See contracts/README.md.",
+  "type": "object",
+  "required": [
+    "schema",
+    "schema_version",
+    "schema_minor",
+    "analysis_id",
+    "generated_at",
+    "language",
+    "perspective",
+    "engine",
+    "coach",
+    "game",
+    "accuracy",
+    "nodes",
+    "comments",
+    "summary"
+  ],
+  "properties": {
+    "schema": { "const": "bognerchess.game-analysis" },
+    "schema_version": {
+      "const": 1,
+      "description": "Major version. Bumped on breaking changes only."
+    },
+    "schema_minor": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Minor version. Bumped on additive changes (new optional fields, new open-enum values)."
+    },
+    "analysis_id": {
+      "$ref": "#/$defs/uuid",
+      "description": "The job uuid supplied by the backend."
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$",
+      "description": "UTC timestamp, RFC 3339 with a Z suffix."
+    },
+    "language": {
+      "type": "string",
+      "minLength": 2,
+      "x-known-values": ["en"],
+      "description": "Language of all coach texts (BCP 47 primary subtag)."
+    },
+    "perspective": { "$ref": "#/$defs/perspective" },
+    "engine": { "$ref": "#/$defs/engine" },
+    "coach": { "$ref": "#/$defs/coach" },
+    "game": { "$ref": "#/$defs/game" },
+    "accuracy": { "$ref": "#/$defs/accuracy" },
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/node" },
+      "description": "One node per played ply, in order. nodes[i].ply == i + 1 and nodes.length == game.ply_count."
+    },
+    "comments": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/comment" },
+      "description": "Coach comments, ordered by ply. May be empty."
+    },
+    "summary": { "$ref": "#/$defs/summary" }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "description": "Lower-case canonical uuid. chess-ai generates uuid4 values for comments and lessons."
+    },
+    "square": {
+      "type": "string",
+      "pattern": "^[a-h][1-8]$"
+    },
+    "uci": {
+      "type": "string",
+      "pattern": "^[a-h][1-8][a-h][1-8][qrbn]?$"
+    },
+    "san": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 10,
+      "description": "Standard algebraic notation as produced by python-chess, including check and mate suffixes (+, #)."
+    },
+    "fen": {
+      "type": "string",
+      "minLength": 15,
+      "description": "Full six-field FEN."
+    },
+    "win_pct": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "eval": {
+      "type": "object",
+      "description": "Engine evaluation from WHITE's point of view. Exactly one of cp (centipawns) or mate (moves to mate; positive = White mates, negative = Black mates). mate = 0 appears only as eval_after of a checkmating move: the side to move in fen_after is checkmated, the mover has won.",
+      "properties": {
+        "cp": { "type": "integer" },
+        "mate": { "type": "integer" }
+      },
+      "oneOf": [
+        { "required": ["cp"], "not": { "required": ["mate"] } },
+        { "required": ["mate"], "not": { "required": ["cp"] } }
+      ],
+      "additionalProperties": true
+    },
+    "model_ref": {
+      "type": "object",
+      "description": "The model that wrote a text. Fallback texts carry provider \"template\".",
+      "required": ["provider", "id"],
+      "properties": {
+        "provider": {
+          "type": "string",
+          "minLength": 1,
+          "x-known-values": ["azure", "openrouter", "fake", "template"]
+        },
+        "id": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": true
+    },
+    "verification": {
+      "type": "object",
+      "required": ["status", "checks_version"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "minLength": 1,
+          "x-known-values": ["passed", "regenerated", "fallback"],
+          "description": "passed: first generation passed the gate. regenerated: second generation passed. fallback: deterministic template text."
+        },
+        "checks_version": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": true
+    },
+    "perspective": {
+      "type": "object",
+      "required": ["color", "rating_band"],
+      "properties": {
+        "color": {
+          "enum": ["white", "black", "both"],
+          "description": "Whose moves are coached. both = third-party game."
+        },
+        "rating_band": {
+          "type": "string",
+          "minLength": 1,
+          "x-known-values": [
+            "<1000",
+            "1000-1200",
+            "1200-1400",
+            "1400-1600",
+            "1600-1800",
+            "1800-2000",
+            "2000+",
+            "unknown"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "engine_pass": {
+      "type": "object",
+      "required": ["nodes"],
+      "properties": {
+        "nodes": { "type": "integer", "minimum": 1 },
+        "multipv": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": true
+    },
+    "engine": {
+      "type": "object",
+      "required": ["name", "pass1", "pass2", "human_model"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "pass1": { "$ref": "#/$defs/engine_pass" },
+        "pass2": {
+          "allOf": [{ "$ref": "#/$defs/engine_pass" }, { "required": ["multipv"] }]
+        },
+        "human_model": {
+          "type": "string",
+          "minLength": 1,
+          "x-known-values": ["maia2-rapid", "unavailable"],
+          "description": "unavailable: the pipeline degraded to eval-only selection; no node carries a human object."
+        }
+      },
+      "additionalProperties": true
+    },
+    "coach": {
+      "type": "object",
+      "required": ["provider", "model", "prompt_set", "prompt_version", "pipeline_version"],
+      "properties": {
+        "provider": {
+          "type": "string",
+          "minLength": 1,
+          "x-known-values": ["azure", "openrouter", "fake"]
+        },
+        "model": { "type": "string", "minLength": 1 },
+        "prompt_set": { "type": "string", "minLength": 1, "x-known-values": ["mobile-coach"] },
+        "prompt_version": { "$ref": "#/$defs/prompt_version" },
+        "pipeline_version": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": true
+    },
+    "prompt_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+\\+[0-9a-f]{8}$",
+      "description": "<semver>+<sha256[:8]> of the prompt set."
+    },
+    "game": {
+      "type": "object",
+      "required": ["start_fen", "ply_count", "result"],
+      "properties": {
+        "start_fen": {
+          "oneOf": [{ "$ref": "#/$defs/fen" }, { "type": "null" }],
+          "description": "null for the standard starting position."
+        },
+        "ply_count": { "type": "integer", "minimum": 1 },
+        "result": { "enum": ["1-0", "0-1", "1/2-1/2", "*"] }
+      },
+      "additionalProperties": true
+    },
+    "accuracy": {
+      "type": "object",
+      "required": ["white", "black"],
+      "properties": {
+        "white": { "$ref": "#/$defs/win_pct" },
+        "black": { "$ref": "#/$defs/win_pct" }
+      },
+      "additionalProperties": true
+    },
+    "move_ref": {
+      "type": "object",
+      "required": ["san", "uci", "eval"],
+      "properties": {
+        "san": { "$ref": "#/$defs/san" },
+        "uci": { "$ref": "#/$defs/uci" },
+        "eval": { "$ref": "#/$defs/eval" }
+      },
+      "additionalProperties": true
+    },
+    "human": {
+      "type": "object",
+      "description": "Human-model (Maia) probabilities for a player of the mover's rating.",
+      "required": ["played_prob", "best_prob"],
+      "properties": {
+        "played_prob": { "type": "number", "minimum": 0, "maximum": 1 },
+        "best_prob": { "type": "number", "minimum": 0, "maximum": 1 }
+      },
+      "additionalProperties": true
+    },
+    "variation_move": {
+      "type": "object",
+      "required": ["san", "uci", "fen_after"],
+      "properties": {
+        "san": { "$ref": "#/$defs/san" },
+        "uci": { "$ref": "#/$defs/uci" },
+        "fen_after": { "$ref": "#/$defs/fen" }
+      },
+      "additionalProperties": true
+    },
+    "variation": {
+      "type": "object",
+      "required": ["id", "kind", "eval", "start_fen", "moves"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Opaque, unique within the document. The pipeline emits v<ply>-best, v<ply>-refutation, v<ply>-alt<n>."
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1,
+          "x-known-values": ["best_line", "refutation", "alternative"],
+          "description": "best_line and alternative start at the node's fen_before (moves the player could have chosen). refutation starts at the node's fen_after (the opponent's punishing reply to the played move)."
+        },
+        "eval": { "$ref": "#/$defs/eval" },
+        "start_fen": {
+          "$ref": "#/$defs/fen",
+          "description": "Position the first move is played from. Always present so that clients can render a line of a kind they do not know."
+        },
+        "moves": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/variation_move" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "node": {
+      "type": "object",
+      "required": [
+        "ply",
+        "move_number",
+        "color",
+        "san",
+        "uci",
+        "fen_before",
+        "fen_after",
+        "eval_before",
+        "eval_after",
+        "win_pct_before",
+        "win_pct_after",
+        "win_pct_loss",
+        "classification",
+        "is_critical",
+        "best",
+        "variations",
+        "comment_ids"
+      ],
+      "properties": {
+        "ply": { "type": "integer", "minimum": 1, "description": "1-based index into nodes." },
+        "move_number": { "type": "integer", "minimum": 1, "description": "Full-move number from fen_before." },
+        "color": { "enum": ["white", "black"], "description": "The mover." },
+        "san": { "$ref": "#/$defs/san" },
+        "uci": { "$ref": "#/$defs/uci" },
+        "fen_before": { "$ref": "#/$defs/fen" },
+        "fen_after": { "$ref": "#/$defs/fen" },
+        "eval_before": { "$ref": "#/$defs/eval" },
+        "eval_after": { "$ref": "#/$defs/eval" },
+        "win_pct_before": {
+          "$ref": "#/$defs/win_pct",
+          "description": "Rating-calibrated win probability from the MOVER's point of view before the move."
+        },
+        "win_pct_after": {
+          "$ref": "#/$defs/win_pct",
+          "description": "Same, after the move, still from the mover's point of view."
+        },
+        "win_pct_loss": {
+          "$ref": "#/$defs/win_pct",
+          "description": "max(0, win_pct_before - win_pct_after), one decimal."
+        },
+        "classification": {
+          "type": "string",
+          "minLength": 1,
+          "x-known-values": ["book", "best", "good", "inaccuracy", "mistake", "blunder"],
+          "description": "book, or by win_pct_loss: <=1 best, <=3 good, <=8 inaccuracy, <=15 mistake, else blunder."
+        },
+        "is_critical": {
+          "type": "boolean",
+          "description": "True exactly when the node was selected as a moment and carries at least one comment."
+        },
+        "best": {
+          "oneOf": [{ "$ref": "#/$defs/move_ref" }, { "type": "null" }],
+          "description": "The engine's first choice at fen_before with its eval. null when the played move is the engine's first choice or no engine result exists for the ply."
+        },
+        "human": { "$ref": "#/$defs/human" },
+        "variations": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/variation" },
+          "description": "Engine lines; empty for nodes without a deep pass."
+        },
+        "comment_ids": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/uuid" },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "square_mark": {
+      "type": "object",
+      "required": ["square", "role"],
+      "properties": {
+        "square": { "$ref": "#/$defs/square" },
+        "role": { "type": "string", "minLength": 1, "x-known-values": ["target", "weak", "key"] }
+      },
+      "additionalProperties": true
+    },
+    "arrow": {
+      "type": "object",
+      "required": ["from", "to", "role"],
+      "properties": {
+        "from": { "$ref": "#/$defs/square" },
+        "to": { "$ref": "#/$defs/square" },
+        "role": { "type": "string", "minLength": 1, "x-known-values": ["played", "best", "threat"] }
+      },
+      "additionalProperties": true
+    },
+    "line_ref": {
+      "type": "object",
+      "required": ["variation_id", "label"],
+      "properties": {
+        "variation_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Must be the id of a variation on the node at the comment's ply."
+        },
+        "label": { "type": "string", "minLength": 1, "maxLength": 24 }
+      },
+      "additionalProperties": true
+    },
+    "theme": {
+      "type": "string",
+      "minLength": 1,
+      "x-known-values": [
+        "opening",
+        "development",
+        "central_break",
+        "king_safety",
+        "tactics",
+        "hanging_piece",
+        "calculation",
+        "piece_activity",
+        "pawn_structure",
+        "endgame",
+        "material_conversion",
+        "unknown"
+      ]
+    },
+    "comment": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "ply",
+        "title",
+        "text",
+        "theme",
+        "squares",
+        "arrows",
+        "lines",
+        "moves_mentioned",
+        "model",
+        "prompt_version",
+        "verification"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "type": {
+          "type": "string",
+          "minLength": 1,
+          "x-known-values": ["critical_moment", "positive_moment"]
+        },
+        "ply": { "type": "integer", "minimum": 1 },
+        "title": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "text": { "type": "string", "minLength": 1, "maxLength": 320 },
+        "theme": { "$ref": "#/$defs/theme" },
+        "squares": { "type": "array", "items": { "$ref": "#/$defs/square_mark" } },
+        "arrows": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/arrow" },
+          "description": "Drawn on the node's fen_before, except role threat, which is drawn on fen_after."
+        },
+        "lines": { "type": "array", "items": { "$ref": "#/$defs/line_ref" } },
+        "moves_mentioned": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/san" },
+          "uniqueItems": true,
+          "description": "SAN tokens used in title and text. Subset of: played move, best move, all variation moves of the node."
+        },
+        "model": { "$ref": "#/$defs/model_ref" },
+        "prompt_version": { "$ref": "#/$defs/prompt_version" },
+        "verification": { "$ref": "#/$defs/verification" }
+      },
+      "additionalProperties": true
+    },
+    "lesson": {
+      "type": "object",
+      "required": ["id", "title", "text", "evidence_plies", "theme"],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "text": { "type": "string", "minLength": 1, "maxLength": 240 },
+        "evidence_plies": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 },
+          "uniqueItems": true,
+          "description": "Plies (nodes[].ply) that illustrate the lesson."
+        },
+        "theme": { "$ref": "#/$defs/theme" }
+      },
+      "additionalProperties": true
+    },
+    "summary": {
+      "type": "object",
+      "required": ["lessons", "model", "prompt_version", "verification"],
+      "properties": {
+        "lessons": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": { "$ref": "#/$defs/lesson" }
+        },
+        "model": { "$ref": "#/$defs/model_ref" },
+        "prompt_version": { "$ref": "#/$defs/prompt_version" },
+        "verification": { "$ref": "#/$defs/verification" }
+      },
+      "additionalProperties": true
+    }
+  }
+}
