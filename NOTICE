@@ -44,8 +44,8 @@ are upstream's, unchanged except for the removals listed in
 third_party/chessground/BOGNER_CHANGES.md, and they stay under GPL-3.0 as
 published upstream. They do NOT carry the app-store permission.
 
-  Directory                | Upstream                                   | Version / commit                                   | Copyright                   | Licence
-  -------------------------+--------------------------------------------+----------------------------------------------------+-----------------------------+--------
+  Directory                | Upstream                                   | Version / commit                                  | Copyright                       | Licence
+  -------------------------+--------------------------------------------+---------------------------------------------------+---------------------------------+--------
   third_party/chessground/ | github.com/lichess-org/flutter-chessground | 10.2.0 / 4b4f1d4734a453cfbe43a37cac95be09d8d1b0bc | the flutter-chessground authors | GPL-3.0
 
 dartchess (chess rules, FEN, SAN, PGN; GPL-3.0, github.com/lichess-org/dartchess)
@@ -64,13 +64,13 @@ vendored trimmed copy (above), and why the built bundle is checked against this
 table. tool/asset_allowlist.txt is the machine-readable form of the first
 column.
 
-  Set      | Author                     | Licence | Source                                                          | Added in
-  ---------+----------------------------+---------+-----------------------------------------------------------------+---------
-  cburnett | Colin M. L. Burnett        | GPLv2+  | github.com/lichess-org/lila/tree/master/public/piece/cburnett   | WP-04
-           |                            |         | (originally en.wikipedia.org/wiki/User:Cburnett)                |
+  Set      | Author                      | Licence | Source                                                          | Added in
+  ---------+-----------------------------+---------+-----------------------------------------------------------------+---------
+  cburnett | Colin M. L. Burnett         | GPLv2+  | github.com/lichess-org/lila/tree/master/public/piece/cburnett   | WP-04
+           |                             |         | (originally en.wikipedia.org/wiki/User:Cburnett)                |
   merida   | Armando Hernandez Marroquin | GPLv2+  | github.com/lichess-org/lila/tree/master/public/piece/merida     | WP-04
-  rhosgfx  | RhosGFX                    | CC0 1.0 | github.com/lichess-org/lila/tree/master/public/piece/rhosgfx    | WP-04
-           |                            |         | (originally rhosgfx.itch.io)                                    |
+  rhosgfx  | RhosGFX                     | CC0 1.0 | github.com/lichess-org/lila/tree/master/public/piece/rhosgfx    | WP-04
+           |                             |         | (originally rhosgfx.itch.io)                                    |
 
 The licences are those stated in lila's COPYING.md
 (github.com/lichess-org/lila/blob/master/COPYING.md), read on 2026-09-19. The
@@ -115,5 +115,8 @@ Third-party packages
 --------------------
 
 Dart and Flutter packages are listed with version, licence and purpose in
-docs/dependencies.md. Their licence texts are shown in the app (About ->
-Licences), which Flutter collects from the packages themselves.
+docs/dependencies.md. Their licence texts are shown in the app (Settings ->
+About and licences -> Open-source licences), which Flutter collects from the
+packages themselves. The artwork and the vendored source listed above are added
+to that list by lib/features/about/domain/additional_licenses.dart; a new row in
+this file needs a new entry there.

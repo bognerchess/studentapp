@@ -72,5 +72,20 @@
   "metadataTimeControlOther": "Andere",
   "metadataTimeControlDetail": "Minuten + Inkrement",
   "metadataTimeControlDetailHint": "z. B. 90+30",
-  "metadataRatingError": "{min}–{max}"
+  "metadataRatingError": "{min}–{max}",
+  "aboutDescription": "Bogner Chess hilft dir, aus deinen eigenen Partien zu lernen. Gib eine Partie auf dem Brett ein oder importiere eine PGN-Datei, lass sie auf bognerchess.com analysieren und geh sie mit den Kommentaren des KI-Coachs durch.",
+  "aboutNotAffiliated": "Bogner Chess steht in keiner Verbindung zu Lichess und wird von Lichess nicht unterstützt. Die App verwendet freie Software, die das Lichess-Projekt veröffentlicht.",
+  "aboutFreeSoftwareNotice": "Copyright © 2026 Bogner Chess. Diese App ist freie Software: Du darfst sie unter der GNU General Public License, Version 3 oder jeder späteren Version, weitergeben und verändern. Es besteht keinerlei Gewährleistung.",
+  "aboutSourceForBuild": "Quellcode dieses Builds",
+  "aboutGplLicence": "GNU General Public License v3",
+  "aboutGplLicenceHint": "Vollständiger Lizenztext, auf Englisch",
+  "aboutAppStorePermission": "Zusätzliche Erlaubnis für App-Stores",
+  "aboutAppStorePermissionDraft": "Entwurf, noch nicht in Kraft",
+  "aboutAppStorePermissionDraftBanner": "Dieser Text ist ein Entwurf. Er räumt keine Rechte ein, bis der Rechteinhaber die endgültige Fassung veröffentlicht. Bis dahin gilt allein die GNU General Public License.",
+  "aboutThirdPartyNotices": "Hinweise zu Drittkomponenten",
+  "aboutThirdPartyNoticesHint": "Schachfiguren und Quellcode aus anderen Projekten",
+  "aboutOpenSourceLicences": "Open-Source-Lizenzen",
+  "aboutOpenSourceLicencesHint": "Die Pakete, mit denen diese App gebaut ist",
+  "aboutLinkFailed": "Der Link konnte nicht geöffnet werden.",
+  "aboutDocumentLoadFailed": "Dieser Text konnte nicht geladen werden. Er ist auch Teil des Quellcodes dieser App."
 }

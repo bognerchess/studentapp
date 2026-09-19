@@ -239,4 +239,56 @@ class AppLocalizationsEn extends AppLocalizations {
   String metadataRatingError(int min, int max) {
     return '$min–$max';
   }
+
+  @override
+  String get aboutDescription =>
+      'Bogner Chess helps you learn from your own games. Enter a game on the board or import a PGN, have it analysed on bognerchess.com, and review it with the comments of the AI coach.';
+
+  @override
+  String get aboutNotAffiliated =>
+      'Bogner Chess is not affiliated with or endorsed by Lichess. It uses free software that the Lichess project publishes.';
+
+  @override
+  String get aboutFreeSoftwareNotice =>
+      'Copyright © 2026 Bogner Chess. This app is free software: you may redistribute and modify it under the GNU General Public License, version 3 or any later version. It comes with no warranty.';
+
+  @override
+  String get aboutSourceForBuild => 'Source code for this build';
+
+  @override
+  String get aboutGplLicence => 'GNU General Public License v3';
+
+  @override
+  String get aboutGplLicenceHint => 'Full licence text, in English';
+
+  @override
+  String get aboutAppStorePermission => 'Additional permission for app stores';
+
+  @override
+  String get aboutAppStorePermissionDraft => 'Draft, not in force yet';
+
+  @override
+  String get aboutAppStorePermissionDraftBanner =>
+      'This text is a draft. It grants nothing until the copyright holder publishes the final wording. Until then only the GNU General Public License applies.';
+
+  @override
+  String get aboutThirdPartyNotices => 'Third-party notices';
+
+  @override
+  String get aboutThirdPartyNoticesHint =>
+      'Chess pieces and source code from other projects';
+
+  @override
+  String get aboutOpenSourceLicences => 'Open-source licences';
+
+  @override
+  String get aboutOpenSourceLicencesHint =>
+      'The packages this app is built with';
+
+  @override
+  String get aboutLinkFailed => 'The link could not be opened.';
+
+  @override
+  String get aboutDocumentLoadFailed =>
+      'This text could not be loaded. It is also part of the source code of this app.';
 }

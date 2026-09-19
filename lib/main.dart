@@ -8,6 +8,7 @@ import 'package:bogner_chess/app.dart';
 import 'package:bogner_chess/config/env.dart';
 import 'package:bogner_chess/core/crash/crash_reporter.dart';
 import 'package:bogner_chess/core/log.dart';
+import 'package:bogner_chess/features/about/domain/additional_licenses.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -45,6 +46,10 @@ void main() {
       // a plain-http API rather than letting such a build start.
       final env = container.read(envProvider);
       _log.info('starting env=${env.envName} auth=${env.authMode.name}');
+
+      // Artwork and vendored source that Flutter's licence collector cannot
+      // see (About -> Open-source licences).
+      registerAdditionalLicenses();
 
       runApp(
         UncontrolledProviderScope(

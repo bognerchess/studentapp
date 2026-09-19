@@ -241,4 +241,56 @@ class AppLocalizationsDe extends AppLocalizations {
   String metadataRatingError(int min, int max) {
     return '$min–$max';
   }
+
+  @override
+  String get aboutDescription =>
+      'Bogner Chess hilft dir, aus deinen eigenen Partien zu lernen. Gib eine Partie auf dem Brett ein oder importiere eine PGN-Datei, lass sie auf bognerchess.com analysieren und geh sie mit den Kommentaren des KI-Coachs durch.';
+
+  @override
+  String get aboutNotAffiliated =>
+      'Bogner Chess steht in keiner Verbindung zu Lichess und wird von Lichess nicht unterstützt. Die App verwendet freie Software, die das Lichess-Projekt veröffentlicht.';
+
+  @override
+  String get aboutFreeSoftwareNotice =>
+      'Copyright © 2026 Bogner Chess. Diese App ist freie Software: Du darfst sie unter der GNU General Public License, Version 3 oder jeder späteren Version, weitergeben und verändern. Es besteht keinerlei Gewährleistung.';
+
+  @override
+  String get aboutSourceForBuild => 'Quellcode dieses Builds';
+
+  @override
+  String get aboutGplLicence => 'GNU General Public License v3';
+
+  @override
+  String get aboutGplLicenceHint => 'Vollständiger Lizenztext, auf Englisch';
+
+  @override
+  String get aboutAppStorePermission => 'Zusätzliche Erlaubnis für App-Stores';
+
+  @override
+  String get aboutAppStorePermissionDraft => 'Entwurf, noch nicht in Kraft';
+
+  @override
+  String get aboutAppStorePermissionDraftBanner =>
+      'Dieser Text ist ein Entwurf. Er räumt keine Rechte ein, bis der Rechteinhaber die endgültige Fassung veröffentlicht. Bis dahin gilt allein die GNU General Public License.';
+
+  @override
+  String get aboutThirdPartyNotices => 'Hinweise zu Drittkomponenten';
+
+  @override
+  String get aboutThirdPartyNoticesHint =>
+      'Schachfiguren und Quellcode aus anderen Projekten';
+
+  @override
+  String get aboutOpenSourceLicences => 'Open-Source-Lizenzen';
+
+  @override
+  String get aboutOpenSourceLicencesHint =>
+      'Die Pakete, mit denen diese App gebaut ist';
+
+  @override
+  String get aboutLinkFailed => 'Der Link konnte nicht geöffnet werden.';
+
+  @override
+  String get aboutDocumentLoadFailed =>
+      'Dieser Text konnte nicht geladen werden. Er ist auch Teil des Quellcodes dieser App.';
 }

@@ -44,6 +44,7 @@ library for the target platform from the package's GitHub release, verifies a
 sha256 that ships with the package, and bundles it (`sqlite3.framework` on
 iOS). SQLite is in the public domain. No system package, CocoaPods or Swift
 package is involved. `docs/storage.md` has the details.
+| `url_launcher` | `^6.3.2` | 6.3.2 (2025-07-10) | BSD-3-Clause | flutter.dev | Opens the "source code for this build" link in the browser (About screen); WP-30 will use it for the legal documents. Only `lib/features/about/domain/link_launcher.dart` imports it (`linkLauncherProvider`), so tests never reach the platform. Re-verified on 2026-09-19: the iOS implementation `url_launcher_ios` 6.4.2 (2026-08-28, BSD-3-Clause, flutter.dev, needs Flutter >= 3.38) is tagged `is:swiftpm-plugin` on pub.dev, so it comes in through Swift Package Manager like the other plugins; this project has no CocoaPods. Pulls the federated platform packages (`url_launcher_android`, `_linux`, `_macos`, `_web`, `_windows`, `_platform_interface`, all BSD-3-Clause, flutter.dev); only the iOS one is built. Added by WP-31. |
 
 `cupertino_icons`, which `flutter create` adds, was removed: nothing uses it.
 
@@ -61,7 +62,6 @@ package is involved. `docs/storage.md` has the details.
 | `file_picker` | 13.1.0 (2026-09-15) | MIT | victorcarreras.dev | Pick a `.pgn` from Files. v13 made `length()` async. | WP-22 |
 | `sentry_flutter` | 9.30.0 (2026-09-10) | MIT | sentry.io | Crash reporting, consent-gated, PII off. The bundled sentry-cocoa is MIT too. | WP-34 |
 | `connectivity_plus` | 7.3.1 (2026-07-23) | BSD-3-Clause | fluttercommunity.dev | Trigger for the submit queue when the network returns. | WP-27 |
-| `url_launcher` | 6.3.2 (2025-07-10) | BSD-3-Clause | flutter.dev | Open legal documents and the source link. | WP-30 |
 | `wakelock_plus` | 1.8.0 (2026-09-01) | BSD-3-Clause | fluttercommunity.dev | Keep the screen on during move entry. Needs Flutter >= 3.44. | WP-20 |
 | `flutter_markdown_plus` | 1.0.12 (2026-07-10) | BSD-3-Clause | foresightmobile.com | Render legal documents and coach text. | WP-30 |
 | `freezed_annotation` | 3.1.0 (2025-07-02) | MIT | dash-overflow.net | Annotations for immutable domain models. WP-03 did not need it (the shell has no domain models); the first WP with one adds it. | first user |
