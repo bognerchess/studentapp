@@ -21,6 +21,20 @@ and `go_router`, `app_links`, `wakelock_plus` (Flutter >= 3.44).
 | --- | --- | --- | --- | --- | --- |
 | `flutter`, `flutter_test` | SDK | 3.47.5 | BSD-3-Clause | flutter.dev | Framework and test framework. |
 | `flutter_lints` | `^6.0.0` (dev) | 6.0.0 (2025-05-27) | BSD-3-Clause | flutter.dev | Base lint set; `analysis_options.yaml` tightens it. |
+| `drift` | `^2.35.0` | 2.35.0 (2026-09-09) | MIT | simonbinder.eu | Local database: drafts, cached games and analyses, pending jobs, outboxes (`lib/core/storage`, see `docs/storage.md`). Added by WP-13. |
+| `drift_flutter` | `^0.3.1` | 0.3.1 (2026-07-11) | MIT | simonbinder.eu | Opens the drift database on the device in a background isolate. Still lists `sqlite3_flutter_libs` and `sqlcipher_flutter_libs` as dependencies; both resolve to their empty `+eol` versions. Added by WP-13. |
+| `path_provider` | `^2.1.6` | 2.1.6 (2026-06-15) | BSD-3-Clause | flutter.dev | The application support directory for the database file. Its iOS part (`path_provider_foundation` 2.6.0) calls Foundation through FFI and brings no CocoaPods or Swift package. Added by WP-13. |
+| `uuid` | `^4.6.0` | 4.6.0 (2026-07-15) | MIT | yuli.dev | Draft ids and `clientGameId` for idempotent game creation. Added by WP-13. |
+| `build_runner` | `^2.16.1` (dev) | 2.16.1 (2026-09-02) | BSD-3-Clause | tools.dart.dev | Runs the generators (`tool/gen.sh`). Added by WP-13, the first package that generates code. |
+| `drift_dev` | `^2.35.0` (dev) | 2.35.0 (2026-09-09) | MIT | simonbinder.eu | drift generator, schema dumps and migration test helpers. Added by WP-13. |
+
+Transitive, but worth knowing: **`sqlite3`** (MIT, simonbinder.eu; locked at
+3.5.2; 3.6.0 needs `hooks ^2.2.0` and with it `meta ^1.19.0`, and Flutter
+3.47.5 pins an older `meta`) brings SQLite itself. Its build hook downloads a prebuilt
+library for the target platform from the package's GitHub release, verifies a
+sha256 that ships with the package, and bundles it (`sqlite3.framework` on
+iOS). SQLite is in the public domain. No system package, CocoaPods or Swift
+package is involved. `docs/storage.md` has the details.
 
 `cupertino_icons`, which `flutter create` adds, was removed: nothing uses it.
 
@@ -35,8 +49,6 @@ and `go_router`, `app_links`, `wakelock_plus` (Flutter >= 3.44).
 | `gql_http_link` | 1.2.0 (2025-09-20) | MIT | gql-dart.dev | Fallback transport should `graphql` have to go. Not planned otherwise. | – |
 | `flutter_appauth` | 12.1.0 (2026-08-29) | BSD-3-Clause | dexterx.dev | OIDC authorization code flow with PKCE through ASWebAuthenticationSession. Needs Flutter >= 3.38.1. | WP-25 |
 | `flutter_secure_storage` | 11.2.0 (2026-09-16) | BSD-3-Clause | steenbakker.dev | Tokens in the Keychain (`first_unlock_this_device`). | WP-25 |
-| `drift` | 2.35.0 (2026-09-09) | MIT | simonbinder.eu | Local database: drafts, cached games and analyses, pending jobs, outboxes. | WP-13 |
-| `drift_flutter` | 0.3.1 (2026-07-11) | MIT | simonbinder.eu | Opens the drift database on the device. Replaces `sqlite3_flutter_libs`, whose latest version is `0.6.0+eol` (end of life): SQLite now comes through the `sqlite3` package's build hooks. | WP-13 |
 | `flutter_riverpod` | 3.4.3 (2026-09-03) | MIT | dash-overflow.net | State management. Plain Riverpod 3 with freezed, without `riverpod_generator`. | WP-03 |
 | `go_router` | 18.0.1 (2026-09-02) | BSD-3-Clause | flutter.dev | Routing and deep links (push tap, shared PGN). Needs Flutter >= 3.44. | WP-03 |
 | `intl` | 0.20.3 (2026-06-25) | BSD-3-Clause | dart.dev | Dates and plurals for `flutter gen-l10n`. The version is dictated by `flutter_localizations` (SDK, `^0.20.3` in Flutter 3.47.5). | WP-03 |
@@ -49,12 +61,10 @@ and `go_router`, `app_links`, `wakelock_plus` (Flutter >= 3.44).
 | `package_info_plus` | 10.2.1 (2026-07-15) | BSD-3-Clause | fluttercommunity.dev | Version and build number for the "source for this build" link and `registerDevice`. | WP-31 |
 | `url_launcher` | 6.3.2 (2025-07-10) | BSD-3-Clause | flutter.dev | Open legal documents and the source link. | WP-30 |
 | `shared_preferences` | 2.5.5 (2026-03-25) | BSD-3-Clause | flutter.dev | Small settings and the first-launch marker for the Keychain wipe. | WP-25 |
-| `path_provider` | 2.1.6 (2026-06-15) | BSD-3-Clause | flutter.dev | Location of the database file. | WP-13 |
 | `wakelock_plus` | 1.8.0 (2026-09-01) | BSD-3-Clause | fluttercommunity.dev | Keep the screen on during move entry. Needs Flutter >= 3.44. | WP-20 |
 | `flutter_markdown_plus` | 1.0.12 (2026-07-10) | BSD-3-Clause | foresightmobile.com | Render legal documents and coach text. | WP-30 |
 | `freezed_annotation` | 3.1.0 (2025-07-02) | MIT | dash-overflow.net | Annotations for immutable domain models. | WP-03 |
 | `json_annotation` | 4.12.0 (2026-05-15) | BSD-3-Clause | google.dev | Annotations for the analysis document model. | WP-14 |
-| `uuid` | 4.6.0 (2026-07-15) | MIT | yuli.dev | `clientGameId` for idempotent game creation. | WP-13 |
 | `http` | 1.6.0 (2025-11-10) | BSD-3-Clause | dart.dev | Transport under the GraphQL HTTP link; token revocation call. | WP-12 |
 | `sound_effect` (optional) | 0.2.0 (2026-06-16) | GPL-3.0 | lichess.org | Move sounds, if any. The MVP ships haptics only; Lichess's sound files are AGPLv3+ or unspecified and are not used. | – |
 
@@ -62,9 +72,7 @@ and `go_router`, `app_links`, `wakelock_plus` (Flutter >= 3.44).
 
 | Package | Latest (published) | Licence | Publisher | Purpose | Added by |
 | --- | --- | --- | --- | --- | --- |
-| `build_runner` | 2.16.1 (2026-09-02) | BSD-3-Clause | tools.dart.dev | Runs the generators (`tool/gen.sh`). | WP-02 |
 | `graphql_codegen` | 3.0.2 (2026-07-05) | MIT | heft.app | Typed operations, enum fallback for unknown values, `when`/`maybeWhen` on unions. | WP-10 |
-| `drift_dev` | 2.35.0 (2026-09-09) | MIT | simonbinder.eu | drift generator and migration test helpers. | WP-13 |
 | `freezed` | 4.0.2 (2026-09-18) | MIT | dash-overflow.net | Generator for immutable models. Needs Dart >= 3.13.0. Published one day before this check: confirm it has settled before pinning. | WP-03 |
 | `json_serializable` | 6.14.1 (2026-07-30) | BSD-3-Clause | google.dev | JSON for the analysis document model. | WP-14 |
 | `mocktail` | 1.0.5 (2026-04-10) | MIT | felangel.dev | Mocks without code generation. | WP-12 |

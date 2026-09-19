@@ -19,6 +19,9 @@ analyzer:
     - "**/*.g.dart"
     - "**/*.freezed.dart"
     - "**/*.graphql.dart"
+    # drift_dev's migration test helpers (test/core/storage/generated/). A
+    # generated/ directory is already exempt from the format and header checks.
+    - "**/generated/**"
     # Deliberately broken trees for the tests of tool/check_headers.dart and
     # tool/check_layers.dart. They import packages that do not exist here.
     - tool/test_fixtures/**
