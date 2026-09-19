@@ -135,10 +135,47 @@ migrates it). Keys added or changed after the template:
 | `CFBundleDocumentTypes` | "Chess PGN", `com.chess.pgn`, role Viewer, rank Alternate | Makes "Open in Bogner Chess" appear for `.pgn` files in Files, Mail and the share sheet. Viewer, because the app reads a game and never writes the file back. Alternate, because we do not own the type. |
 | `UTImportedTypeDeclarations` | `com.chess.pgn`, conforms to `public.plain-text`, extension `pgn`, MIME `application/x-chess-pgn` | iOS has no built-in type for PGN. `com.chess.pgn` is the identifier that chess apps conventionally use, so we *import* it (we describe a type that belongs to someone else) instead of exporting an identifier of our own. If an installed app exports the type, its declaration wins and ours is ignored, which is the intended behaviour. |
 | `LSSupportsOpeningDocumentsInPlace` | `true` | The app receives the original file's URL instead of a copy in `Documents/Inbox` that it would have to clean up. The URL is security-scoped: the receiving code must bracket the read with `startAccessingSecurityScopedResource()` and `stopAccessingSecurityScopedResource()`. App Store validation also asks for this key (or `UISupportsDocumentBrowser`) as soon as document types are declared. |
+| `FlutterDeepLinkingEnabled` | `false` | Flutter's engine would otherwise push every URL the app is opened with into the router as a location: `com.bognerchess.mobile://games/1/review` parses with `games` as the host, a document arrives as `file:///…/game.pgn`, and the OIDC redirect would show the not-found screen. All incoming URLs go through `IncomingLinkHandler.swift` and `lib/core/links` instead (see "Incoming links and documents" below). |
 | `UISupportedInterfaceOrientations` | portrait only | A chess board with a move list is laid out for portrait. The `~ipad` variant was removed together with iPad support. |
 
 `UIBackgroundModes` is deliberately absent. Alert pushes need no background
 mode.
+
+## Incoming links and documents
+
+`ios/Runner/IncomingLinkHandler.swift` is the one native entry point for what
+reaches the app from outside. `AppDelegate.didInitializeImplicitFlutterEngine`
+registers it with `addSceneDelegate` *before* the generated plugins, because
+Flutter offers a scene URL to the registered objects in order until one
+returns `true`. The app uses the scene life cycle, so URLs arrive in
+`scene(_:openURLContexts:)` while the app runs and in the connection options
+of `scene(_:willConnectTo:options:)` on a cold start; both end in the same
+function.
+
+| What arrives | What the handler does |
+| --- | --- |
+| A file URL ("Open in Bogner Chess", "Copy to Bogner Chess") | Calls `startAccessingSecurityScopedResource()` at once, reads at most 2 MiB through an `NSFileCoordinator` on a background queue, calls `stopAccessingSecurityScopedResource()`, and sends `{kind: file, bytes}` or `{kind: fileError, reason: tooLarge or unreadable}`. When the file was not opened in place, iOS made a copy in an `Inbox` directory inside the app's container; only such a copy is deleted afterwards. Dart never sees a path or a file name and has no call to make the native side read one. Returns `true`. |
+| `com.bognerchess.mobile://…` | Sends `{kind: url, url}`. Dart classifies it (`lib/core/links/link_target.dart` holds the table of locations a link may open). Returns `true`. |
+| `com.bognerchess.mobile:/oauthredirect…` | Nothing: not forwarded (it carries the authorisation code), not consumed. Returns `false`, so the auth plugin still gets it, should `ASWebAuthenticationSession` not have intercepted it already. |
+| Any other URL | Returns `false`. |
+
+There is one `FlutterEventChannel`, `com.bognerchess.mobile/incoming_links`.
+Events that arrive before Dart listens (a cold start) are kept, at most four,
+and delivered first when `main.dart` starts `IncomingLinkService`. That is why
+there is no "get initial link" method and no way to receive the first link
+twice.
+
+To try it in a simulator without touching the screen (a file URL needs no
+confirmation, a custom-scheme URL makes iOS ask "Open in Bogner Chess?"):
+
+    DATA=$(xcrun simctl get_app_container <udid> com.bognerchess.mobile data)
+    cp test/fixtures/pgn/chesscom_style.pgn "$DATA/Documents/game.pgn"
+    xcrun simctl openurl <udid> "file://$DATA/Documents/game.pgn"
+    xcrun simctl openurl <udid> "com.bognerchess.mobile://games/abc/review"
+
+Terminate the app first to exercise the cold start. A file below
+`…/data/Containers/Shared/AppGroup/<id>/File Provider Storage/` (the Files
+app's "On My iPhone") works the same way and lies outside the app's container.
 
 ## Entitlements
 

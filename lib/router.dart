@@ -3,6 +3,7 @@
 // Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
 
 import 'package:bogner_chess/core/auth/auth_state.dart';
+import 'package:bogner_chess/core/links/link_target.dart';
 import 'package:bogner_chess/core/log.dart';
 import 'package:bogner_chess/core/ui/widgets/not_found_screen.dart';
 import 'package:bogner_chess/core/ui/widgets/tab_shell.dart';
@@ -125,6 +126,17 @@ String? authRedirect({required AuthState auth, required Uri uri}) {
   }
 }
 
+/// Where a URI with a scheme leads: the location from the mapping table in
+/// `core/links/link_target.dart`; the start location for the OIDC redirect,
+/// which is not a place; null (the not-found screen) for everything else.
+String? externalLinkRedirect(Uri uri) {
+  return switch (classifyUri(uri)) {
+    AppLocationTarget(:final location) => location,
+    IgnoredTarget(reason: IgnoredLinkReason.oauthRedirect) => AppRoutes.initial,
+    _ => null,
+  };
+}
+
 /// The app's router. It re-evaluates its redirect whenever the auth state
 /// changes.
 final routerProvider = Provider<GoRouter>((ref) {
@@ -136,6 +148,14 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: AppRoutes.initial,
     refreshListenable: authChanged,
     redirect: (context, state) {
+      // A URI with a scheme is a link from outside that reached the router
+      // directly. Normally IncomingLinkService normalises those first (and
+      // Flutter's own deep linking is off in Info.plist); this is the net
+      // below it. The result passes through this redirect again, so the
+      // auth rules apply to it as to any location.
+      if (state.uri.hasScheme) {
+        return externalLinkRedirect(state.uri);
+      }
       final target = authRedirect(
         auth: ref.read(authStateProvider),
         uri: state.uri,

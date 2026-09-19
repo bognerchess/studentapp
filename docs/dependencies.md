@@ -13,7 +13,7 @@ re-checks it, picks the constraint and fills in the "In pubspec" column.
 
 Toolchain: Flutter **3.47.5** (stable, Dart 3.13.4), BSD-3-Clause. Every
 package below supports it; the tightest floors are `freezed` (Dart >= 3.13.0)
-and `go_router`, `app_links`, `wakelock_plus` (Flutter >= 3.44).
+and `go_router`, `wakelock_plus` (Flutter >= 3.44).
 
 ## In `pubspec.yaml` today
 
@@ -61,7 +61,6 @@ package is involved. `docs/storage.md` has the details.
 | `flutter_appauth` | 12.1.0 (2026-08-29) | BSD-3-Clause | dexterx.dev | OIDC authorization code flow with PKCE through ASWebAuthenticationSession. Needs Flutter >= 3.38.1. | WP-25 |
 | `flutter_secure_storage` | 11.2.0 (2026-09-16) | BSD-3-Clause | steenbakker.dev | Tokens in the Keychain (`first_unlock_this_device`). | WP-25 |
 | `fl_chart` | 1.2.0 (2026-03-13) | MIT | flchart.dev | Evaluation graph. | WP-29b |
-| `app_links` | 7.2.1 (2026-07-09) | Apache-2.0 | cow-level.ovh | Custom URL scheme and file URLs ("Open in Bogner Chess"). Apache-2.0 is compatible with GPLv3. Needs Flutter >= 3.44. | WP-23 |
 | `sentry_flutter` | 9.30.0 (2026-09-10) | MIT | sentry.io | Crash reporting, consent-gated, PII off. The bundled sentry-cocoa is MIT too. | WP-34 |
 | `connectivity_plus` | 7.3.1 (2026-07-23) | BSD-3-Clause | fluttercommunity.dev | Trigger for the submit queue when the network returns. | WP-27 |
 | `flutter_markdown_plus` | 1.0.12 (2026-07-10) | BSD-3-Clause | foresightmobile.com | Render legal documents and coach text. | WP-30 |
@@ -90,6 +89,7 @@ package is involved. `docs/storage.md` has the details.
 | `isar` | 3.1.0+1 (2023-04-25), Apache-2.0 | Unmaintained, Dart 2 constraint. |
 | `hive` | 2.2.3 (2022-06-30) | Unmaintained; pub.dev cannot even detect its licence. Only tolerated as an unused transitive dependency of `graphql`. |
 | `sqlite3_flutter_libs` | 0.6.0+eol (2026-02-15), MIT | Marked end of life by its author. |
+| `app_links` | 7.2.1 (2026-07-09), Apache-2.0, cow-level.ovh, `is:swiftpm-plugin` | Was planned for WP-23 and re-checked there: licence and Swift Package Manager support are fine, but its iOS side (`AppLinksIosPlugin.swift`, 268 lines, read in full) forwards only `url.absoluteString` to Dart. For a `.pgn` opened in place (`LSSupportsOpeningDocumentsInPlace`) the URL is security-scoped, and the scope belongs to the `URL` object iOS hands over: the read has to happen natively, between `startAccessingSecurityScopedResource()` and `stopAccessingSecurityScopedResource()`. So a Swift handler is needed in any case, and once it exists it receives the custom-scheme URLs from the same two scene callbacks for free. `ios/Runner/IncomingLinkHandler.swift` (under 200 lines, one event channel) does both; the package would only have added a second path with its own cold-start bookkeeping. Universal links, its other feature, are not used (no associated domains). |
 | `receive_sharing_intent` | 1.9.0 (2026-06-24), Apache-2.0 | Still needs a share extension and an App Group, so it saves nothing over the roughly 100 lines of Swift adapted from Lichess. |
 | `push` | 3.3.3 (2025-01-14), MIT | Stale. A small Swift platform channel does the job. |
 | `flutter_apns_only` | 1.6.0 (2022-08-08) | Discontinued on pub.dev. |
