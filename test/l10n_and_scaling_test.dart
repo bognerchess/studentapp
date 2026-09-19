@@ -16,6 +16,7 @@ final List<String> allLocations = [
   AppRoutes.newGame,
   AppRoutes.newGameEntry,
   AppRoutes.newGameImport,
+  AppRoutes.newGameMetadata,
   AppRoutes.settings,
   AppRoutes.settingsAbout,
   AppRoutes.settingsAccount,

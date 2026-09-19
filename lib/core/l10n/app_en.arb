@@ -145,5 +145,171 @@
   "signInTitle": "Sign in",
   "@signInTitle": {
     "description": "Title of the sign-in screen."
+  },
+  "metadataTitle": "Game details",
+  "@metadataTitle": {
+    "description": "Title of the game metadata screen."
+  },
+  "metadataSave": "Save",
+  "@metadataSave": {
+    "description": "Primary button of the game metadata screen."
+  },
+  "metadataSaveNeedsColor": "Choose the colour you played.",
+  "@metadataSaveNeedsColor": {
+    "description": "Shown above the disabled Save button while the colour played is not chosen."
+  },
+  "metadataSaveNeedsFix": "Check the marked fields.",
+  "@metadataSaveNeedsFix": {
+    "description": "Shown above the disabled Save button while a field is invalid."
+  },
+  "metadataColorLabel": "I played",
+  "@metadataColorLabel": {
+    "description": "Heading above the White/Black choice: which colour the user played. Read together with the choice: 'I played White'."
+  },
+  "metadataColorWhite": "White",
+  "@metadataColorWhite": {
+    "description": "The white side: a choice in the colour control and a label for White's name."
+  },
+  "metadataColorBlack": "Black",
+  "@metadataColorBlack": {
+    "description": "The black side: a choice in the colour control and a label for Black's name."
+  },
+  "metadataResultLabel": "Result",
+  "@metadataResultLabel": {
+    "description": "Heading above the result chips."
+  },
+  "metadataResultUnknown": "Unknown",
+  "@metadataResultUnknown": {
+    "description": "Result chip for a game whose result is not known or that was not finished."
+  },
+  "metadataResultWhiteWinsA11y": "White won, 1-0",
+  "@metadataResultWhiteWinsA11y": {
+    "description": "Screen-reader label of the 1-0 result chip."
+  },
+  "metadataResultBlackWinsA11y": "Black won, 0-1",
+  "@metadataResultBlackWinsA11y": {
+    "description": "Screen-reader label of the 0-1 result chip."
+  },
+  "metadataResultDrawA11y": "Draw, one half each",
+  "@metadataResultDrawA11y": {
+    "description": "Screen-reader label of the draw result chip."
+  },
+  "metadataOutcomeWin": "You won.",
+  "@metadataOutcomeWin": {
+    "description": "Shown under the result chips when the chosen result is a win for the user's colour."
+  },
+  "metadataOutcomeLoss": "You lost.",
+  "@metadataOutcomeLoss": {
+    "description": "Shown under the result chips when the chosen result is a loss for the user's colour."
+  },
+  "metadataOutcomeDraw": "A draw.",
+  "@metadataOutcomeDraw": {
+    "description": "Shown under the result chips when the chosen result is a draw."
+  },
+  "metadataPlayersLabel": "Players",
+  "@metadataPlayersLabel": {
+    "description": "Heading above the name and rating fields."
+  },
+  "metadataOpponentName": "Opponent",
+  "@metadataOpponentName": {
+    "description": "Label of the opponent's name field."
+  },
+  "metadataPlayerName": "Your name",
+  "@metadataPlayerName": {
+    "description": "Label of the user's own name field."
+  },
+  "metadataRatingLabel": "Rating",
+  "@metadataRatingLabel": {
+    "description": "Short label of a rating field next to a name. German players say Elo for any rating number."
+  },
+  "metadataPlayerRatingA11y": "Your rating",
+  "@metadataPlayerRatingA11y": {
+    "description": "Screen-reader label of the user's own rating field."
+  },
+  "metadataOpponentRatingA11y": "Opponent's rating",
+  "@metadataOpponentRatingA11y": {
+    "description": "Screen-reader label of the opponent's rating field."
+  },
+  "metadataWhiteRatingA11y": "White's rating",
+  "@metadataWhiteRatingA11y": {
+    "description": "Screen-reader label of White's rating field, used while the colour played is not known."
+  },
+  "metadataBlackRatingA11y": "Black's rating",
+  "@metadataBlackRatingA11y": {
+    "description": "Screen-reader label of Black's rating field, used while the colour played is not known."
+  },
+  "metadataRatingHint": "With your rating the coach explains at your level. An online rating or a rough guess is fine.",
+  "@metadataRatingHint": {
+    "description": "Gentle encouragement shown while the user's own rating is empty."
+  },
+  "metadataDateLabel": "Date",
+  "@metadataDateLabel": {
+    "description": "Label of the date field: the day the game was played."
+  },
+  "metadataDateUnknown": "Unknown",
+  "@metadataDateUnknown": {
+    "description": "Text of the date field when no date is set."
+  },
+  "metadataDateClear": "Clear date",
+  "@metadataDateClear": {
+    "description": "Tooltip of the button that removes the date."
+  },
+  "metadataDateFuture": "This date is in the future.",
+  "@metadataDateFuture": {
+    "description": "Error under the date field."
+  },
+  "metadataEventLabel": "Event",
+  "@metadataEventLabel": {
+    "description": "Label of the event field: the tournament, league or occasion."
+  },
+  "metadataEventHint": "e.g. Club championship",
+  "@metadataEventHint": {
+    "description": "Placeholder inside the empty event field."
+  },
+  "metadataTimeControlLabel": "Time control",
+  "@metadataTimeControlLabel": {
+    "description": "Heading above the time-control chips."
+  },
+  "metadataTimeControlClassical": "Classical",
+  "@metadataTimeControlClassical": {
+    "description": "Time-control chip: long games, an hour or more each."
+  },
+  "metadataTimeControlRapid": "Rapid",
+  "@metadataTimeControlRapid": {
+    "description": "Time-control chip: more than 10 and less than 60 minutes each."
+  },
+  "metadataTimeControlBlitz": "Blitz",
+  "@metadataTimeControlBlitz": {
+    "description": "Time-control chip: 3 to 10 minutes each."
+  },
+  "metadataTimeControlBullet": "Bullet",
+  "@metadataTimeControlBullet": {
+    "description": "Time-control chip: less than 3 minutes each."
+  },
+  "metadataTimeControlOther": "Other",
+  "@metadataTimeControlOther": {
+    "description": "Time-control chip: anything else, such as correspondence or no clock."
+  },
+  "metadataTimeControlDetail": "Minutes + increment",
+  "@metadataTimeControlDetail": {
+    "description": "Label of the optional free-text field for the exact time control."
+  },
+  "metadataTimeControlDetailHint": "e.g. 90+30",
+  "@metadataTimeControlDetailHint": {
+    "description": "Placeholder inside the empty time-control detail field: 90 minutes plus 30 seconds per move."
+  },
+  "metadataRatingError": "{min}–{max}",
+  "@metadataRatingError": {
+    "description": "Error under a rating field: the accepted range, kept short because the field is narrow.",
+    "placeholders": {
+      "min": {
+        "type": "int",
+        "example": "100"
+      },
+      "max": {
+        "type": "int",
+        "example": "3500"
+      }
+    }
   }
 }
