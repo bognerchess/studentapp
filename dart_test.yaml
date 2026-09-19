@@ -1,0 +1,6 @@
+# Tags used by the test suite. An undeclared tag is a warning on every run.
+tags:
+  # Pixel comparisons. They pass on macOS only, because text and anti-aliasing
+  # rasterise differently elsewhere: run with `flutter test --tags golden` on
+  # a Mac and with `--exclude-tags golden` on Linux.
+  golden:
