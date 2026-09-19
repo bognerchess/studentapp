@@ -305,6 +305,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sign in'**
   String get signInTitle;
+
+  /// One-paragraph description of the app at the top of the about screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Bogner Chess helps you learn from your own games. Enter a game on the board or import a PGN, have it analysed on bognerchess.com, and review it with the comments of the AI coach.'**
+  String get aboutDescription;
+
+  /// Statement on the about screen. Must stay; do not soften it.
+  ///
+  /// In en, this message translates to:
+  /// **'Bogner Chess is not affiliated with or endorsed by Lichess. It uses free software that the Lichess project publishes.'**
+  String get aboutNotAffiliated;
+
+  /// The legal notice the GPL asks an interactive program to show: copyright, no warranty, licence.
+  ///
+  /// In en, this message translates to:
+  /// **'Copyright © 2026 Bogner Chess. This app is free software: you may redistribute and modify it under the GNU General Public License, version 3 or any later version. It comes with no warranty.'**
+  String get aboutFreeSoftwareNotice;
+
+  /// About screen row that opens the public source repository at the tag of the running build. The address is shown below it.
+  ///
+  /// In en, this message translates to:
+  /// **'Source code for this build'**
+  String get aboutSourceForBuild;
+
+  /// About screen row that opens the full GPL text. The licence name stays in English.
+  ///
+  /// In en, this message translates to:
+  /// **'GNU General Public License v3'**
+  String get aboutGplLicence;
+
+  /// Explanation under the GPL row.
+  ///
+  /// In en, this message translates to:
+  /// **'Full licence text, in English'**
+  String get aboutGplLicenceHint;
+
+  /// About screen row and screen title: the additional permission under GPL section 7 for distribution through app stores.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional permission for app stores'**
+  String get aboutAppStorePermission;
+
+  /// Explanation under the additional-permission row while the text has no legal sign-off.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft, not in force yet'**
+  String get aboutAppStorePermissionDraft;
+
+  /// Warning above the additional-permission text while it is a draft.
+  ///
+  /// In en, this message translates to:
+  /// **'This text is a draft. It grants nothing until the copyright holder publishes the final wording. Until then only the GNU General Public License applies.'**
+  String get aboutAppStorePermissionDraftBanner;
+
+  /// About screen row and screen title: the NOTICE file with artwork and source code from other projects.
+  ///
+  /// In en, this message translates to:
+  /// **'Third-party notices'**
+  String get aboutThirdPartyNotices;
+
+  /// Explanation under the third-party notices row.
+  ///
+  /// In en, this message translates to:
+  /// **'Chess pieces and source code from other projects'**
+  String get aboutThirdPartyNoticesHint;
+
+  /// About screen row that opens the list of packages with their licence texts.
+  ///
+  /// In en, this message translates to:
+  /// **'Open-source licences'**
+  String get aboutOpenSourceLicences;
+
+  /// Explanation under the open-source licences row.
+  ///
+  /// In en, this message translates to:
+  /// **'The packages this app is built with'**
+  String get aboutOpenSourceLicencesHint;
+
+  /// Message when the browser could not be opened for a link on the about screen.
+  ///
+  /// In en, this message translates to:
+  /// **'The link could not be opened.'**
+  String get aboutLinkFailed;
+
+  /// Body of the error view when a bundled licence text cannot be read.
+  ///
+  /// In en, this message translates to:
+  /// **'This text could not be loaded. It is also part of the source code of this app.'**
+  String get aboutDocumentLoadFailed;
 }
 
 class _AppLocalizationsDelegate

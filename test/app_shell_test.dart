@@ -4,9 +4,9 @@
 
 import 'package:bogner_chess/config/env.dart';
 import 'package:bogner_chess/core/ui/theme.dart';
+import 'package:bogner_chess/features/about/ui/about_screen.dart';
 import 'package:bogner_chess/features/entry/ui/entry_screen.dart';
 import 'package:bogner_chess/features/import/ui/import_screen.dart';
-import 'package:bogner_chess/features/legal/ui/about_screen.dart';
 import 'package:bogner_chess/features/library/ui/library_screen.dart';
 import 'package:bogner_chess/features/new_game/ui/new_game_screen.dart';
 import 'package:bogner_chess/features/settings/ui/settings_screen.dart';

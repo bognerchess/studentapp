@@ -30,6 +30,7 @@ dependencies:
   material_ui: ^1.3.0
   package_info_plus: ^10.2.1
   shared_preferences: ^2.5.5
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
@@ -40,3 +41,10 @@ flutter:
   uses-material-design: true
   # Runs gen-l10n (see l10n.yaml) as part of pub get and the build.
   generate: true
+  # The legal texts the about screen shows (lib/features/about). These are the
+  # files in the repository root themselves, not copies, so the text in the
+  # app cannot drift from the text the repository is licensed under.
+  assets:
+    - LICENSE
+    - LICENSE-APP-STORE-PERMISSION.md
+    - NOTICE

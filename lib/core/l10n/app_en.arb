@@ -145,5 +145,65 @@
   "signInTitle": "Sign in",
   "@signInTitle": {
     "description": "Title of the sign-in screen."
+  },
+  "aboutDescription": "Bogner Chess helps you learn from your own games. Enter a game on the board or import a PGN, have it analysed on bognerchess.com, and review it with the comments of the AI coach.",
+  "@aboutDescription": {
+    "description": "One-paragraph description of the app at the top of the about screen."
+  },
+  "aboutNotAffiliated": "Bogner Chess is not affiliated with or endorsed by Lichess. It uses free software that the Lichess project publishes.",
+  "@aboutNotAffiliated": {
+    "description": "Statement on the about screen. Must stay; do not soften it."
+  },
+  "aboutFreeSoftwareNotice": "Copyright © 2026 Bogner Chess. This app is free software: you may redistribute and modify it under the GNU General Public License, version 3 or any later version. It comes with no warranty.",
+  "@aboutFreeSoftwareNotice": {
+    "description": "The legal notice the GPL asks an interactive program to show: copyright, no warranty, licence."
+  },
+  "aboutSourceForBuild": "Source code for this build",
+  "@aboutSourceForBuild": {
+    "description": "About screen row that opens the public source repository at the tag of the running build. The address is shown below it."
+  },
+  "aboutGplLicence": "GNU General Public License v3",
+  "@aboutGplLicence": {
+    "description": "About screen row that opens the full GPL text. The licence name stays in English."
+  },
+  "aboutGplLicenceHint": "Full licence text, in English",
+  "@aboutGplLicenceHint": {
+    "description": "Explanation under the GPL row."
+  },
+  "aboutAppStorePermission": "Additional permission for app stores",
+  "@aboutAppStorePermission": {
+    "description": "About screen row and screen title: the additional permission under GPL section 7 for distribution through app stores."
+  },
+  "aboutAppStorePermissionDraft": "Draft, not in force yet",
+  "@aboutAppStorePermissionDraft": {
+    "description": "Explanation under the additional-permission row while the text has no legal sign-off."
+  },
+  "aboutAppStorePermissionDraftBanner": "This text is a draft. It grants nothing until the copyright holder publishes the final wording. Until then only the GNU General Public License applies.",
+  "@aboutAppStorePermissionDraftBanner": {
+    "description": "Warning above the additional-permission text while it is a draft."
+  },
+  "aboutThirdPartyNotices": "Third-party notices",
+  "@aboutThirdPartyNotices": {
+    "description": "About screen row and screen title: the NOTICE file with artwork and source code from other projects."
+  },
+  "aboutThirdPartyNoticesHint": "Chess pieces and source code from other projects",
+  "@aboutThirdPartyNoticesHint": {
+    "description": "Explanation under the third-party notices row."
+  },
+  "aboutOpenSourceLicences": "Open-source licences",
+  "@aboutOpenSourceLicences": {
+    "description": "About screen row that opens the list of packages with their licence texts."
+  },
+  "aboutOpenSourceLicencesHint": "The packages this app is built with",
+  "@aboutOpenSourceLicencesHint": {
+    "description": "Explanation under the open-source licences row."
+  },
+  "aboutLinkFailed": "The link could not be opened.",
+  "@aboutLinkFailed": {
+    "description": "Message when the browser could not be opened for a link on the about screen."
+  },
+  "aboutDocumentLoadFailed": "This text could not be loaded. It is also part of the source code of this app.",
+  "@aboutDocumentLoadFailed": {
+    "description": "Body of the error view when a bundled licence text cannot be read."
   }
 }

@@ -30,6 +30,7 @@ and `go_router`, `app_links`, `wakelock_plus` (Flutter >= 3.44).
 | `intl` | `^0.20.3` | 0.20.3 (2026-06-25) | BSD-3-Clause | dart.dev | Placeholders, dates and plurals in the generated localisations. The version is dictated by `flutter_localizations`. Added by WP-03. |
 | `shared_preferences` | `^2.5.5` | 2.5.5 (2026-03-25) | BSD-3-Clause | flutter.dev | Small settings (`preferencesProvider`, the `SharedPreferencesAsync` API); WP-25 adds the first-launch marker for the Keychain wipe. Added by WP-03. |
 | `package_info_plus` | `^10.2.1` | 10.2.1 (2026-07-15) | BSD-3-Clause | fluttercommunity.dev | Version and build number (`appInfoProvider`): settings footer now, "source for this build" link and `registerDevice` later. Needs Flutter >= 3.38.1. Added by WP-03. |
+| `url_launcher` | `^6.3.2` | 6.3.2 (2025-07-10) | BSD-3-Clause | flutter.dev | Opens the "source code for this build" link in the browser (About screen); WP-30 will use it for the legal documents. Only `lib/features/about/domain/link_launcher.dart` imports it (`linkLauncherProvider`), so tests never reach the platform. Re-verified on 2026-09-19: the iOS implementation `url_launcher_ios` 6.4.2 (2026-08-28, BSD-3-Clause, flutter.dev, needs Flutter >= 3.38) is tagged `is:swiftpm-plugin` on pub.dev, so it comes in through Swift Package Manager like the other plugins; this project has no CocoaPods. Pulls the federated platform packages (`url_launcher_android`, `_linux`, `_macos`, `_web`, `_windows`, `_platform_interface`, all BSD-3-Clause, flutter.dev); only the iOS one is built. Added by WP-31. |
 
 `cupertino_icons`, which `flutter create` adds, was removed: nothing uses it.
 
@@ -49,7 +50,6 @@ and `go_router`, `app_links`, `wakelock_plus` (Flutter >= 3.44).
 | `file_picker` | 13.1.0 (2026-09-15) | MIT | victorcarreras.dev | Pick a `.pgn` from Files. v13 made `length()` async. | WP-22 |
 | `sentry_flutter` | 9.30.0 (2026-09-10) | MIT | sentry.io | Crash reporting, consent-gated, PII off. The bundled sentry-cocoa is MIT too. | WP-34 |
 | `connectivity_plus` | 7.3.1 (2026-07-23) | BSD-3-Clause | fluttercommunity.dev | Trigger for the submit queue when the network returns. | WP-27 |
-| `url_launcher` | 6.3.2 (2025-07-10) | BSD-3-Clause | flutter.dev | Open legal documents and the source link. | WP-30 |
 | `path_provider` | 2.1.6 (2026-06-15) | BSD-3-Clause | flutter.dev | Location of the database file. | WP-13 |
 | `wakelock_plus` | 1.8.0 (2026-09-01) | BSD-3-Clause | fluttercommunity.dev | Keep the screen on during move entry. Needs Flutter >= 3.44. | WP-20 |
 | `flutter_markdown_plus` | 1.0.12 (2026-07-10) | BSD-3-Clause | foresightmobile.com | Render legal documents and coach text. | WP-30 |
