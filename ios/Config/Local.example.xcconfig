@@ -1,0 +1,8 @@
+// Copy this file to Local.xcconfig (same directory) and fill in your team.
+// Local.xcconfig is git-ignored and must never be committed.
+//
+// The ten-character team id is shown on https://developer.apple.com/account
+// under "Membership details". It is only needed for builds that are signed:
+// anything for a real device, and archives. Simulator builds do not need it.
+
+DEVELOPMENT_TEAM = ABCDE12345
