@@ -18,7 +18,7 @@ Scope, dependencies and acceptance for every WP are in `../product-hub/docs/mobi
 | WP-21 | Metadata form (IN-2) | S | WP-03 | review | [WP-21](WP-21-metadata-form.md) |
 | WP-22 | PGN paste, file picker, multi-game chooser (IN-3) | M | WP-04 | review | [WP-22](WP-22-pgn-import.md) |
 | WP-23 | "Open in" document types (IN-3) | M | WP-22, WP-01 | review | [WP-23](WP-23-open-in-and-deep-links.md) |
-| WP-24 | Share Extension + App Group (IN-3) | M | WP-23, H5 | todo | – |
+| WP-24 | Share Extension + App Group (IN-3) | M | WP-23 (device signing: H5) | review | [WP-24](WP-24-share-extension.md) |
 | WP-25 | Auth: PKCE, single-flight refresh, fake auth (AC-1) | L | WP-03 (real verify: H2, H10) | review | [WP-25](WP-25-auth.md) |
 | WP-26 | Library list, search, delete (AC-2) | M | WP-12, WP-13 | todo | – |
 | WP-27 | Submit queue, offline to online (AC-3) | M | WP-12, WP-13, WP-20 | todo | – |
