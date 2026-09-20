@@ -233,6 +233,46 @@ While there are no golden tests, `flutter test --tags golden` exits with 79
 `test/` mentions the tag, so that a typo in a selector cannot turn the golden
 job into a silent no-op later.
 
+## `integration_test/`: the app on a simulator
+
+    flutter test integration_test -d "iPhone 17 Pro" --dart-define-from-file=config/fake.json
+
+These tests install the real app on a simulator and drive it with touches.
+They are not part of `tool/check.sh`: they need a Mac, a simulator and
+minutes, and they are the only tests that run the app as it is built rather
+than a widget tree pumped by a test.
+
+`integration_test/helpers/` is the whole harness, and it is meant to stay
+small:
+
+- `app_harness.dart`: `ensureIntegrationBinding()`, `launchApp(tester)` (the
+  real `BognerChessApp` in a `ProviderScope`, with the one-time analytics
+  question switched off), `goTo`, `locationOf`, and `publishReport`.
+- `board_taps.dart`: touching squares of a `BoardView` by name. The
+  coordinates come from the board's rectangle and `squareRect`, not from the
+  semantics tree, so that the test does not pay for switching semantics on.
+  The widget tests in `test/helpers/board_tester.dart` take the other route
+  on purpose, and the two agree.
+- `ply_work.dart`: how much work the app itself did for one step, from the
+  frame timings the engine reports (`FrameTiming.buildDuration` on the UI
+  thread and `rasterDuration` on the raster thread, attributed to a step by
+  frame number). `entry_40_moves_test` holds that number under a budget.
+
+**Reports.** `publishReport(binding, key, summary)` writes a JSON summary
+twice: into `binding.reportData`, which is what `flutter drive` with
+`integrationDriver` hands back, and as one line on stdout beginning with
+`INTEGRATION-REPORT`, which is what `flutter test integration_test` leaves
+behind. The integration workflow splits those lines into
+`build/integration/<key>.json`, uploads them as the `integration-reports`
+artifact and puts them in the job summary. Keep a summary small: `debugPrint`
+throttles, and a report of tens of kilobytes can still be in the queue when
+the process exits.
+
+**A performance number in one of these tests is a regression proxy, not a
+product claim.** A debug build on a simulator is several times slower than a
+release build on a phone. The acceptance bar for entry speed is human gate
+H9: a stopwatch, a paper scoresheet and a real iPhone.
+
 ## CI
 
 `.github/workflows/pr.yml` runs on every pull request and on pushes to `main`.
@@ -250,9 +290,10 @@ has read access to the repository contents and uses no secrets.
 
 `.github/workflows/integration.yml` is for the slow tests that drive the app
 in a simulator (`flutter test integration_test`). It runs nightly, on manual
-dispatch, and on pull requests labelled `integration`. It is a placeholder
-today: while there is no `integration_test/` directory it does nothing and
-says so.
+dispatch, and on pull requests labelled `integration`. It boots the first
+iPhone the runner image offers, runs the tests, and collects the reports
+described above. A checkout without an `integration_test/` directory still
+passes: the probe step skips the rest.
 
 Workflow files are linted with `actionlint` (`brew install actionlint`), which
 also runs `shellcheck` over the inline scripts. The shell scripts in `tool/`
