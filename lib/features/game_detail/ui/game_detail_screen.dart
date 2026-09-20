@@ -326,7 +326,20 @@ class _AnalysisCard extends ConsumerWidget {
     final theme = Theme.of(context);
     final colors = AppColors.of(context);
 
-    void request() => runAnalysisRequest(context, ref, gameId);
+    // Do not gate this on the cached usage numbers, however tempting: only
+    // the server knows the quota, and the server is what counts the pressure
+    // on it. Its mutation writes the `analysis_limit_hit` event (once per
+    // person per day, inside the quota lock) when it refuses, because the
+    // client-side event proved unreliable. An app that stops asking at the
+    // limit makes that metric read zero, which looks exactly like a product
+    // nobody bumps into. `UsageSummary` below warns before the tap; the
+    // refusal comes back typed and `_LimitSheet` explains it (LIM-2).
+    void request() => unawaited(
+      runAnalysisRequest(
+        context,
+        ref.read(gameDetailControllerProvider(gameId).notifier),
+      ),
+    );
 
     final List<Widget> children = switch (status) {
       LibraryStatus.analysing => [

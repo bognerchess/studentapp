@@ -90,6 +90,10 @@ class _AnalysisNoticesState extends ConsumerState<AnalysisNotices> {
     final l10n = context.l10n;
     final router = ref.read(routerProvider);
     final opponent = game?.displayOpponentName;
+    // `persist` defaults to `action != null`, which would make [duration]
+    // a decoration: the notice would sit over the tab bar until somebody
+    // tapped it, and every snack bar raised afterwards would wait behind it
+    // for the rest of the session. It is news, not a decision to take.
     final snackBar = switch (event) {
       AnalysisReadyEvent() => SnackBar(
         content: Text(
@@ -98,6 +102,7 @@ class _AnalysisNoticesState extends ConsumerState<AnalysisNotices> {
               : l10n.analysisNoticeReadyOpponent(opponent),
         ),
         duration: const Duration(seconds: 8),
+        persist: false,
         action: SnackBarAction(
           label: l10n.analysisNoticeOpen,
           onPressed: () {
@@ -112,6 +117,7 @@ class _AnalysisNoticesState extends ConsumerState<AnalysisNotices> {
       AnalysisFailedEvent() => SnackBar(
         content: Text(l10n.analysisNoticeFailed),
         duration: const Duration(seconds: 8),
+        persist: false,
         action: SnackBarAction(
           label: l10n.analysisNoticeView,
           onPressed: () => unawaited(router.push(AppRoutes.game(event.gameId))),

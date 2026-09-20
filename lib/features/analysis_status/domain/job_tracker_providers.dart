@@ -5,10 +5,10 @@
 import 'dart:async';
 
 import 'package:bogner_chess/core/api/api_providers.dart';
+import 'package:bogner_chess/core/app_foreground.dart';
 import 'package:bogner_chess/core/storage/storage_providers.dart';
 import 'package:bogner_chess/features/library/domain/games_repository.dart';
 import 'package:bogner_chess/features/library/domain/owner.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'job_tracker.dart';
@@ -33,18 +33,14 @@ final jobTrackerProvider = Provider<JobTracker>((ref) {
 
   // Visible = the life cycle says resumed and the widget tree is mounted
   // (AnalysisNotices reports that through jobTrackerUiMountedProvider).
-  final binding = WidgetsBinding.instance;
-  var resumed =
-      binding.lifecycleState == null ||
-      binding.lifecycleState == AppLifecycleState.resumed;
+  var resumed = AppForeground.isForeground;
   void update() =>
       tracker.setForeground(resumed && ref.read(jobTrackerUiMountedProvider));
   update();
-  final lifecycle = AppLifecycleListener(
-    binding: binding,
-    onStateChange: (state) {
-      resumed = state == AppLifecycleState.resumed;
-      if (resumed && ref.read(mobileConfigProvider).hasError) {
+  final lifecycle = AppForeground(
+    onChanged: (foreground) {
+      resumed = foreground;
+      if (foreground && ref.read(mobileConfigProvider).hasError) {
         ref.invalidate(mobileConfigProvider);
       }
       update();
@@ -67,8 +63,9 @@ final jobTrackerProvider = Provider<JobTracker>((ref) {
 
 /// Whether the app's widget tree is mounted. `AnalysisNotices` sets it; the
 /// tracker does not poll without it (there is nobody to show anything to).
-final jobTrackerUiMountedProvider =
-    NotifierProvider<JobTrackerUiMounted, bool>(JobTrackerUiMounted.new);
+final jobTrackerUiMountedProvider = NotifierProvider<JobTrackerUiMounted, bool>(
+  JobTrackerUiMounted.new,
+);
 
 class JobTrackerUiMounted extends Notifier<bool> {
   @override

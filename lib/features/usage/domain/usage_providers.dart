@@ -4,8 +4,8 @@
 
 import 'package:bogner_chess/core/api/api_providers.dart';
 import 'package:bogner_chess/core/api/usage_api.dart';
+import 'package:bogner_chess/core/app_foreground.dart';
 import 'package:bogner_chess/features/library/domain/owner.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 export 'package:bogner_chess/core/api/usage_api.dart'
@@ -20,7 +20,7 @@ export 'package:bogner_chess/core/api/usage_api.dart'
 final usageProvider = FutureProvider.autoDispose<AnalysisUsage>((ref) {
   // Another account has another quota.
   ref.watch(currentOwnerProvider);
-  final lifecycle = AppLifecycleListener(onResume: ref.invalidateSelf);
+  final lifecycle = AppForeground(onResume: ref.invalidateSelf);
   ref.onDispose(lifecycle.dispose);
   return ref.watch(usageApiProvider).usage();
   // The widget shows nothing on an error; the next resume or request asks

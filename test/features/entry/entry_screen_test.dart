@@ -455,11 +455,23 @@ void main() {
       expect(tester.entryPgn, '1. e4');
       expect(harness.store.saves, isEmpty, reason: 'debounce still running');
 
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
-      await tester.pump();
+      // The whole way down and up again, as iOS reports it. A shortcut
+      // (resumed straight to paused and back) is what the platform never
+      // sends and what AppLifecycleListener asserts on — and there is one of
+      // those inside every EditableText, so the library's search field on the
+      // tab below makes the assertion reachable from here.
+      await _lifecycle(tester, [
+        AppLifecycleState.inactive,
+        AppLifecycleState.hidden,
+        AppLifecycleState.paused,
+      ]);
 
       expect(harness.store.saves.single.pgnMoves, '1. e4');
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await _lifecycle(tester, [
+        AppLifecycleState.hidden,
+        AppLifecycleState.inactive,
+        AppLifecycleState.resumed,
+      ]);
       await tester.pumpAndSettle();
     });
 
@@ -744,6 +756,17 @@ void main() {
       await settleAutosave(tester);
     });
   });
+}
+
+/// Sends [states] to the binding in order and pumps one frame.
+Future<void> _lifecycle(
+  WidgetTester tester,
+  List<AppLifecycleState> states,
+) async {
+  for (final state in states) {
+    tester.binding.handleAppLifecycleStateChanged(state);
+  }
+  await tester.pump();
 }
 
 String _pgnOf(List<String> ucis) {

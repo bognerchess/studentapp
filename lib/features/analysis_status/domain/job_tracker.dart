@@ -42,8 +42,10 @@ final class AnalysisFailedEvent extends JobTrackerEvent {
 ///
 /// Job ids are kept in `pending_jobs`, so tracking survives an app kill: on
 /// start ([setOwner]) the table is read and then reconciled with the
-/// server's list, which also adopts jobs requested elsewhere (the submit
-/// queue, the web client).
+/// server's list, which also adopts jobs requested elsewhere (the web
+/// client). The table is also watched while the tracker runs, which is how
+/// a job the submit queue just created (through `AnalysisJobSink`) is
+/// picked up the moment it exists.
 ///
 /// When a job is done the analysis is fetched once into `cached_analyses`
 /// and the library copy of the game gets its new badge, so the review opens
@@ -74,6 +76,7 @@ class JobTracker {
   /// Job id to game id, for the jobs that are queued or running.
   final Map<String, String> _active = {};
 
+  StreamSubscription<List<PendingJob>>? _rows;
   String? _owner;
   bool _foreground = true;
   bool _disposed = false;
@@ -104,6 +107,8 @@ class JobTracker {
     }
     _owner = owner;
     _stopTimer();
+    unawaited(_rows?.cancel());
+    _rows = null;
     _active.clear();
     _jobs.value = const {};
     if (owner == null) {
@@ -129,10 +134,44 @@ class JobTracker {
           ),
         );
       }
+      _rows = _db.pendingJobsDao
+          .watchActive(owner)
+          .listen((rows) => _adopt(owner, rows));
     } on Object catch (e, s) {
       _warn('reading persisted jobs failed', e, s);
     }
     await refreshNow();
+  }
+
+  /// Rows somebody else wrote (the submit queue's `AnalysisJobSink`, after
+  /// "Save & analyse"): follow them from now on. What the tracker wrote
+  /// itself is already known and ignored here.
+  void _adopt(String owner, List<PendingJob> rows) {
+    if (_disposed || owner != _owner) {
+      return;
+    }
+    var added = false;
+    for (final row in rows) {
+      if (_active.containsKey(row.jobId)) {
+        continue;
+      }
+      _active[row.jobId] = row.gameId;
+      _setJob(
+        JobInfo(
+          id: row.jobId,
+          gameId: row.gameId,
+          status: row.state == JobState.queued
+              ? JobStatus.queued
+              : JobStatus.running,
+          requestedAt: row.createdAt.toUtc(),
+        ),
+      );
+      added = true;
+    }
+    if (added) {
+      // Ask the server about it now, and keep asking.
+      unawaited(refreshNow());
+    }
   }
 
   /// Whether the app is visible: in the foreground, with its widget tree
@@ -188,8 +227,12 @@ class JobTracker {
   }
 
   void dispose() {
+    if (_disposed) {
+      return;
+    }
     _disposed = true;
     _stopTimer();
+    unawaited(_rows?.cancel());
     _jobs.dispose();
     unawaited(_events.close());
   }

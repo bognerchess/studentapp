@@ -238,29 +238,46 @@ class _SyncBanner extends StatelessWidget {
       liveRegion: true,
       child: Container(
         color: scheme.surfaceContainerHigh,
-        padding: const EdgeInsets.only(left: AppSpacing.page, right: 4),
-        child: Row(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.page,
+          AppSpacing.sm,
+          AppSpacing.sm,
+          0,
+        ),
+        // Message and action are stacked, not side by side: in German, at a
+        // large text scale, a row squeezes the message into a column of
+        // single words.
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Icon(
-              offline ? Icons.cloud_off_outlined : Icons.sync_problem,
-              size: 20,
-              color: scheme.onSurfaceVariant,
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                child: Text(
-                  offline
-                      ? l10n.libraryOfflineBanner
-                      : l10n.libraryRefreshFailedBanner,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  offline ? Icons.cloud_off_outlined : Icons.sync_problem,
+                  size: 20,
+                  color: scheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    offline
+                        ? l10n.libraryOfflineBanner
+                        : l10n.libraryRefreshFailedBanner,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
+              ],
+            ),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: TextButton(
+                onPressed: onRetry,
+                child: Text(l10n.commonRetry),
               ),
             ),
-            TextButton(onPressed: onRetry, child: Text(l10n.commonRetry)),
           ],
         ),
       ),
@@ -297,6 +314,11 @@ class _RowList extends ConsumerWidget {
             separatorBuilder: (_, _) => const Divider(height: 1, indent: 80),
             itemBuilder: (context, index) {
               if (index >= rows.length) {
+                // The spinner is on screen: time for the next page, also
+                // when the list is too short to scroll.
+                WidgetsBinding.instance.addPostFrameCallback(
+                  (_) => unawaited(controller.loadMore()),
+                );
                 return Padding(
                   padding: const EdgeInsets.all(AppSpacing.md),
                   child: Center(

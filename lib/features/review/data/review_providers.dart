@@ -6,10 +6,10 @@ import 'dart:async';
 
 import 'package:bogner_chess/core/analytics/analytics.dart';
 import 'package:bogner_chess/core/api/api_providers.dart';
+import 'package:bogner_chess/core/app_foreground.dart';
 import 'package:bogner_chess/core/storage/storage_providers.dart';
 import 'package:bogner_chess/features/library/domain/games_repository.dart';
 import 'package:bogner_chess/features/library/domain/owner.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/review_repository.dart';
@@ -40,7 +40,7 @@ final outboxFeedbackSinkProvider = Provider<OutboxFeedbackSink>((ref) {
   );
   // Ratings given offline go out when the app comes back, and when the
   // account they belong to signs in again.
-  final lifecycle = AppLifecycleListener(onResume: sink.flush);
+  final lifecycle = AppForeground(onResume: sink.flush);
   ref
     ..onDispose(lifecycle.dispose)
     ..listen(currentOwnerProvider, (_, owner) {

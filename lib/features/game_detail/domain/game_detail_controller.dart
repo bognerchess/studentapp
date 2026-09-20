@@ -146,7 +146,17 @@ class GameDetailController extends Notifier<GameDetailState> {
   /// tracker; every other outcome is the screen's to explain. The AI consent
   /// round trip is the screen's as well (it needs the navigator): it calls
   /// this method again after the user agreed.
-  Future<RequestAnalysisOutcome> requestAnalysis() async {
+  ///
+  /// [languageCode] is the language the app is showing (the coach writes in
+  /// it when the server supports it); without one the device language is
+  /// used.
+  ///
+  /// The request is always sent, also when the cached usage says the quota
+  /// is gone: the server counts limit pressure when it refuses
+  /// (`analysis_limit_hit`, once per person per day), and a client that
+  /// refuses on its own would make that metric read zero. Show the numbers
+  /// as a warning, never as a gate.
+  Future<RequestAnalysisOutcome> requestAnalysis({String? languageCode}) async {
     if (state.requesting) {
       return const AnalysisRequestFailed(ApiNetworkError());
     }
@@ -162,7 +172,7 @@ class GameDetailController extends Notifier<GameDetailState> {
       }
       final language = coachLanguageOf(
         ref.read(mobileConfigProvider).value,
-        PlatformDispatcher.instance.locale.languageCode,
+        languageCode ?? PlatformDispatcher.instance.locale.languageCode,
       );
       final outcome = await ref
           .read(analysisApiProvider)
@@ -202,7 +212,9 @@ class GameDetailController extends Notifier<GameDetailState> {
 
   /// After "I've confirmed my address": fetches fresh tokens, so that the
   /// `email_verified` claim the server reads is current, and asks again.
-  Future<RequestAnalysisOutcome> recheckEmailAndRequest() async {
+  Future<RequestAnalysisOutcome> recheckEmailAndRequest({
+    String? languageCode,
+  }) async {
     try {
       await ref.read(authRepositoryProvider).forceRefresh();
     } on AuthException catch (e) {
@@ -215,7 +227,7 @@ class GameDetailController extends Notifier<GameDetailState> {
     if (!ref.mounted) {
       return const AnalysisRequestFailed(ApiNetworkError());
     }
-    return requestAnalysis();
+    return requestAnalysis(languageCode: languageCode);
   }
 
   /// Deletes the game on the server and in the cache.

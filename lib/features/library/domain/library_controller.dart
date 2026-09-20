@@ -5,7 +5,9 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:bogner_chess/core/app_foreground.dart';
 import 'package:bogner_chess/core/game/game_metadata.dart';
+import 'package:bogner_chess/core/game/library_refresh.dart';
 import 'package:bogner_chess/core/storage/app_database.dart' show DraftState;
 import 'package:bogner_chess/core/storage/storage_providers.dart';
 import 'package:bogner_chess/features/analysis_status/domain/job_tracker_providers.dart';
@@ -84,10 +86,13 @@ class LibraryController extends Notifier<LibrarySyncState> {
   @override
   LibrarySyncState build() {
     ref.watch(currentOwnerProvider);
-    final lifecycle = AppLifecycleListener(onResume: refresh);
+    final lifecycle = AppForeground(onResume: refresh);
     ref
       ..onDispose(lifecycle.dispose)
-      ..onDispose(() => _debounce?.cancel());
+      ..onDispose(() => _debounce?.cancel())
+      // Somebody changed the games on the server: the submit queue after an
+      // upload (WP-27), or a screen that deleted one.
+      ..listen(libraryRefreshProvider, (_, _) => refresh());
     unawaited(Future.microtask(refresh));
     return const LibrarySyncState();
   }

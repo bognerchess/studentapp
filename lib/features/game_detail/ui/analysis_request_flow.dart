@@ -6,7 +6,6 @@ import 'package:bogner_chess/core/api/analysis_api.dart';
 import 'package:bogner_chess/core/l10n/l10n.dart';
 import 'package:bogner_chess/core/ui/theme.dart';
 import 'package:bogner_chess/router.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -14,18 +13,19 @@ import '../domain/game_detail_controller.dart';
 import 'game_detail_ids.dart';
 import 'game_texts.dart';
 
-/// Requests the analysis of [gameId] and explains whatever comes back.
+/// Requests the analysis of the [controller]'s game and explains whatever
+/// comes back. [context] must be below a navigator and a scaffold messenger.
 ///
 /// Accepted: nothing to say, the screen turns into the progress card. AI
 /// consent missing: the consent screen opens; when it pops with `true` the
 /// request is sent once more. Everything else is a sheet or a snack bar.
 Future<void> runAnalysisRequest(
   BuildContext context,
-  WidgetRef ref,
-  String gameId,
+  GameDetailController controller,
 ) async {
-  final controller = ref.read(gameDetailControllerProvider(gameId).notifier);
-  var outcome = await controller.requestAnalysis();
+  // The coach writes in the language the app is showing.
+  final language = Localizations.localeOf(context).languageCode;
+  var outcome = await controller.requestAnalysis(languageCode: language);
   if (outcome is AnalysisAiConsentRequired) {
     if (!context.mounted) {
       return;
@@ -38,7 +38,7 @@ Future<void> runAnalysisRequest(
       _snack(context, context.l10n.gameDetailConsentNeeded);
       return;
     }
-    outcome = await controller.requestAnalysis();
+    outcome = await controller.requestAnalysis(languageCode: language);
   }
   if (context.mounted) {
     await _explain(context, controller, outcome);
@@ -239,12 +239,16 @@ class _EmailSheetState extends State<_EmailSheet> {
   bool _busy = false;
   bool _stillUnverified = false;
 
+  String get _language => Localizations.localeOf(context).languageCode;
+
   Future<void> _recheck() async {
     setState(() {
       _busy = true;
       _stillUnverified = false;
     });
-    final outcome = await widget.controller.recheckEmailAndRequest();
+    final outcome = await widget.controller.recheckEmailAndRequest(
+      languageCode: _language,
+    );
     if (!mounted) {
       return;
     }

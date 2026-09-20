@@ -118,10 +118,12 @@ class ApiReviewRepository implements ReviewRepository {
   }
 
   static bool _finishedAfter(JobInfo? job, DateTime fetchedAt) {
+    // The database keeps whole seconds, and the tracker fetches a document
+    // right when its job ends: allow for the rounding.
     final finishedAt = job?.finishedAt;
     return job?.status == JobStatus.done &&
         finishedAt != null &&
-        finishedAt.isAfter(fetchedAt);
+        finishedAt.difference(fetchedAt) > const Duration(seconds: 2);
   }
 
   static List<String> _commentIds(AnalysisParseResult result) =>

@@ -6,16 +6,14 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:bogner_chess/app.dart';
 import 'package:bogner_chess/config/env.dart';
 import 'package:bogner_chess/core/analysis/analysis_parser.dart';
-import 'package:bogner_chess/core/app_info.dart';
+import 'package:bogner_chess/core/auth/auth_state.dart';
 import 'package:bogner_chess/features/review/data/review_providers.dart';
 import 'package:bogner_chess/features/review/domain/review_controller.dart';
 import 'package:bogner_chess/features/review/domain/review_repository.dart';
 import 'package:bogner_chess/features/review/ui/review_screen.dart';
 import 'package:bogner_chess/router.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -114,6 +112,12 @@ class ReviewHarness {
 }
 
 /// Pumps the whole app and opens the review screen through the router.
+///
+/// [auth] is for the rare test that needs a signed-in state the environment
+/// does not imply: `AUTH_MODE=fake` is refused for `prod` (see
+/// `authRepositoryProvider`), so a test that wants the production chrome —
+/// the golden, which has no environment ribbon — says who is signed in
+/// instead of asking for a fake repository the app would not build.
 Future<ReviewHarness> pumpReview(
   WidgetTester tester, {
   String fixture = kFortyMoveGame,
@@ -127,6 +131,7 @@ Future<ReviewHarness> pumpReview(
   Map<String, CommentRating?> myFeedback = const {},
   Object? loadError,
   Env? env,
+  AuthState? auth,
   Locale locale = const Locale('en'),
   Brightness brightness = Brightness.light,
   double textScale = 1.0,
@@ -143,29 +148,19 @@ Future<ReviewHarness> pumpReview(
     RecordingFeedbackSink(),
   );
 
-  tester.view.devicePixelRatio = 3;
-  tester.view.physicalSize = screen * 3;
-  tester.platformDispatcher.localesTestValue = [locale];
-  tester.platformDispatcher.platformBrightnessTestValue = brightness;
-  tester.platformDispatcher.textScaleFactorTestValue = textScale;
-  addTearDown(tester.view.reset);
-  addTearDown(tester.platformDispatcher.clearAllTestValues);
-
-  await tester.pumpWidget(
-    ProviderScope(
-      overrides: [
-        envProvider.overrideWithValue(env ?? testEnv()),
-        appInfoProvider.overrideWith(
-          (ref) async => const AppInfo(version: '1.2.3', buildNumber: '45'),
-        ),
-        ...backendOverrides(),
-        reviewRepositoryProvider.overrideWithValue(harness.repository),
-        feedbackSinkProvider.overrideWithValue(harness.sink),
-      ],
-      child: const BognerChessApp(),
-    ),
+  await pumpApp(
+    tester,
+    env: env,
+    auth: auth,
+    locale: locale,
+    brightness: brightness,
+    textScale: textScale,
+    screen: screen,
+    overrides: [
+      reviewRepositoryProvider.overrideWithValue(harness.repository),
+      feedbackSinkProvider.overrideWithValue(harness.sink),
+    ],
   );
-  await tester.pumpAndSettle();
 
   routerOf(tester).go(AppRoutes.gameReview(kReviewGameId));
   await tester.pumpAndSettle();

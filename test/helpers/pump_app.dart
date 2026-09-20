@@ -105,6 +105,7 @@ Future<void> pumpApp(
   double textScale = 1.0,
   Size screen = kIphone17Pro,
   List<Override> overrides = const [],
+  bool settle = true,
 }) async {
   tester.view.devicePixelRatio = 3;
   tester.view.physicalSize = screen * 3;
@@ -129,7 +130,11 @@ Future<void> pumpApp(
       child: const BognerChessApp(),
     ),
   );
-  await tester.pumpAndSettle();
+  // Without [settle] the test sees the first frame, e.g. what is on screen
+  // while the server has not answered yet.
+  if (settle) {
+    await tester.pumpAndSettle();
+  }
 }
 
 ProviderContainer containerOf(WidgetTester tester) =>
