@@ -2141,6 +2141,282 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open Settings'**
   String get pushSettingsOpenSettings;
+
+  /// Primary button at the end of the new-game flow: stores the game and requests the coach analysis.
+  ///
+  /// In en, this message translates to:
+  /// **'Save & analyse'**
+  String get newGameSaveAndAnalyse;
+
+  /// Secondary button at the end of the new-game flow: stores the game without requesting an analysis.
+  ///
+  /// In en, this message translates to:
+  /// **'Save only'**
+  String get newGameSaveOnly;
+
+  /// Confirmation after saving a game without analysis while online.
+  ///
+  /// In en, this message translates to:
+  /// **'Game saved. It is being uploaded.'**
+  String get newGameSavedUploading;
+
+  /// Confirmation after 'Save & analyse' while online.
+  ///
+  /// In en, this message translates to:
+  /// **'Game saved. It is being uploaded and analysed.'**
+  String get newGameSavedAnalysing;
+
+  /// Confirmation after saving a game while the device is offline.
+  ///
+  /// In en, this message translates to:
+  /// **'Game saved. It will be uploaded as soon as you are online.'**
+  String get newGameSavedOffline;
+
+  /// Confirmation after 'Save & analyse' when the user did not give the AI consent.
+  ///
+  /// In en, this message translates to:
+  /// **'Game saved without analysis. You can start the analysis from the game later.'**
+  String get newGameSavedWithoutConsent;
+
+  /// Message when the user tries to save a draft that was already handed to the upload queue.
+  ///
+  /// In en, this message translates to:
+  /// **'This game has already been saved.'**
+  String get newGameAlreadySaved;
+
+  /// Message when storing the game on the device failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The game could not be saved. Please try again.'**
+  String get newGameSaveFailed;
+
+  /// Queue banner while games are being uploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Uploading 1 game…} other{Uploading {count} games…}}'**
+  String submitQueueUploading(int count);
+
+  /// Queue banner: games that are saved on the device and not uploaded yet.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 game waiting to upload} other{{count} games waiting to upload}}'**
+  String submitQueueWaiting(int count);
+
+  /// Queue banner while the device has no network.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 game waiting to upload · offline} other{{count} games waiting to upload · offline}}'**
+  String submitQueueWaitingOffline(int count);
+
+  /// Queue banner after a failed upload attempt, while the queue waits before it tries again.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 game waiting to upload · will retry automatically} other{{count} games waiting to upload · will retry automatically}}'**
+  String submitQueueWaitingRetry(int count);
+
+  /// Queue banner for games the queue has given up on.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 game could not be uploaded} other{{count} games could not be uploaded}}'**
+  String submitQueueFailed(int count);
+
+  /// Button that makes the upload queue try again now.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get submitQueueRetry;
+
+  /// Snack bar action that opens the list of waiting and failed uploads.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get submitQueueDetails;
+
+  /// Title of the sheet that lists games waiting for upload.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploads'**
+  String get submitQueueSheetTitle;
+
+  /// Shown in the uploads sheet when nothing is waiting any more.
+  ///
+  /// In en, this message translates to:
+  /// **'All games are uploaded.'**
+  String get submitQueueSheetEmpty;
+
+  /// Title of a waiting game whose players are not known.
+  ///
+  /// In en, this message translates to:
+  /// **'Game without names'**
+  String get submitQueueDraftUntitled;
+
+  /// Title of a waiting game: the two players.
+  ///
+  /// In en, this message translates to:
+  /// **'{white} – {black}'**
+  String submitQueueDraftPlayers(String white, String black);
+
+  /// Stands for a player whose name is not known in the title of a waiting game.
+  ///
+  /// In en, this message translates to:
+  /// **'?'**
+  String get submitQueueDraftUnknownPlayer;
+
+  /// State of a game in the uploads sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to upload'**
+  String get submitQueueStateWaiting;
+
+  /// State of a game in the uploads sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading…'**
+  String get submitQueueStateUploading;
+
+  /// State of a game in the uploads sheet after a failed attempt. {reason} is a full sentence.
+  ///
+  /// In en, this message translates to:
+  /// **'Last attempt failed: {reason} Will retry automatically.'**
+  String submitQueueStateRetrying(String reason);
+
+  /// State of a game the queue has given up on. {reason} is a full sentence.
+  ///
+  /// In en, this message translates to:
+  /// **'Not uploaded: {reason}'**
+  String submitQueueStateFailed(String reason);
+
+  /// Button that deletes a game that was not uploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get submitQueueDelete;
+
+  /// Title of the confirmation before deleting a game that was not uploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this game?'**
+  String get submitQueueDeleteTitle;
+
+  /// Body of the confirmation before deleting a game that was not uploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'It only exists on this device. Deleting it cannot be undone.'**
+  String get submitQueueDeleteMessage;
+
+  /// Dismisses the delete confirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get submitQueueCancel;
+
+  /// Reason a game was not uploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'No connection to the server.'**
+  String get submitQueueErrorNetwork;
+
+  /// Reason a game was not uploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'The server had a problem.'**
+  String get submitQueueErrorServer;
+
+  /// Reason a game was not uploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many requests in a short time.'**
+  String get submitQueueErrorRateLimited;
+
+  /// Reason a game was not uploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Your session has ended. Please sign in again.'**
+  String get submitQueueErrorUnauthenticated;
+
+  /// Reason a game was not uploaded: the server rejected the notation.
+  ///
+  /// In en, this message translates to:
+  /// **'The server could not read the moves.'**
+  String get submitQueueErrorPgnInvalid;
+
+  /// Reason a game was not uploaded, with the move the server stumbled over.
+  ///
+  /// In en, this message translates to:
+  /// **'The server could not read the moves (move {moveNumber}: {san}).'**
+  String submitQueueErrorPgnInvalidAt(int moveNumber, String san);
+
+  /// Reason a game was not uploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'The server did not accept this game.'**
+  String get submitQueueErrorRejected;
+
+  /// Reason a game was not uploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong in the app.'**
+  String get submitQueueErrorInternal;
+
+  /// Snack bar when a saved game reached the server (no analysis was requested).
+  ///
+  /// In en, this message translates to:
+  /// **'Game uploaded.'**
+  String get submitQueueUploaded;
+
+  /// Snack bar when a saved game reached the server and its analysis was queued.
+  ///
+  /// In en, this message translates to:
+  /// **'Game uploaded. The analysis has started.'**
+  String get submitQueueUploadedAnalysing;
+
+  /// Snack bar when the game was uploaded but the analysis could not be requested. {reason} is a full sentence.
+  ///
+  /// In en, this message translates to:
+  /// **'Game saved. Analysis not started: {reason}'**
+  String submitQueueUploadedHeld(String reason);
+
+  /// Snack bar action that opens the uploaded game.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get submitQueueOpenGame;
+
+  /// Reason an analysis was not started.
+  ///
+  /// In en, this message translates to:
+  /// **'Your analysis limit is used up.'**
+  String get submitQueueHoldLimitReached;
+
+  /// Reason an analysis was not started.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many of your analyses are still waiting.'**
+  String get submitQueueHoldQueueFull;
+
+  /// Reason an analysis was not started.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many requests in a short time.'**
+  String get submitQueueHoldRateLimited;
+
+  /// Reason an analysis was not started.
+  ///
+  /// In en, this message translates to:
+  /// **'Your e-mail address is not confirmed yet.'**
+  String get submitQueueHoldEmailNotVerified;
+
+  /// Reason an analysis was not started.
+  ///
+  /// In en, this message translates to:
+  /// **'Your consent to the AI analysis is missing.'**
+  String get submitQueueHoldAiConsentRequired;
+
+  /// Reason an analysis was not started.
+  ///
+  /// In en, this message translates to:
+  /// **'The request did not get through.'**
+  String get submitQueueHoldRequestFailed;
 }
 
 class _AppLocalizationsDelegate

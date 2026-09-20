@@ -53,6 +53,9 @@ dependencies:
   # WP-30: legal documents and the AI consent text arrive as Markdown.
   flutter_markdown_plus: ^1.0.12
   sentry_flutter: ^9.30.0
+  # WP-27: "the network is back" as a trigger for the submit queue
+  # (lib/core/connectivity, its only importer). Swift Package Manager.
+  connectivity_plus: ^7.3.1
 
 dev_dependencies:
   flutter_test:

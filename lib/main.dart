@@ -14,6 +14,8 @@ import 'package:bogner_chess/core/links/incoming_link_service.dart';
 import 'package:bogner_chess/core/log.dart';
 import 'package:bogner_chess/core/push/push_service.dart';
 import 'package:bogner_chess/features/about/domain/additional_licenses.dart';
+import 'package:bogner_chess/features/submit_queue/domain/submit_queue_providers.dart';
+import 'package:bogner_chess/features/submit_queue/submit_queue_overrides.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,10 +25,15 @@ const _log = Log('main');
 void main() {
   // One container for the whole process, created before the first frame so
   // that errors during start-up already reach the crash reporter.
-  // The running app records analytics and crashes (both only with consent);
+  // The running app records analytics and crashes (both only with consent)
+  // and keeps entered games as drafts in the database from the first move;
   // tests build their own scope and keep the no-op defaults.
   final container = ProviderContainer(
-    overrides: [...analyticsOverrides, ...crashOverrides],
+    overrides: [
+      ...analyticsOverrides,
+      ...crashOverrides,
+      ...submitQueueOverrides,
+    ],
   );
 
   void report(Object error, StackTrace? stack, String reason, bool fatal) {
@@ -87,6 +94,11 @@ void main() {
 
         // app_open, sign_in, and when the event outbox is sent.
         container.read(analyticsLifecycleProvider).start();
+
+        // Games that were saved but not uploaded yet (AC-3): recover what a
+        // killed app left behind and try now; from here on the queue reacts
+        // to the network, to resume, to sign-in and to "Save".
+        container.read(submitQueueProvider).start();
 
         runApp(
           UncontrolledProviderScope(

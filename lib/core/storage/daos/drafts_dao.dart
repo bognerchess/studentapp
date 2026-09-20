@@ -29,20 +29,26 @@ class DraftsDao extends DatabaseAccessor<AppDatabase> with _$DraftsDaoMixin {
 
   /// Creates a draft in [DraftState.editing] with a fresh id and
   /// `client_game_id`.
+  ///
+  /// [id] is for the entry screen, which names its draft before the first
+  /// save; it has to be a UUID nobody used before. [ready] creates the draft
+  /// as [DraftState.ready] in one step: an imported game has no editing phase.
   Future<Draft> create(
     String ownerSub, {
+    String? id,
     String pgn = '',
     String metaJson = '{}',
     bool wantsAnalysis = true,
+    bool ready = false,
   }) {
     final now = attachedDatabase.now();
     return into(drafts).insertReturning(
       DraftsCompanion.insert(
-        id: _uuid.v4(),
+        id: id ?? _uuid.v4(),
         ownerSub: ownerSub,
         pgn: pgn,
         metaJson: Value(metaJson),
-        state: DraftState.editing,
+        state: ready ? DraftState.ready : DraftState.editing,
         clientGameId: _uuid.v4(),
         wantsAnalysis: Value(wantsAnalysis),
         createdAt: now,
@@ -80,7 +86,17 @@ class DraftsDao extends DatabaseAccessor<AppDatabase> with _$DraftsDaoMixin {
 
   /// Drafts of [ownerSub], most recently changed first. [states] narrows the
   /// list; by default every state is included.
-  Stream<List<Draft>> watchAll(String ownerSub, {Set<DraftState>? states}) {
+  Stream<List<Draft>> watchAll(String ownerSub, {Set<DraftState>? states}) =>
+      _all(ownerSub, states).watch();
+
+  /// [watchAll] as a single read.
+  Future<List<Draft>> getAll(String ownerSub, {Set<DraftState>? states}) =>
+      _all(ownerSub, states).get();
+
+  SimpleSelectStatement<$DraftsTable, Draft> _all(
+    String ownerSub,
+    Set<DraftState>? states,
+  ) {
     final query = select(drafts)
       ..where((t) => t.ownerSub.equals(ownerSub))
       ..orderBy([
@@ -91,7 +107,7 @@ class DraftsDao extends DatabaseAccessor<AppDatabase> with _$DraftsDaoMixin {
     if (states != null) {
       query.where((t) => t.state.isInValues(states));
     }
-    return query.watch();
+    return query;
   }
 
   /// The draft the submit queue should send next: the [DraftState.ready] one
@@ -177,11 +193,13 @@ class DraftsDao extends DatabaseAccessor<AppDatabase> with _$DraftsDaoMixin {
     DraftsCompanion(serverGameId: Value(serverGameId)),
   );
 
-  /// submitting -> submitted.
+  /// submitting -> submitted. [metaJson] replaces the metadata when given:
+  /// the queue notes there why an analysis was not started.
   Future<bool> markSubmitted(
     String ownerSub,
     String id, {
     required String serverGameId,
+    String? metaJson,
   }) => _update(
     ownerSub,
     id,
@@ -189,6 +207,7 @@ class DraftsDao extends DatabaseAccessor<AppDatabase> with _$DraftsDaoMixin {
     DraftsCompanion(
       state: const Value(DraftState.submitted),
       serverGameId: Value(serverGameId),
+      metaJson: Value.absentIfNull(metaJson),
       lastError: const Value(null),
       nextAttemptAt: const Value(null),
     ),

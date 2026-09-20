@@ -9,11 +9,14 @@ import 'package:bogner_chess/core/storage/preferences.dart';
 import 'package:bogner_chess/features/entry/data/screen_wakelock.dart';
 import 'package:bogner_chess/features/entry/domain/entry_controller.dart';
 import 'package:bogner_chess/features/entry/domain/entry_draft_store.dart';
+import 'package:bogner_chess/features/entry/domain/entry_result.dart';
 import 'package:bogner_chess/features/entry/ui/entry_screen.dart';
+import 'package:bogner_chess/features/new_game/ui/new_game_flow.dart';
 import 'package:bogner_chess/router.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -37,9 +40,27 @@ class FakePreferences implements SharedPreferencesAsync {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+/// Where the app's entry route sends Done (WP-27: on to the metadata form
+/// and the submit queue, which have tests of their own). Here the flow ends
+/// at once: the result is recorded and the screen pops with it.
+class PoppingNewGameFlow extends NewGameFlow {
+  PoppingNewGameFlow(super.ref);
+
+  final List<EntryResult> results = [];
+
+  @override
+  Future<void> entryDone(BuildContext context, EntryResult result) async {
+    results.add(result);
+    if (context.canPop()) context.pop(result);
+  }
+}
+
 /// What a test can look at after [pumpEntry].
 class EntryHarness {
   EntryHarness(this.store, this.wakelock, this.preferences, this.haptics);
+
+  /// The flow of the pumped app, for the results Done handed over.
+  late final PoppingNewGameFlow flow;
 
   final RecordingDraftStore store;
   final FakeWakelock wakelock;
@@ -106,6 +127,9 @@ Future<EntryHarness> pumpEntry(
         screenWakelockProvider.overrideWithValue(harness.wakelock),
         preferencesProvider.overrideWithValue(harness.preferences),
         entryClockProvider.overrideWithValue(() => kEntryTestNow),
+        newGameFlowProvider.overrideWith(
+          (ref) => harness.flow = PoppingNewGameFlow(ref),
+        ),
       ],
       child: const BognerChessApp(),
     ),

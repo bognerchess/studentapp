@@ -63,6 +63,12 @@ package.
   renaming or removing one is a migration.
 - **JSON columns** (`meta_json`, `summary_json`, `payload`, `props_json`) are
   opaque text to this layer. The feature that writes them owns the format.
+  `drafts.meta_json` belongs to `DraftMeta`
+  (`lib/features/submit_queue/domain/draft_meta.dart`): the keys of
+  `GameMetadata.toJson` at the top level, plus a `draft` object with what only
+  the device cares about (`source`, `cursorPly`, `orientation`,
+  `analysisHold`). Reading it never throws; unknown or damaged content reads
+  as "not known". That is why the submit queue needed no schema change.
 - **Upserts never cross owners.** `cached_games`, `cached_analyses` and
   `pending_jobs` have the server id as the primary key. An upsert for owner A
   on an id that is stored for owner B is ignored.

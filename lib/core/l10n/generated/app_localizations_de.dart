@@ -1321,4 +1321,207 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get pushSettingsOpenSettings => 'Einstellungen öffnen';
+
+  @override
+  String get newGameSaveAndAnalyse => 'Speichern & analysieren';
+
+  @override
+  String get newGameSaveOnly => 'Nur speichern';
+
+  @override
+  String get newGameSavedUploading =>
+      'Partie gespeichert. Sie wird hochgeladen.';
+
+  @override
+  String get newGameSavedAnalysing =>
+      'Partie gespeichert. Sie wird hochgeladen und analysiert.';
+
+  @override
+  String get newGameSavedOffline =>
+      'Partie gespeichert. Sie wird hochgeladen, sobald du online bist.';
+
+  @override
+  String get newGameSavedWithoutConsent =>
+      'Partie ohne Analyse gespeichert. Du kannst die Analyse später bei der Partie starten.';
+
+  @override
+  String get newGameAlreadySaved => 'Diese Partie wurde bereits gespeichert.';
+
+  @override
+  String get newGameSaveFailed =>
+      'Die Partie konnte nicht gespeichert werden. Bitte versuche es noch einmal.';
+
+  @override
+  String submitQueueUploading(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Partien werden hochgeladen …',
+      one: '1 Partie wird hochgeladen …',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String submitQueueWaiting(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Partien warten auf den Upload',
+      one: '1 Partie wartet auf den Upload',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String submitQueueWaitingOffline(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Partien warten auf den Upload · offline',
+      one: '1 Partie wartet auf den Upload · offline',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String submitQueueWaitingRetry(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count Partien warten auf den Upload · neuer Versuch folgt automatisch',
+      one: '1 Partie wartet auf den Upload · neuer Versuch folgt automatisch',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String submitQueueFailed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Partien konnten nicht hochgeladen werden',
+      one: '1 Partie konnte nicht hochgeladen werden',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get submitQueueRetry => 'Erneut versuchen';
+
+  @override
+  String get submitQueueDetails => 'Details';
+
+  @override
+  String get submitQueueSheetTitle => 'Uploads';
+
+  @override
+  String get submitQueueSheetEmpty => 'Alle Partien sind hochgeladen.';
+
+  @override
+  String get submitQueueDraftUntitled => 'Partie ohne Namen';
+
+  @override
+  String submitQueueDraftPlayers(String white, String black) {
+    return '$white – $black';
+  }
+
+  @override
+  String get submitQueueDraftUnknownPlayer => '?';
+
+  @override
+  String get submitQueueStateWaiting => 'Wartet auf den Upload';
+
+  @override
+  String get submitQueueStateUploading => 'Wird hochgeladen …';
+
+  @override
+  String submitQueueStateRetrying(String reason) {
+    return 'Letzter Versuch fehlgeschlagen: $reason Neuer Versuch folgt automatisch.';
+  }
+
+  @override
+  String submitQueueStateFailed(String reason) {
+    return 'Nicht hochgeladen: $reason';
+  }
+
+  @override
+  String get submitQueueDelete => 'Löschen';
+
+  @override
+  String get submitQueueDeleteTitle => 'Diese Partie löschen?';
+
+  @override
+  String get submitQueueDeleteMessage =>
+      'Sie existiert nur auf diesem Gerät. Das Löschen kann nicht rückgängig gemacht werden.';
+
+  @override
+  String get submitQueueCancel => 'Abbrechen';
+
+  @override
+  String get submitQueueErrorNetwork => 'Keine Verbindung zum Server.';
+
+  @override
+  String get submitQueueErrorServer => 'Der Server hatte ein Problem.';
+
+  @override
+  String get submitQueueErrorRateLimited => 'Zu viele Anfragen in kurzer Zeit.';
+
+  @override
+  String get submitQueueErrorUnauthenticated =>
+      'Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.';
+
+  @override
+  String get submitQueueErrorPgnInvalid =>
+      'Der Server konnte die Züge nicht lesen.';
+
+  @override
+  String submitQueueErrorPgnInvalidAt(int moveNumber, String san) {
+    return 'Der Server konnte die Züge nicht lesen (Zug $moveNumber: $san).';
+  }
+
+  @override
+  String get submitQueueErrorRejected =>
+      'Der Server hat diese Partie nicht angenommen.';
+
+  @override
+  String get submitQueueErrorInternal => 'In der App ist etwas schiefgegangen.';
+
+  @override
+  String get submitQueueUploaded => 'Partie hochgeladen.';
+
+  @override
+  String get submitQueueUploadedAnalysing =>
+      'Partie hochgeladen. Die Analyse läuft.';
+
+  @override
+  String submitQueueUploadedHeld(String reason) {
+    return 'Partie gespeichert. Analyse nicht gestartet: $reason';
+  }
+
+  @override
+  String get submitQueueOpenGame => 'Öffnen';
+
+  @override
+  String get submitQueueHoldLimitReached =>
+      'Dein Analyse-Kontingent ist aufgebraucht.';
+
+  @override
+  String get submitQueueHoldQueueFull =>
+      'Es warten noch zu viele deiner Analysen.';
+
+  @override
+  String get submitQueueHoldRateLimited => 'Zu viele Anfragen in kurzer Zeit.';
+
+  @override
+  String get submitQueueHoldEmailNotVerified =>
+      'Deine E-Mail-Adresse ist noch nicht bestätigt.';
+
+  @override
+  String get submitQueueHoldAiConsentRequired =>
+      'Deine Einwilligung zur KI-Analyse fehlt.';
+
+  @override
+  String get submitQueueHoldRequestFailed => 'Die Anfrage kam nicht durch.';
 }

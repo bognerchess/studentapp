@@ -9,9 +9,13 @@ import 'package:material_ui/material_ui.dart';
 /// The three-tab frame of the app: Games, New game, Settings. Each tab keeps
 /// its own navigation stack; tapping the active tab pops it to its root.
 class TabShell extends StatelessWidget {
-  const TabShell({super.key, required this.navigationShell});
+  const TabShell({super.key, required this.navigationShell, this.banner});
 
   final StatefulNavigationShell navigationShell;
+
+  /// A strip between the tab's content and the navigation bar, on every tab:
+  /// the submit queue's status. It takes no room while it has nothing to say.
+  final Widget? banner;
 
   /// Branch indices, in the order of the destinations below and of the
   /// branches in `router.dart`.
@@ -23,7 +27,14 @@ class TabShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return Scaffold(
-      body: navigationShell,
+      body: banner == null
+          ? navigationShell
+          : Column(
+              children: [
+                Expanded(child: navigationShell),
+                banner!,
+              ],
+            ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
         onDestinationSelected: (index) => navigationShell.goBranch(

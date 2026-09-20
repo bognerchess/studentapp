@@ -397,16 +397,14 @@ void main() {
   });
 
   group('inside the app', () {
-    testWidgets('pending text is taken once; Continue pops with the result', (
-      tester,
-    ) async {
+    testWidgets('pending text is taken once; Continue leads to the metadata '
+        'step (WP-27)', (tester) async {
       await pumpApp(tester);
       final container = containerOf(tester);
       container
           .read(pendingImportProvider.notifier)
           .offer(fixture('chesscom_style.pgn'));
-      final popped = routerOf(tester)
-          .push<ImportResult>(AppRoutes.newGameImport);
+      routerOf(tester).go(AppRoutes.newGameImport);
       await tester.pumpAndSettle();
 
       expect(byKey('import-preview'), findsOneWidget);
@@ -420,8 +418,27 @@ void main() {
 
       await tester.tap(byKey('import-continue'));
       await tester.pumpAndSettle();
+      // Pushed on top: the import screen is still underneath for "back".
+      expect(find.text('Game details'), findsOneWidget);
+      expect(find.text('Save & analyse'), findsOneWidget);
+    });
+
+    testWidgets('without onContinue, Continue pops with the result', (
+      tester,
+    ) async {
+      await pumpApp(tester);
+      final popped = rootNavigatorKey.currentState!.push<ImportResult>(
+        MaterialPageRoute(
+          builder: (context) => const ImportScreen(initialText: '1. d4 d5'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(byKey('import-continue'));
+      await tester.pumpAndSettle();
       final result = await popped;
-      expect(result?.movetext, '1. d4 d5 2. c4');
+      expect(result?.movetext, '1. d4 d5');
+      expect(result?.origin, ImportOrigin.text);
       expect(find.byType(ImportScreen), findsNothing);
     });
 

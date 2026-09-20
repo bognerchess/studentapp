@@ -46,20 +46,44 @@ class MetadataScreenArgs {
   final bool autofocus;
 }
 
+/// A button of [MetadataScreen]'s bottom bar that does something other than
+/// popping the route. While [onPressed] runs, the buttons are disabled and
+/// this one shows a progress ring.
+@immutable
+class MetadataAction {
+  const MetadataAction({required this.label, required this.onPressed});
+
+  final String label;
+  final Future<void> Function(GameMetadata metadata) onPressed;
+}
+
 /// The metadata form as a full screen with a Save button. Save pops the
 /// route with the edited [GameMetadata]; back pops with null. Save is enabled
 /// once `validate()` has nothing to complain about.
+///
+/// A host that wants to go on from here instead (the new-game flow: "Save &
+/// analyse" and "Save only") passes [primaryAction] and, for a second button,
+/// [secondaryAction]; the screen then never pops by itself.
 class MetadataScreen extends StatefulWidget {
   const MetadataScreen({
     super.key,
     this.args = const MetadataScreenArgs(),
     this.today,
+    this.primaryAction,
+    this.secondaryAction,
   });
 
   static const Key saveKey = ValueKey('metadata-save');
+  static const Key secondaryKey = ValueKey('metadata-save-secondary');
   static const Key saveHintKey = ValueKey('metadata-save-hint');
 
   final MetadataScreenArgs args;
+
+  /// Replaces what the filled button does and says. Null: "Save", pops.
+  final MetadataAction? primaryAction;
+
+  /// A second, outlined button under the first one.
+  final MetadataAction? secondaryAction;
 
   /// Today, for tests.
   final GameDate? today;
@@ -71,9 +95,39 @@ class MetadataScreen extends StatefulWidget {
 class _MetadataScreenState extends State<MetadataScreen> {
   late GameMetadata _metadata = widget.args.initial;
 
+  /// The action that is running, if any: true for the primary one. (Not the
+  /// action object: the host may build a new one with every rebuild.)
+  bool? _running;
+
   void _save() {
     FocusManager.instance.primaryFocus?.unfocus();
     Navigator.of(context).pop<GameMetadata>(_metadata);
+  }
+
+  Future<void> _run(MetadataAction action, {required bool primary}) async {
+    if (_running != null) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() => _running = primary);
+    try {
+      await action.onPressed(_metadata);
+    } finally {
+      if (mounted) setState(() => _running = null);
+    }
+  }
+
+  Widget _label(MetadataAction action, {required bool primary}) {
+    if (_running != primary) return Text(action.label);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox.square(
+          dimension: 16,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Flexible(child: Text(action.label)),
+      ],
+    );
   }
 
   @override
@@ -87,6 +141,9 @@ class _MetadataScreenState extends State<MetadataScreen> {
         : validation.missing.contains(MetadataField.playerColor)
         ? l10n.metadataSaveNeedsColor
         : l10n.metadataSaveNeedsFix;
+    final primary = widget.primaryAction;
+    final secondary = widget.secondaryAction;
+    final enabled = validation.isValid && _running == null;
 
     return AppScaffold(
       title: l10n.metadataTitle,
@@ -134,9 +191,25 @@ class _MetadataScreenState extends State<MetadataScreen> {
               ),
             FilledButton(
               key: MetadataScreen.saveKey,
-              onPressed: validation.isValid ? _save : null,
-              child: Text(l10n.metadataSave),
+              onPressed: !enabled
+                  ? null
+                  : primary == null
+                  ? _save
+                  : () => _run(primary, primary: true),
+              child: primary == null
+                  ? Text(l10n.metadataSave)
+                  : _label(primary, primary: true),
             ),
+            if (secondary != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              OutlinedButton(
+                key: MetadataScreen.secondaryKey,
+                onPressed: enabled
+                    ? () => _run(secondary, primary: false)
+                    : null,
+                child: _label(secondary, primary: false),
+              ),
+            ],
           ],
         ),
       ),

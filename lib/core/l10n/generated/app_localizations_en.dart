@@ -1311,4 +1311,204 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pushSettingsOpenSettings => 'Open Settings';
+
+  @override
+  String get newGameSaveAndAnalyse => 'Save & analyse';
+
+  @override
+  String get newGameSaveOnly => 'Save only';
+
+  @override
+  String get newGameSavedUploading => 'Game saved. It is being uploaded.';
+
+  @override
+  String get newGameSavedAnalysing =>
+      'Game saved. It is being uploaded and analysed.';
+
+  @override
+  String get newGameSavedOffline =>
+      'Game saved. It will be uploaded as soon as you are online.';
+
+  @override
+  String get newGameSavedWithoutConsent =>
+      'Game saved without analysis. You can start the analysis from the game later.';
+
+  @override
+  String get newGameAlreadySaved => 'This game has already been saved.';
+
+  @override
+  String get newGameSaveFailed =>
+      'The game could not be saved. Please try again.';
+
+  @override
+  String submitQueueUploading(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Uploading $count games…',
+      one: 'Uploading 1 game…',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String submitQueueWaiting(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count games waiting to upload',
+      one: '1 game waiting to upload',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String submitQueueWaitingOffline(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count games waiting to upload · offline',
+      one: '1 game waiting to upload · offline',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String submitQueueWaitingRetry(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count games waiting to upload · will retry automatically',
+      one: '1 game waiting to upload · will retry automatically',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String submitQueueFailed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count games could not be uploaded',
+      one: '1 game could not be uploaded',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get submitQueueRetry => 'Retry';
+
+  @override
+  String get submitQueueDetails => 'Details';
+
+  @override
+  String get submitQueueSheetTitle => 'Uploads';
+
+  @override
+  String get submitQueueSheetEmpty => 'All games are uploaded.';
+
+  @override
+  String get submitQueueDraftUntitled => 'Game without names';
+
+  @override
+  String submitQueueDraftPlayers(String white, String black) {
+    return '$white – $black';
+  }
+
+  @override
+  String get submitQueueDraftUnknownPlayer => '?';
+
+  @override
+  String get submitQueueStateWaiting => 'Waiting to upload';
+
+  @override
+  String get submitQueueStateUploading => 'Uploading…';
+
+  @override
+  String submitQueueStateRetrying(String reason) {
+    return 'Last attempt failed: $reason Will retry automatically.';
+  }
+
+  @override
+  String submitQueueStateFailed(String reason) {
+    return 'Not uploaded: $reason';
+  }
+
+  @override
+  String get submitQueueDelete => 'Delete';
+
+  @override
+  String get submitQueueDeleteTitle => 'Delete this game?';
+
+  @override
+  String get submitQueueDeleteMessage =>
+      'It only exists on this device. Deleting it cannot be undone.';
+
+  @override
+  String get submitQueueCancel => 'Cancel';
+
+  @override
+  String get submitQueueErrorNetwork => 'No connection to the server.';
+
+  @override
+  String get submitQueueErrorServer => 'The server had a problem.';
+
+  @override
+  String get submitQueueErrorRateLimited =>
+      'Too many requests in a short time.';
+
+  @override
+  String get submitQueueErrorUnauthenticated =>
+      'Your session has ended. Please sign in again.';
+
+  @override
+  String get submitQueueErrorPgnInvalid =>
+      'The server could not read the moves.';
+
+  @override
+  String submitQueueErrorPgnInvalidAt(int moveNumber, String san) {
+    return 'The server could not read the moves (move $moveNumber: $san).';
+  }
+
+  @override
+  String get submitQueueErrorRejected => 'The server did not accept this game.';
+
+  @override
+  String get submitQueueErrorInternal => 'Something went wrong in the app.';
+
+  @override
+  String get submitQueueUploaded => 'Game uploaded.';
+
+  @override
+  String get submitQueueUploadedAnalysing =>
+      'Game uploaded. The analysis has started.';
+
+  @override
+  String submitQueueUploadedHeld(String reason) {
+    return 'Game saved. Analysis not started: $reason';
+  }
+
+  @override
+  String get submitQueueOpenGame => 'Open';
+
+  @override
+  String get submitQueueHoldLimitReached => 'Your analysis limit is used up.';
+
+  @override
+  String get submitQueueHoldQueueFull =>
+      'Too many of your analyses are still waiting.';
+
+  @override
+  String get submitQueueHoldRateLimited => 'Too many requests in a short time.';
+
+  @override
+  String get submitQueueHoldEmailNotVerified =>
+      'Your e-mail address is not confirmed yet.';
+
+  @override
+  String get submitQueueHoldAiConsentRequired =>
+      'Your consent to the AI analysis is missing.';
+
+  @override
+  String get submitQueueHoldRequestFailed => 'The request did not get through.';
 }
