@@ -5,17 +5,19 @@
 import 'package:bogner_chess/core/l10n/l10n.dart';
 import 'package:bogner_chess/core/ui/theme.dart';
 import 'package:bogner_chess/core/ui/widgets/app_scaffold.dart';
+import 'package:bogner_chess/features/new_game/ui/new_game_flow.dart';
 import 'package:bogner_chess/router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// The "New game" tab: the choice between entering the moves on the board
 /// and importing a PGN.
-class NewGameScreen extends StatelessWidget {
+class NewGameScreen extends ConsumerWidget {
   const NewGameScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     return AppScaffold(
       title: l10n.newGameTitle,
@@ -27,7 +29,7 @@ class NewGameScreen extends StatelessWidget {
             icon: Icons.touch_app_outlined,
             title: l10n.newGameEnterMoves,
             hint: l10n.newGameEnterMovesHint,
-            onTap: () => context.go(AppRoutes.newGameEntry),
+            onTap: () => ref.read(newGameFlowProvider).startEntry(context),
           ),
           const SizedBox(height: AppSpacing.md),
           _ChoiceCard(

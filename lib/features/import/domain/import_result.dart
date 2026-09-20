@@ -4,6 +4,18 @@
 
 import 'package:bogner_chess/core/pgn/pgn_import.dart';
 
+/// How the text got onto the import screen.
+enum ImportOrigin {
+  /// Typed or pasted.
+  text,
+
+  /// Picked with "Open file…".
+  file,
+
+  /// Handed over from outside the app: "Open in…" or the share extension.
+  external,
+}
+
 /// What the import screen hands to whoever opened it: one game, cleaned up and
 /// known to be legal. The metadata form and the submit step take it from here.
 final class ImportResult {
@@ -14,15 +26,20 @@ final class ImportResult {
     required this.result,
     required this.plyCount,
     required this.finalFen,
+    this.origin = ImportOrigin.text,
   });
 
-  factory ImportResult.fromGame(PgnImportedGame game) => ImportResult(
+  factory ImportResult.fromGame(
+    PgnImportedGame game, {
+    ImportOrigin origin = ImportOrigin.text,
+  }) => ImportResult(
     movetext: game.movetext,
     headers: game.headers,
     warnings: game.warnings,
     result: game.result,
     plyCount: game.plyCount,
     finalFen: game.finalFen,
+    origin: origin,
   );
 
   /// The main line in canonical SAN on one line, "1. e4 e5 2. Nf3": no
@@ -43,4 +60,7 @@ final class ImportResult {
 
   /// FEN after the last move, for a thumbnail.
   final String finalFen;
+
+  /// Where the text came from. Edited text counts as [ImportOrigin.text].
+  final ImportOrigin origin;
 }

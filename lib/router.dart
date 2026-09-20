@@ -3,6 +3,7 @@
 // Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
 
 import 'package:bogner_chess/core/auth/auth_state.dart';
+import 'package:bogner_chess/core/l10n/l10n.dart';
 import 'package:bogner_chess/core/links/link_target.dart';
 import 'package:bogner_chess/core/log.dart';
 import 'package:bogner_chess/core/ui/widgets/not_found_screen.dart';
@@ -17,9 +18,12 @@ import 'package:bogner_chess/features/legal/ui/legal_screen.dart';
 import 'package:bogner_chess/features/library/ui/game_screen.dart';
 import 'package:bogner_chess/features/library/ui/library_screen.dart';
 import 'package:bogner_chess/features/metadata/ui/metadata_screen.dart';
+import 'package:bogner_chess/features/new_game/domain/new_game_save_request.dart';
+import 'package:bogner_chess/features/new_game/ui/new_game_flow.dart';
 import 'package:bogner_chess/features/new_game/ui/new_game_screen.dart';
 import 'package:bogner_chess/features/review/ui/review_screen.dart';
 import 'package:bogner_chess/features/settings/ui/settings_screen.dart';
+import 'package:bogner_chess/features/submit_queue/ui/submit_queue_banner.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -137,6 +141,38 @@ String? externalLinkRedirect(Uri uri) {
   };
 }
 
+/// The last step of the new-game flow: the metadata form with "Save &
+/// analyse" and "Save only". Composed here because a feature may not import
+/// another feature's `ui/`.
+Widget _newGameSaveStep(
+  BuildContext context,
+  NewGameFlow flow,
+  NewGameSaveRequest request,
+) {
+  final l10n = context.l10n;
+  return MetadataScreen(
+    args: request.isImport
+        ? MetadataScreenArgs.existingGame(
+            initial: request.initial,
+            defaultPlayerName: request.defaultPlayerName,
+          )
+        : MetadataScreenArgs(
+            initial: request.initial,
+            defaultPlayerName: request.defaultPlayerName,
+          ),
+    primaryAction: MetadataAction(
+      label: l10n.newGameSaveAndAnalyse,
+      onPressed: (metadata) =>
+          flow.save(context, request, metadata, analyse: true),
+    ),
+    secondaryAction: MetadataAction(
+      label: l10n.newGameSaveOnly,
+      onPressed: (metadata) =>
+          flow.save(context, request, metadata, analyse: false),
+    ),
+  );
+}
+
 /// The app's router. It re-evaluates its redirect whenever the auth state
 /// changes.
 final routerProvider = Provider<GoRouter>((ref) {
@@ -189,8 +225,10 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // ---- The tab shell. Branch order is the tab order (see TabShell). ----
       StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) =>
-            TabShell(navigationShell: navigationShell),
+        builder: (context, state, navigationShell) => TabShell(
+          navigationShell: navigationShell,
+          banner: const SubmitQueueBanner(),
+        ),
         branches: [
           // ---- Tab 1: Games. Sub-routes alphabetical by path. ----
           StatefulShellBranch(
@@ -238,13 +276,20 @@ final routerProvider = Provider<GoRouter>((ref) {
                     builder: (context, state) => EntryScreen(
                       draftId:
                           state.uri.queryParameters[AppRoutes.draftIdParam],
+                      onDone: (result) => ref
+                          .read(newGameFlowProvider)
+                          .entryDone(context, result),
                     ),
                   ),
                   GoRoute(
                     path: 'import',
                     name: AppRouteNames.newGameImport,
                     parentNavigatorKey: rootNavigatorKey,
-                    builder: (context, state) => const ImportScreen(),
+                    builder: (context, state) => ImportScreen(
+                      onContinue: (result) => ref
+                          .read(newGameFlowProvider)
+                          .importDone(context, result),
+                    ),
                   ),
                   GoRoute(
                     path: 'metadata',
@@ -252,13 +297,19 @@ final routerProvider = Provider<GoRouter>((ref) {
                     parentNavigatorKey: rootNavigatorKey,
                     // Push it with `extra: MetadataScreenArgs(...)` and await
                     // the GameMetadata it pops with. A cold deep link has no
-                    // extra and gets the empty form.
-                    builder: (context, state) => MetadataScreen(
-                      args: switch (state.extra) {
-                        final MetadataScreenArgs args => args,
-                        _ => const MetadataScreenArgs(),
-                      },
-                    ),
+                    // extra and gets the empty form. The new-game flow pushes
+                    // a NewGameSaveRequest instead and gets its two buttons.
+                    builder: (context, state) => switch (state.extra) {
+                      final NewGameSaveRequest request => _newGameSaveStep(
+                        context,
+                        ref.read(newGameFlowProvider),
+                        request,
+                      ),
+                      final MetadataScreenArgs args => MetadataScreen(
+                        args: args,
+                      ),
+                      _ => const MetadataScreen(),
+                    },
                   ),
                 ],
               ),

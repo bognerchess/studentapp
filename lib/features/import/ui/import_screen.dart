@@ -57,6 +57,9 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
   bool _checking = false;
   PgnImportResult? _result;
 
+  /// Where the text in the field came from, for [ImportResult.origin].
+  ImportOrigin _origin = ImportOrigin.text;
+
   /// The game the detail area shows. Null while the list is shown.
   int? _selected;
 
@@ -82,11 +85,12 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
   void _takePending() {
     if (!mounted) return;
     final text = ref.read(pendingImportProvider.notifier).take();
-    if (text != null) _load(text);
+    if (text != null) _load(text, origin: ImportOrigin.external);
   }
 
   /// Text that arrives in one piece: checked at once, keyboard away.
-  void _load(String text) {
+  void _load(String text, {ImportOrigin origin = ImportOrigin.text}) {
+    _origin = origin;
     _focus.unfocus();
     _checkedText = text;
     _controller.text = text;
@@ -96,6 +100,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
   void _onTextChanged() {
     // The listener also fires when only the cursor moves.
     if (_controller.text == _checkedText) return;
+    _origin = ImportOrigin.text;
     _checkedText = _controller.text;
     _debounce?.cancel();
     _debounce = Timer(kImportDebounce, () => unawaited(_check()));
@@ -153,7 +158,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
     if (!mounted) return;
     switch (pick) {
       case PgnFilePicked(:final text):
-        _load(text);
+        _load(text, origin: ImportOrigin.file);
       case PgnFileCancelled():
         break;
       case PgnFileTooLarge():
@@ -180,7 +185,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
   }
 
   void _continue(PgnImportedGame game) {
-    final result = ImportResult.fromGame(game);
+    final result = ImportResult.fromGame(game, origin: _origin);
     final onContinue = widget.onContinue;
     if (onContinue != null) {
       onContinue(result);

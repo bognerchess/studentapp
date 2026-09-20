@@ -1111,5 +1111,245 @@
   "reviewLoading": "Loading analysis",
   "@reviewLoading": {
     "description": "Screen-reader label of the loading state of the review screen."
+  },
+  "newGameSaveAndAnalyse": "Save & analyse",
+  "@newGameSaveAndAnalyse": {
+    "description": "Primary button at the end of the new-game flow: stores the game and requests the coach analysis."
+  },
+  "newGameSaveOnly": "Save only",
+  "@newGameSaveOnly": {
+    "description": "Secondary button at the end of the new-game flow: stores the game without requesting an analysis."
+  },
+  "newGameSavedUploading": "Game saved. It is being uploaded.",
+  "@newGameSavedUploading": {
+    "description": "Confirmation after saving a game without analysis while online."
+  },
+  "newGameSavedAnalysing": "Game saved. It is being uploaded and analysed.",
+  "@newGameSavedAnalysing": {
+    "description": "Confirmation after 'Save & analyse' while online."
+  },
+  "newGameSavedOffline": "Game saved. It will be uploaded as soon as you are online.",
+  "@newGameSavedOffline": {
+    "description": "Confirmation after saving a game while the device is offline."
+  },
+  "newGameSavedWithoutConsent": "Game saved without analysis. You can start the analysis from the game later.",
+  "@newGameSavedWithoutConsent": {
+    "description": "Confirmation after 'Save & analyse' when the user did not give the AI consent."
+  },
+  "newGameAlreadySaved": "This game has already been saved.",
+  "@newGameAlreadySaved": {
+    "description": "Message when the user tries to save a draft that was already handed to the upload queue."
+  },
+  "newGameSaveFailed": "The game could not be saved. Please try again.",
+  "@newGameSaveFailed": {
+    "description": "Message when storing the game on the device failed."
+  },
+  "submitQueueUploading": "{count, plural, =1{Uploading 1 game…} other{Uploading {count} games…}}",
+  "@submitQueueUploading": {
+    "description": "Queue banner while games are being uploaded.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "submitQueueWaiting": "{count, plural, =1{1 game waiting to upload} other{{count} games waiting to upload}}",
+  "@submitQueueWaiting": {
+    "description": "Queue banner: games that are saved on the device and not uploaded yet.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "submitQueueWaitingOffline": "{count, plural, =1{1 game waiting to upload · offline} other{{count} games waiting to upload · offline}}",
+  "@submitQueueWaitingOffline": {
+    "description": "Queue banner while the device has no network.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "submitQueueWaitingRetry": "{count, plural, =1{1 game waiting to upload · will retry automatically} other{{count} games waiting to upload · will retry automatically}}",
+  "@submitQueueWaitingRetry": {
+    "description": "Queue banner after a failed upload attempt, while the queue waits before it tries again.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "submitQueueFailed": "{count, plural, =1{1 game could not be uploaded} other{{count} games could not be uploaded}}",
+  "@submitQueueFailed": {
+    "description": "Queue banner for games the queue has given up on.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "submitQueueRetry": "Retry",
+  "@submitQueueRetry": {
+    "description": "Button that makes the upload queue try again now."
+  },
+  "submitQueueDetails": "Details",
+  "@submitQueueDetails": {
+    "description": "Snack bar action that opens the list of waiting and failed uploads."
+  },
+  "submitQueueSheetTitle": "Uploads",
+  "@submitQueueSheetTitle": {
+    "description": "Title of the sheet that lists games waiting for upload."
+  },
+  "submitQueueSheetEmpty": "All games are uploaded.",
+  "@submitQueueSheetEmpty": {
+    "description": "Shown in the uploads sheet when nothing is waiting any more."
+  },
+  "submitQueueDraftUntitled": "Game without names",
+  "@submitQueueDraftUntitled": {
+    "description": "Title of a waiting game whose players are not known."
+  },
+  "submitQueueDraftPlayers": "{white} – {black}",
+  "@submitQueueDraftPlayers": {
+    "description": "Title of a waiting game: the two players.",
+    "placeholders": {
+      "white": {
+        "type": "String"
+      },
+      "black": {
+        "type": "String"
+      }
+    }
+  },
+  "submitQueueDraftUnknownPlayer": "?",
+  "@submitQueueDraftUnknownPlayer": {
+    "description": "Stands for a player whose name is not known in the title of a waiting game."
+  },
+  "submitQueueStateWaiting": "Waiting to upload",
+  "@submitQueueStateWaiting": {
+    "description": "State of a game in the uploads sheet."
+  },
+  "submitQueueStateUploading": "Uploading…",
+  "@submitQueueStateUploading": {
+    "description": "State of a game in the uploads sheet."
+  },
+  "submitQueueStateRetrying": "Last attempt failed: {reason} Will retry automatically.",
+  "@submitQueueStateRetrying": {
+    "description": "State of a game in the uploads sheet after a failed attempt. {reason} is a full sentence.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "submitQueueStateFailed": "Not uploaded: {reason}",
+  "@submitQueueStateFailed": {
+    "description": "State of a game the queue has given up on. {reason} is a full sentence.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "submitQueueDelete": "Delete",
+  "@submitQueueDelete": {
+    "description": "Button that deletes a game that was not uploaded."
+  },
+  "submitQueueDeleteTitle": "Delete this game?",
+  "@submitQueueDeleteTitle": {
+    "description": "Title of the confirmation before deleting a game that was not uploaded."
+  },
+  "submitQueueDeleteMessage": "It only exists on this device. Deleting it cannot be undone.",
+  "@submitQueueDeleteMessage": {
+    "description": "Body of the confirmation before deleting a game that was not uploaded."
+  },
+  "submitQueueCancel": "Cancel",
+  "@submitQueueCancel": {
+    "description": "Dismisses the delete confirmation."
+  },
+  "submitQueueErrorNetwork": "No connection to the server.",
+  "@submitQueueErrorNetwork": {
+    "description": "Reason a game was not uploaded."
+  },
+  "submitQueueErrorServer": "The server had a problem.",
+  "@submitQueueErrorServer": {
+    "description": "Reason a game was not uploaded."
+  },
+  "submitQueueErrorRateLimited": "Too many requests in a short time.",
+  "@submitQueueErrorRateLimited": {
+    "description": "Reason a game was not uploaded."
+  },
+  "submitQueueErrorUnauthenticated": "Your session has ended. Please sign in again.",
+  "@submitQueueErrorUnauthenticated": {
+    "description": "Reason a game was not uploaded."
+  },
+  "submitQueueErrorPgnInvalid": "The server could not read the moves.",
+  "@submitQueueErrorPgnInvalid": {
+    "description": "Reason a game was not uploaded: the server rejected the notation."
+  },
+  "submitQueueErrorPgnInvalidAt": "The server could not read the moves (move {moveNumber}: {san}).",
+  "@submitQueueErrorPgnInvalidAt": {
+    "description": "Reason a game was not uploaded, with the move the server stumbled over.",
+    "placeholders": {
+      "moveNumber": {
+        "type": "int"
+      },
+      "san": {
+        "type": "String"
+      }
+    }
+  },
+  "submitQueueErrorRejected": "The server did not accept this game.",
+  "@submitQueueErrorRejected": {
+    "description": "Reason a game was not uploaded."
+  },
+  "submitQueueErrorInternal": "Something went wrong in the app.",
+  "@submitQueueErrorInternal": {
+    "description": "Reason a game was not uploaded."
+  },
+  "submitQueueUploaded": "Game uploaded.",
+  "@submitQueueUploaded": {
+    "description": "Snack bar when a saved game reached the server (no analysis was requested)."
+  },
+  "submitQueueUploadedAnalysing": "Game uploaded. The analysis has started.",
+  "@submitQueueUploadedAnalysing": {
+    "description": "Snack bar when a saved game reached the server and its analysis was queued."
+  },
+  "submitQueueUploadedHeld": "Game saved. Analysis not started: {reason}",
+  "@submitQueueUploadedHeld": {
+    "description": "Snack bar when the game was uploaded but the analysis could not be requested. {reason} is a full sentence.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "submitQueueOpenGame": "Open",
+  "@submitQueueOpenGame": {
+    "description": "Snack bar action that opens the uploaded game."
+  },
+  "submitQueueHoldLimitReached": "Your analysis limit is used up.",
+  "@submitQueueHoldLimitReached": {
+    "description": "Reason an analysis was not started."
+  },
+  "submitQueueHoldQueueFull": "Too many of your analyses are still waiting.",
+  "@submitQueueHoldQueueFull": {
+    "description": "Reason an analysis was not started."
+  },
+  "submitQueueHoldRateLimited": "Too many requests in a short time.",
+  "@submitQueueHoldRateLimited": {
+    "description": "Reason an analysis was not started."
+  },
+  "submitQueueHoldEmailNotVerified": "Your e-mail address is not confirmed yet.",
+  "@submitQueueHoldEmailNotVerified": {
+    "description": "Reason an analysis was not started."
+  },
+  "submitQueueHoldAiConsentRequired": "Your consent to the AI analysis is missing.",
+  "@submitQueueHoldAiConsentRequired": {
+    "description": "Reason an analysis was not started."
+  },
+  "submitQueueHoldRequestFailed": "The request did not get through.",
+  "@submitQueueHoldRequestFailed": {
+    "description": "Reason an analysis was not started."
   }
 }

@@ -5,6 +5,9 @@
 import 'dart:ui' show Tristate;
 
 import 'package:bogner_chess/core/chess/board_view.dart';
+import 'package:bogner_chess/core/l10n/l10n.dart';
+import 'package:bogner_chess/core/storage/preferences.dart';
+import 'package:bogner_chess/features/entry/data/screen_wakelock.dart';
 import 'package:bogner_chess/features/entry/domain/entry_draft_store.dart';
 import 'package:bogner_chess/features/entry/domain/entry_result.dart';
 import 'package:bogner_chess/features/entry/domain/entry_settings.dart';
@@ -14,6 +17,7 @@ import 'package:bogner_chess/features/entry/ui/entry_screen.dart';
 import 'package:bogner_chess/router.dart';
 import 'package:dartchess/dartchess.dart';
 import 'package:flutter/semantics.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -547,18 +551,65 @@ void main() {
   });
 
   group('Done', () {
-    testWidgets('without a next step: saved as draft, back to New game', (
+    testWidgets('in the app: the flushed result goes to the new-game flow', (
       tester,
     ) async {
       final harness = await pumpEntry(tester);
       await playAll(tester, ['f2f3', 'e7e5', 'g2g4', 'd8h4']);
 
       await tester.tapEntryControl(EntryIds.done);
+      await tester.pumpAndSettle();
+
+      expect(harness.store.saves.last.pgnMoves, '1. f3 e5 2. g4 Qh4#');
+      expect(harness.flow.results.single.pgnMoves, '1. f3 e5 2. g4 Qh4#');
+      expect(harness.flow.results.single.suggestedResult, '0-1');
+      expect(find.text('Saved as draft'), findsNothing);
+    });
+
+    testWidgets('without a next step: saved as draft, and the screen closes', (
+      tester,
+    ) async {
+      final store = RecordingDraftStore();
+      final router = GoRouter(
+        initialLocation: '/entry',
+        routes: [
+          GoRoute(
+            path: AppRoutes.newGame,
+            builder: (context, state) => const Scaffold(body: Text('home')),
+          ),
+          GoRoute(
+            path: '/entry',
+            builder: (context, state) => const EntryScreen(),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            entryDraftStoreProvider.overrideWithValue(store),
+            screenWakelockProvider.overrideWithValue(FakeWakelock()),
+            preferencesProvider.overrideWithValue(FakePreferences()),
+          ],
+          child: MaterialApp.router(
+            routerConfig: router,
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              ...GlobalMaterialLocalizations.delegates,
+            ],
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await playAll(tester, ['f2f3', 'e7e5', 'g2g4', 'd8h4']);
+
+      await tester.tapEntryControl(EntryIds.done);
 
       expect(find.byType(EntryScreen), findsNothing);
-      expect(locationOf(tester), AppRoutes.newGame);
+      expect(find.text('home'), findsOneWidget);
       expect(find.text('Saved as draft'), findsOneWidget);
-      expect(harness.store.saves.last.pgnMoves, '1. f3 e5 2. g4 Qh4#');
+      expect(store.saves.last.pgnMoves, '1. f3 e5 2. g4 Qh4#');
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
     });

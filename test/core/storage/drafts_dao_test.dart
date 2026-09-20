@@ -28,6 +28,53 @@ void main() {
     return (await dao.get(owner, draft.id))!;
   }
 
+  group('WP-27 additions', () {
+    test('create with a given id, and ready at once', () async {
+      const id = '00000000-0000-4000-8000-000000000001';
+      final draft = await dao.create(alice, id: id, pgn: '1. e4', ready: true);
+      expect(draft.id, id);
+      expect(draft.state, DraftState.ready);
+      expect(draft.clientGameId, isNot(id));
+      expect((await dao.nextSubmittable(alice))!.id, id);
+      // The id is a primary key: a second draft under it is an error.
+      await expectLater(dao.create(alice, id: id), throwsA(anything));
+    });
+
+    test('getAll is watchAll as a single read', () async {
+      final a = await dao.create(alice);
+      clock.advance(const Duration(seconds: 1));
+      final b = await dao.create(alice, ready: true);
+      await dao.create(bob);
+
+      expect((await dao.getAll(alice)).map((d) => d.id), [b.id, a.id]);
+      expect(
+        (await dao.getAll(alice, states: {DraftState.ready})).single.id,
+        b.id,
+      );
+      expect(await dao.getAll(alice, states: {DraftState.failed}), isEmpty);
+    });
+
+    test(
+      'markSubmitted may replace the metadata, and keeps it otherwise',
+      () async {
+        final first = await submitting(alice);
+        await dao.markSubmitted(alice, first.id, serverGameId: 'g1');
+        expect((await dao.get(alice, first.id))!.metaJson, '{}');
+
+        final second = await submitting(alice);
+        await dao.markSubmitted(
+          alice,
+          second.id,
+          serverGameId: 'g2',
+          metaJson: '{"draft":{"analysisHold":"queueFull"}}',
+        );
+        final after = (await dao.get(alice, second.id))!;
+        expect(after.state, DraftState.submitted);
+        expect(after.metaJson, contains('queueFull'));
+      },
+    );
+  });
+
   group('create and autosave', () {
     test('create starts in editing with fresh ids and defaults', () async {
       final a = await dao.create(alice);

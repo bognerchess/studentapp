@@ -11,6 +11,8 @@ import 'package:bogner_chess/core/crash/crash_reporter.dart';
 import 'package:bogner_chess/core/links/incoming_link_service.dart';
 import 'package:bogner_chess/core/log.dart';
 import 'package:bogner_chess/features/about/domain/additional_licenses.dart';
+import 'package:bogner_chess/features/submit_queue/domain/submit_queue_providers.dart';
+import 'package:bogner_chess/features/submit_queue/submit_queue_overrides.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,7 +22,12 @@ const _log = Log('main');
 void main() {
   // One container for the whole process, created before the first frame so
   // that errors during start-up already reach the crash reporter.
-  final container = ProviderContainer();
+  final container = ProviderContainer(
+    overrides: [
+      // Entered games are drafts in the database from the first move.
+      ...submitQueueOverrides,
+    ],
+  );
   final crash = container.read(crashReporterProvider);
 
   void report(Object error, StackTrace? stack, String reason, bool fatal) {
@@ -62,6 +69,11 @@ void main() {
         // Links and documents from outside the app ("Open in Bogner Chess").
         // What arrived before this line, on a cold start, is delivered first.
         container.read(incomingLinkServiceProvider).start();
+
+        // Games that were saved but not uploaded yet (AC-3): recover what a
+        // killed app left behind and try now; from here on the queue reacts
+        // to the network, to resume, to sign-in and to "Save".
+        container.read(submitQueueProvider).start();
 
         runApp(
           UncontrolledProviderScope(
