@@ -8,6 +8,7 @@ import 'package:bogner_chess/core/app_info.dart';
 import 'package:bogner_chess/core/auth/auth_state.dart';
 import 'package:bogner_chess/core/consent/consent_state.dart';
 import 'package:bogner_chess/core/l10n/l10n.dart';
+import 'package:bogner_chess/core/push/ui/push_denied_hint.dart';
 import 'package:bogner_chess/core/ui/theme.dart';
 import 'package:bogner_chess/core/ui/widgets/app_scaffold.dart';
 import 'package:bogner_chess/features/entry/domain/entry_settings.dart';
@@ -103,6 +104,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
             _SectionHeader(l10n.settingsSectionAnalyses),
             const SettingsUsage(),
+            // The only notification the app sends is "your analysis is
+            // ready", so the way back into the Settings app belongs here
+            // rather than in a section of its own. Empty unless iOS says
+            // notifications are denied.
+            const PushDeniedHint(),
             const _SectionDivider(),
 
             _SectionHeader(l10n.settingsSectionBoard),

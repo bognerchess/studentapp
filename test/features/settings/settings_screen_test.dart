@@ -2,11 +2,14 @@
 // Copyright (C) 2026 Bogner Chess
 // Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:bogner_chess/core/chess/board_theme_preference.dart';
 import 'package:bogner_chess/core/chess/board_view.dart';
 import 'package:bogner_chess/core/consent/consent_state.dart';
+import 'package:bogner_chess/core/push/push_platform.dart';
+import 'package:bogner_chess/core/push/ui/push_denied_hint.dart';
 import 'package:bogner_chess/features/account/ui/account_screen.dart';
 import 'package:bogner_chess/features/consent/ui/ai_consent_screen.dart';
 import 'package:bogner_chess/features/entry/domain/entry_settings.dart';
@@ -20,6 +23,7 @@ import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/push/push_test_support.dart';
 import '../../helpers/account_harness.dart';
 import '../../helpers/pump_app.dart';
 
@@ -330,6 +334,63 @@ void main() {
       await pumpApp(tester, overrides: h.overrides);
       await _openSettings(tester);
       expect(find.text('The status could not be loaded.'), findsOneWidget);
+    });
+  });
+
+  group('notifications', () {
+    Future<FakePushPlatform> openWith(
+      WidgetTester tester,
+      PushPermissionStatus status,
+    ) async {
+      final h = AccountHarness();
+      final platform = FakePushPlatform(status: status);
+      // Not awaited: without a listener the future of close() never ends.
+      addTearDown(() => unawaited(platform.controller.close()));
+      await pumpApp(
+        tester,
+        overrides: [
+          ...h.overrides,
+          pushPlatformProvider.overrideWithValue(platform),
+        ],
+      );
+      await _openSettings(tester);
+      return platform;
+    }
+
+    testWidgets('denied: the way into the Settings app is in "Analyses"', (
+      tester,
+    ) async {
+      final platform = await openWith(tester, PushPermissionStatus.denied);
+      final button = find.byKey(PushDeniedHint.openSettingsKey);
+      expect(button, findsOneWidget);
+      // Between the quota and the next section, not at the end of the screen.
+      expect(
+        tester.getCenter(button).dy,
+        greaterThan(tester.getCenter(find.byType(SettingsUsage)).dy),
+      );
+      expect(
+        tester.getCenter(button).dy,
+        lessThan(tester.getCenter(find.text('Board')).dy),
+      );
+
+      await _tapVisible(tester, button);
+      expect(platform.calls, contains('openSettings'));
+    });
+
+    testWidgets('allowed or not asked yet: nothing about notifications', (
+      tester,
+    ) async {
+      for (final status in [
+        PushPermissionStatus.authorized,
+        PushPermissionStatus.notDetermined,
+      ]) {
+        await openWith(tester, status);
+        expect(
+          find.byKey(PushDeniedHint.openSettingsKey),
+          findsNothing,
+          reason: status.name,
+        );
+      }
     });
   });
 
