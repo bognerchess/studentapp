@@ -868,4 +868,437 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get reviewLoading => 'Analyse wird geladen';
+
+  @override
+  String get legalPrivacyPolicy => 'Datenschutzerklärung';
+
+  @override
+  String get legalTerms => 'Nutzungsbedingungen';
+
+  @override
+  String get legalDraftLabel => 'ENTWURF';
+
+  @override
+  String get legalDraftHint =>
+      'Dieser Text ist ein Platzhalter und wurde noch nicht rechtlich geprüft.';
+
+  @override
+  String get legalNotPublishedTitle => 'Noch nicht verfügbar';
+
+  @override
+  String get legalNotPublishedMessage =>
+      'Dieser Text ist noch nicht veröffentlicht. Du findest ihn auf bognerchess.com.';
+
+  @override
+  String get legalOfflineTitle => 'Du bist offline';
+
+  @override
+  String get legalOfflineMessage =>
+      'Der Text wird vom Server geladen, damit er immer aktuell ist. Verbinde dich mit dem Internet und versuche es erneut.';
+
+  @override
+  String get legalLoading => 'Text wird geladen';
+
+  @override
+  String legalVersionLine(int version, String date) {
+    return 'Version $version · $date';
+  }
+
+  @override
+  String get legalEnglishOnly =>
+      'Dieser Text ist zurzeit nur auf Englisch verfügbar.';
+
+  @override
+  String get consentAiClose => 'Schliessen';
+
+  @override
+  String get consentAiLoading => 'Text wird geladen';
+
+  @override
+  String consentAiProvider(String provider) {
+    return 'Die Analysekommentare werden von $provider erzeugt.';
+  }
+
+  @override
+  String get consentAiProviderUnnamed =>
+      'Die Analysekommentare werden von einem KI-Sprachmodell eines externen Anbieters erzeugt.';
+
+  @override
+  String get consentAiSentTitle => 'Was an den KI-Anbieter gesendet wird';
+
+  @override
+  String get consentAiSentMoves => 'Die Züge der Partie';
+
+  @override
+  String get consentAiSentPositions => 'Die Stellungen auf dem Brett';
+
+  @override
+  String get consentAiSentEvaluations =>
+      'Die Bewertungen und besten Varianten der Schach-Engine';
+
+  @override
+  String get consentAiSentColour => 'Welche Farbe du gespielt hast';
+
+  @override
+  String get consentAiSentRatingBand =>
+      'Ein grober Wertungsbereich, damit die Erklärungen zu deinem Niveau passen';
+
+  @override
+  String get consentAiNotSentTitle => 'Was nie gesendet wird';
+
+  @override
+  String get consentAiNotSentName => 'Dein Name und der Name deines Gegners';
+
+  @override
+  String get consentAiNotSentEmail => 'Deine E-Mail-Adresse';
+
+  @override
+  String get consentAiNotSentAccount =>
+      'Dein Konto oder etwas, das es identifiziert';
+
+  @override
+  String get consentAiNotSentEvent => 'Turnier, Ort und Datum der Partie';
+
+  @override
+  String get consentAiAgree => 'Zustimmen und weiter';
+
+  @override
+  String get consentAiNotNow => 'Nicht jetzt';
+
+  @override
+  String get consentAiSaveFailed =>
+      'Deine Zustimmung konnte nicht gespeichert werden. Prüfe deine Verbindung und versuche es erneut.';
+
+  @override
+  String get consentAiAlreadyAgreed => 'Du hast dieser Version zugestimmt.';
+
+  @override
+  String get consentAiWithdraw => 'Zustimmung widerrufen';
+
+  @override
+  String get consentAiOfflineTitle => 'Du bist offline';
+
+  @override
+  String get consentAiOfflineMessage =>
+      'Die Zustimmung ist nur online möglich, weil der Server sie kennen muss, bevor eine Partie analysiert wird. Deine Partie bleibt auf diesem Gerät gespeichert.';
+
+  @override
+  String get consentAiErrorMessage =>
+      'Der Zustimmungstext konnte nicht geladen werden. Bitte versuche es erneut.';
+
+  @override
+  String get consentAiUnavailableTitle => 'Noch nicht verfügbar';
+
+  @override
+  String get consentAiUnavailableMessage =>
+      'Der Zustimmungstext für die KI-Analyse ist noch nicht verfügbar. Deine Partien sind gespeichert; bitte versuche es später erneut.';
+
+  @override
+  String get consentAnalyticsTitle => 'Hilfst du, die App zu verbessern?';
+
+  @override
+  String get consentAnalyticsBody =>
+      'Darf die App Nutzungsstatistiken und Absturzberichte senden? Sie zeigen uns, welche Ansichten genutzt werden und wo die App Fehler hat. Sie enthalten nie deine Partien, deine Züge oder deinen Namen.';
+
+  @override
+  String get consentAnalyticsFootnote =>
+      'Das ist ausgeschaltet, solange du es nicht erlaubst, und du kannst es jederzeit in den Einstellungen ändern. Es gilt auch für Absturzberichte.';
+
+  @override
+  String get consentAnalyticsAllow => 'Erlauben';
+
+  @override
+  String get consentAnalyticsDecline => 'Nein danke';
+
+  @override
+  String get settingsAccountSignedIn => 'Angemeldet';
+
+  @override
+  String get settingsSectionAnalyses => 'Analysen';
+
+  @override
+  String get settingsSectionBoard => 'Brett';
+
+  @override
+  String get settingsSectionEntry => 'Züge eingeben';
+
+  @override
+  String get settingsSectionPrivacy => 'Deine Daten';
+
+  @override
+  String get settingsAutoQueenHint =>
+      'Überspringt die Wahl der Figur, wenn ein Bauer die letzte Reihe erreicht.';
+
+  @override
+  String get settingsAnalytics => 'Nutzungsstatistiken und Absturzberichte';
+
+  @override
+  String get settingsAnalyticsHint =>
+      'Hilft uns, die App zu verbessern. Enthält nie deine Partien oder deinen Namen.';
+
+  @override
+  String get settingsAiConsent => 'Zustimmung zur KI-Analyse';
+
+  @override
+  String settingsAiConsentAgreed(int version) {
+    return 'Zugestimmt (Version $version)';
+  }
+
+  @override
+  String get settingsAiConsentNewVersion =>
+      'Der Text wurde geändert. Bitte lies ihn erneut.';
+
+  @override
+  String get settingsAiConsentNotYet =>
+      'Noch nicht zugestimmt. Du wirst vor deiner ersten Analyse gefragt.';
+
+  @override
+  String get settingsAiConsentUnknown =>
+      'Der Status konnte nicht geladen werden.';
+
+  @override
+  String get settingsAiConsentLoading => 'Wird geladen …';
+
+  @override
+  String get settingsAiConsentReview => 'Ansehen';
+
+  @override
+  String get settingsUsageToday => 'Heute';
+
+  @override
+  String get settingsUsageMonth => 'Diesen Monat';
+
+  @override
+  String settingsUsageOf(int used, int limit) {
+    return '$used von $limit';
+  }
+
+  @override
+  String settingsUsageCount(int used) {
+    String _temp0 = intl.Intl.pluralLogic(
+      used,
+      locale: localeName,
+      other: '$used Analysen',
+      one: '1 Analyse',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String settingsUsageResetsAt(String time) {
+    return 'Wird um $time Uhr zurückgesetzt.';
+  }
+
+  @override
+  String settingsUsageResetsOn(String date) {
+    return 'Wird am $date zurückgesetzt.';
+  }
+
+  @override
+  String get settingsUsageLimitReached => 'Limit erreicht.';
+
+  @override
+  String get settingsUsageUnlimited => 'Unbegrenzt';
+
+  @override
+  String settingsUsageQueued(int count, int max) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Analysen laufen',
+      one: '1 Analyse läuft',
+    );
+    return '$_temp0 (höchstens $max gleichzeitig)';
+  }
+
+  @override
+  String get settingsUsageError => 'Die Zahlen konnten nicht geladen werden.';
+
+  @override
+  String get settingsUsageLoading => 'Analysekontingent wird geladen';
+
+  @override
+  String get settingsBoardPieces => 'Figuren';
+
+  @override
+  String get settingsBoardColors => 'Brettfarben';
+
+  @override
+  String get settingsBoardColorsBrown => 'Braun';
+
+  @override
+  String get settingsBoardColorsBlue => 'Blau';
+
+  @override
+  String get settingsBoardColorsGreen => 'Grün';
+
+  @override
+  String get settingsBoardColorsOlive => 'Oliv';
+
+  @override
+  String settingsBoardPreviewLabel(String pieces, String colours) {
+    return 'Brettvorschau: Figuren $pieces, $colours';
+  }
+
+  @override
+  String get updateRequiredTitle => 'Bitte aktualisiere die App';
+
+  @override
+  String get updateRequiredMessage =>
+      'Diese Version von Bogner Chess wird nicht mehr unterstützt. Installiere die aktuelle Version, um weiterzumachen. Deine Partien und Entwürfe bleiben erhalten.';
+
+  @override
+  String get updateRequiredAction => 'App Store öffnen';
+
+  @override
+  String get accountSameAccount =>
+      'Das ist dein Konto von bognerchess.com. App und Website teilen es: dieselbe Anmeldung, dieselben Partien.';
+
+  @override
+  String get accountEmailNotVerified =>
+      'Deine E-Mail-Adresse ist noch nicht bestätigt. Öffne den Link in der E-Mail, die wir dir geschickt haben.';
+
+  @override
+  String get accountSignOut => 'Abmelden';
+
+  @override
+  String get accountSignOutHint =>
+      'Partien, die du noch nicht gesendet hast, bleiben auf diesem Gerät.';
+
+  @override
+  String get accountSignOutConfirmTitle => 'Abmelden?';
+
+  @override
+  String get accountSignOutConfirmMessage =>
+      'Deine Partien bleiben in deinem Konto. Entwürfe, die du noch nicht gesendet hast, bleiben auf diesem Gerät und sind wieder da, wenn du dich erneut anmeldest.';
+
+  @override
+  String get accountCancel => 'Abbrechen';
+
+  @override
+  String get accountBack => 'Zurück';
+
+  @override
+  String get accountDeleteSection => 'Konto löschen';
+
+  @override
+  String get accountDeleteTeaser =>
+      'Löscht dein Konto von bognerchess.com mit allen Partien und Analysen, in der App und auf der Website.';
+
+  @override
+  String get accountDelete => 'Konto löschen …';
+
+  @override
+  String get accountDeleteTitle => 'Konto löschen';
+
+  @override
+  String get accountDeleteSameAccountTitle =>
+      'Damit löschst du dein Konto von bognerchess.com';
+
+  @override
+  String get accountDeleteSameAccountBody =>
+      'Die App hat kein eigenes Konto. Du meldest dich mit deinem Konto von bognerchess.com an, und genau dieses Konto wird gelöscht: Du verlierst auch den Zugang zur Website, nicht nur zu dieser App.';
+
+  @override
+  String get accountDeleteWhatGoesTitle => 'Was gelöscht wird';
+
+  @override
+  String get accountDeleteGoesGames =>
+      'Alle deine Partien, Analysen und Trainerkommentare';
+
+  @override
+  String get accountDeleteGoesProfile =>
+      'Dein Profil und deine Anmeldung; deine persönlichen Daten werden anonymisiert';
+
+  @override
+  String get accountDeleteGoesDevice =>
+      'Alles, was die App auf diesem Gerät gespeichert hat, auch Entwürfe';
+
+  @override
+  String get accountDeleteWhatStaysTitle => 'Was wir aufbewahren müssen';
+
+  @override
+  String get accountDeleteStaysInvoices =>
+      'Bezahlte Rechnungen, solange das Gesetz ihre Aufbewahrung verlangt';
+
+  @override
+  String get accountDeleteGoodToKnowTitle => 'Bevor du weitermachst';
+
+  @override
+  String get accountDeleteIrreversible =>
+      'Das lässt sich nicht rückgängig machen. Niemand kann ein gelöschtes Konto wiederherstellen, auch unser Support nicht.';
+
+  @override
+  String get accountDeleteMayBeBlocked =>
+      'Konten mit aktiver Mitgliedschaft, offenen Rechnungen oder verknüpften Kinderkonten können hier nicht gelöscht werden. Falls das auf dich zutrifft, sagen wir dir, was zu tun ist.';
+
+  @override
+  String accountDeleteTypeInstruction(String word) {
+    return 'Tippe zur Bestätigung $word in das Feld.';
+  }
+
+  @override
+  String accountDeleteFieldLabel(String word) {
+    return '$word eintippen';
+  }
+
+  @override
+  String get accountDeleteConfirm => 'Mein Konto endgültig löschen';
+
+  @override
+  String get accountDeleteRetry => 'Erneut versuchen';
+
+  @override
+  String get accountDeleteInProgress => 'Konto wird gelöscht';
+
+  @override
+  String get accountDeleteFailed =>
+      'Das Konto konnte nicht gelöscht werden. Es wurde nichts geändert. Bitte versuche es erneut.';
+
+  @override
+  String get accountDeleteFailedOffline =>
+      'Du bist offline. Das Konto kann nur mit Verbindung gelöscht werden. Es wurde nichts geändert.';
+
+  @override
+  String get accountDeleteBlockedTitle =>
+      'Dieses Konto kann hier nicht gelöscht werden';
+
+  @override
+  String get accountDeleteBlockedKid =>
+      'Das ist ein Kinderkonto. Es gehört zum Konto eines Elternteils, und nur dieser kann es löschen lassen. Bitte ihn darum oder schreib uns.';
+
+  @override
+  String get accountDeleteBlockedDependents =>
+      'Mit deinem Konto sind Kinderkonten verknüpft, die ihren Zugang verlieren würden. Schreib uns, dann klären wir das zuerst mit dir.';
+
+  @override
+  String get accountDeleteBlockedMembership =>
+      'Du hast eine aktive Mitgliedschaft. Beende sie zuerst auf bognerchess.com oder schreib uns; danach kann das Konto gelöscht werden.';
+
+  @override
+  String get accountDeleteBlockedInvoices =>
+      'Auf deinem Konto gibt es offene Rechnungen. Sobald sie beglichen sind, kann das Konto gelöscht werden. Schreib uns bei Fragen.';
+
+  @override
+  String get accountDeleteBlockedOther =>
+      'Bei deinem Konto muss noch etwas geklärt werden, bevor es gelöscht werden kann. Schreib uns, wir kümmern uns darum.';
+
+  @override
+  String get accountDeleteBlockedNothingDeleted => 'Es wurde nichts gelöscht.';
+
+  @override
+  String get accountDeleteContactSupport => 'Support schreiben';
+
+  @override
+  String get accountDeleteSupportSubject => 'Mein Bogner-Chess-Konto löschen';
+
+  @override
+  String get accountDeletedTitle => 'Dein Konto wurde gelöscht';
+
+  @override
+  String get accountDeletedMessage =>
+      'Deine Partien, Analysen und persönlichen Daten werden entfernt, und alles, was die App auf diesem Gerät gespeichert hat, ist weg. Danke, dass du mit uns gespielt hast.';
+
+  @override
+  String get accountDeletedDone => 'Fertig';
 }

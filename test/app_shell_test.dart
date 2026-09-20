@@ -91,6 +91,9 @@ void main() {
         await tester.tap(find.text('Settings'));
         await tester.pumpAndSettle();
 
+        // The settings are longer than the screen since WP-30.
+        await tester.ensureVisible(find.text('About and licences'));
+        await tester.pumpAndSettle();
         await tester.tap(find.text('About and licences'));
         await tester.pumpAndSettle();
         expect(locationOf(tester), AppRoutes.settingsAbout);

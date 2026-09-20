@@ -6,6 +6,7 @@ import 'package:bogner_chess/app.dart';
 import 'package:bogner_chess/config/env.dart';
 import 'package:bogner_chess/core/app_info.dart';
 import 'package:bogner_chess/core/auth/auth_state.dart';
+import 'package:bogner_chess/features/consent/ui/first_run_consent_prompt.dart';
 import 'package:bogner_chess/router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
@@ -49,6 +50,7 @@ const Size kIphone17Pro = Size(402, 874);
 /// [auth] defaults to what [env] implies: signed in with fake auth, signed
 /// out with real auth. [overrides] come last, for example
 /// `authRepositoryProvider.overrideWithValue(FakeAuthRepository(...))`.
+/// [firstRunPrompts] lets the one-time analytics question open.
 Future<void> pumpApp(
   WidgetTester tester, {
   Env? env,
@@ -57,6 +59,7 @@ Future<void> pumpApp(
   Brightness brightness = Brightness.light,
   double textScale = 1.0,
   Size screen = kIphone17Pro,
+  bool firstRunPrompts = false,
   List<Override> overrides = const [],
 }) async {
   tester.view.devicePixelRatio = 3;
@@ -76,6 +79,10 @@ Future<void> pumpApp(
         ),
         if (auth != null)
           authStateProvider.overrideWith(() => TestAuthNotifier(auth)),
+        // The one-time analytics question would sit on top of the first
+        // screen of every test with working storage.
+        if (!firstRunPrompts)
+          firstRunConsentPromptEnabledProvider.overrideWithValue(false),
         ...overrides,
       ],
       child: const BognerChessApp(),

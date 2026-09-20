@@ -13,8 +13,9 @@ typedef LinkLauncher = Future<bool> Function(Uri uri);
 /// override it and never reach the platform:
 /// `linkLauncherProvider.overrideWithValue((uri) async => true)`.
 final linkLauncherProvider = Provider<LinkLauncher>((ref) {
-  // In the browser, not in an in-app web view: the source link is a page
-  // people want to keep, share and sign in to.
+  // In the browser (or the mail app for mailto:), not in an in-app web view:
+  // the source link and the links of a legal text are pages people want to
+  // keep and share.
   return (uri) => url_launcher.launchUrl(
     uri,
     mode: url_launcher.LaunchMode.externalApplication,

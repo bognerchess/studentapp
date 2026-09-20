@@ -22,6 +22,8 @@ final List<String> allLocations = [
   AppRoutes.settingsAccount,
   AppRoutes.settingsLegal,
   AppRoutes.consentAi,
+  AppRoutes.legalDocument('privacy'),
+  AppRoutes.legalDocument('terms'),
   '/does/not/exist',
 ];
 

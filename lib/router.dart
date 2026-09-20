@@ -13,6 +13,8 @@ import 'package:bogner_chess/features/auth/ui/sign_in_screen.dart';
 import 'package:bogner_chess/features/consent/ui/ai_consent_screen.dart';
 import 'package:bogner_chess/features/entry/ui/entry_screen.dart';
 import 'package:bogner_chess/features/import/ui/import_screen.dart';
+import 'package:bogner_chess/features/legal/domain/legal_documents.dart';
+import 'package:bogner_chess/features/legal/ui/legal_document_screen.dart';
 import 'package:bogner_chess/features/legal/ui/legal_screen.dart';
 import 'package:bogner_chess/features/library/ui/game_screen.dart';
 import 'package:bogner_chess/features/library/ui/library_screen.dart';
@@ -47,6 +49,8 @@ abstract final class AppRoutes {
   // Locations with parameters, alphabetical.
   static String game(String id) => '/games/${Uri.encodeComponent(id)}';
   static String gameReview(String id) => '${game(id)}/review';
+  static String legalDocument(String slug) =>
+      '/legal/${Uri.encodeComponent(slug)}';
 
   /// The location a fresh start opens.
   static const String initial = games;
@@ -59,6 +63,9 @@ abstract final class AppRoutes {
 
   /// Query parameter of [newGameEntry]: the draft to resume.
   static const String draftIdParam = 'draftId';
+
+  /// Path parameter of [legalDocument]: a `LegalPage.slug`.
+  static const String legalDocParam = 'doc';
 
   /// [newGameEntry], resuming the draft with [draftId].
   static String newGameEntryResume(String draftId) => Uri(
@@ -74,6 +81,7 @@ abstract final class AppRouteNames {
   static const String game = 'game';
   static const String gameReview = 'game-review';
   static const String games = 'games';
+  static const String legalDocument = 'legal-document';
   static const String newGame = 'new-game';
   static const String newGameEntry = 'new-game-entry';
   static const String newGameImport = 'new-game-import';
@@ -179,6 +187,21 @@ final routerProvider = Provider<GoRouter>((ref) {
           fullscreenDialog: true,
           child: const AiConsentScreen(),
         ),
+      ),
+      GoRoute(
+        // Full screen, so that it can open above a sheet or the consent
+        // screen as well as from the settings: `context.push(...)`.
+        path: '/legal/:${AppRoutes.legalDocParam}',
+        name: AppRouteNames.legalDocument,
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final page = LegalPage.ofSlug(
+            state.pathParameters[AppRoutes.legalDocParam],
+          );
+          return page == null
+              ? NotFoundScreen(onGoHome: () => context.go(AppRoutes.initial))
+              : LegalDocumentScreen(page: page);
+        },
       ),
       GoRoute(
         path: AppRoutes.signIn,

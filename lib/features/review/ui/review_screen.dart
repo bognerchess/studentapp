@@ -7,6 +7,7 @@ import 'dart:math' as math;
 
 import 'package:bogner_chess/core/analysis/analysis_parser.dart';
 import 'package:bogner_chess/core/analysis/analysis_view.dart';
+import 'package:bogner_chess/core/chess/board_theme_preference.dart';
 import 'package:bogner_chess/core/chess/board_view.dart';
 import 'package:bogner_chess/core/l10n/board_labels.dart';
 import 'package:bogner_chess/core/l10n/l10n.dart';
@@ -214,7 +215,7 @@ class _ReviewBodyState extends ConsumerState<_ReviewBody> {
                   lastMove: board.lastMove,
                   arrows: board.arrows,
                   glyphs: board.glyphs,
-                  theme: _boardTheme,
+                  theme: ref.watch(boardThemeProvider),
                   animate: state.animate,
                   semanticsLabels: boardLabelsOf(l10n),
                 ),

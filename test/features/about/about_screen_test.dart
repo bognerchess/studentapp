@@ -5,8 +5,8 @@
 import 'package:bogner_chess/app.dart';
 import 'package:bogner_chess/config/env.dart';
 import 'package:bogner_chess/core/app_info.dart';
+import 'package:bogner_chess/core/links/link_launcher.dart';
 import 'package:bogner_chess/features/about/domain/additional_licenses.dart';
-import 'package:bogner_chess/features/about/domain/link_launcher.dart';
 import 'package:bogner_chess/features/about/ui/about_screen.dart';
 import 'package:bogner_chess/features/about/ui/licence_text_screen.dart';
 import 'package:bogner_chess/router.dart';
