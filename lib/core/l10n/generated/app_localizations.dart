@@ -1001,6 +1001,300 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cancel promotion'**
   String get boardCancelPromotion;
+
+  /// Name of a colour on the review screen: fallback player name, column head of the move-quality table.
+  ///
+  /// In en, this message translates to:
+  /// **'{side, select, white{White} other{Black}}'**
+  String reviewSideName(String side);
+
+  /// Screen-reader label of an accuracy chip in the review header.
+  ///
+  /// In en, this message translates to:
+  /// **'Accuracy of {side, select, white{White} other{Black}}: {value} percent'**
+  String reviewAccuracySemantics(String side, String value);
+
+  /// Tooltip of the menu button in the review app bar.
+  ///
+  /// In en, this message translates to:
+  /// **'Board options'**
+  String get reviewMenu;
+
+  /// Checkable menu item: green arrow for the best move of the engine.
+  ///
+  /// In en, this message translates to:
+  /// **'Show best move'**
+  String get reviewShowBestArrow;
+
+  /// Checkable menu item: amber arrow on the move that was played.
+  ///
+  /// In en, this message translates to:
+  /// **'Show played move'**
+  String get reviewShowPlayedArrow;
+
+  /// Menu item that turns the review board around.
+  ///
+  /// In en, this message translates to:
+  /// **'Flip board'**
+  String get reviewFlipBoard;
+
+  /// Tooltip and screen-reader label of the button that jumps to the start position.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to start'**
+  String get reviewGoToStart;
+
+  /// Tooltip and screen-reader label of the step-back button.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous move'**
+  String get reviewPreviousMove;
+
+  /// Tooltip and screen-reader label of the step-forward button.
+  ///
+  /// In en, this message translates to:
+  /// **'Next move'**
+  String get reviewNextMove;
+
+  /// Tooltip and screen-reader label of the button that jumps to the last move.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to end'**
+  String get reviewGoToEnd;
+
+  /// Tooltip and screen-reader label of the button that jumps to the previous moment the coach commented on.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous key moment'**
+  String get reviewPreviousMoment;
+
+  /// Button (and tooltip) that jumps to the next moment the coach commented on.
+  ///
+  /// In en, this message translates to:
+  /// **'Next key moment'**
+  String get reviewNextMoment;
+
+  /// Tab below the review board: the comments of the AI coach. Keep it very short.
+  ///
+  /// In en, this message translates to:
+  /// **'Coach'**
+  String get reviewTabCoach;
+
+  /// Tab below the review board: the move list. Keep it very short.
+  ///
+  /// In en, this message translates to:
+  /// **'Moves'**
+  String get reviewTabMoves;
+
+  /// Tab below the review board: the lessons of the game and the move-quality table. Keep it very short.
+  ///
+  /// In en, this message translates to:
+  /// **'Summary'**
+  String get reviewTabSummary;
+
+  /// The quality of a move in words. "strong" is a move the coach praised.
+  ///
+  /// In en, this message translates to:
+  /// **'{classification, select, book{Book move} best{Best move} good{Good move} inaccuracy{Inaccuracy} mistake{Mistake} blunder{Blunder} strong{Strong move} other{Move}}'**
+  String reviewClassification(String classification);
+
+  /// The theme of a coach comment or lesson, shown as a small chip.
+  ///
+  /// In en, this message translates to:
+  /// **'{theme, select, opening{Opening} development{Development} centralBreak{Central break} kingSafety{King safety} tactics{Tactics} hangingPiece{Hanging piece} calculation{Calculation} pieceActivity{Piece activity} pawnStructure{Pawn structure} endgame{Endgame} materialConversion{Converting an advantage} other{Chess}}'**
+  String reviewTheme(String theme);
+
+  /// Evaluation in words: nobody is better.
+  ///
+  /// In en, this message translates to:
+  /// **'Equal position'**
+  String get reviewEvalEqual;
+
+  /// Evaluation in words: a small advantage.
+  ///
+  /// In en, this message translates to:
+  /// **'{side, select, white{White is slightly better} other{Black is slightly better}}'**
+  String reviewEvalSlight(String side);
+
+  /// Evaluation in words: a clear advantage.
+  ///
+  /// In en, this message translates to:
+  /// **'{side, select, white{White is clearly better} other{Black is clearly better}}'**
+  String reviewEvalClear(String side);
+
+  /// Evaluation in words: a decisive advantage.
+  ///
+  /// In en, this message translates to:
+  /// **'{side, select, white{White is winning} other{Black is winning}}'**
+  String reviewEvalWinning(String side);
+
+  /// Evaluation in words: a forced mate.
+  ///
+  /// In en, this message translates to:
+  /// **'Mate in {count} for {side, select, white{White} other{Black}}'**
+  String reviewEvalMate(int count, String side);
+
+  /// Evaluation in words: checkmate is on the board.
+  ///
+  /// In en, this message translates to:
+  /// **'{side, select, white{Checkmate. White wins} black{Checkmate. Black wins} other{Checkmate}}'**
+  String reviewEvalCheckmate(String side);
+
+  /// Small line above a coach comment: which of the moments the coach picked this is.
+  ///
+  /// In en, this message translates to:
+  /// **'Key moment {index} of {total}'**
+  String reviewMomentCounter(int index, int total);
+
+  /// Small footnote under every coach comment.
+  ///
+  /// In en, this message translates to:
+  /// **'AI-generated. May contain mistakes.'**
+  String get reviewCoachAiNote;
+
+  /// Screen-reader label and tooltip of the thumbs-up button of a coach comment.
+  ///
+  /// In en, this message translates to:
+  /// **'Helpful'**
+  String get reviewThumbUp;
+
+  /// Screen-reader label and tooltip of the thumbs-down button of a coach comment.
+  ///
+  /// In en, this message translates to:
+  /// **'Not helpful'**
+  String get reviewThumbDown;
+
+  /// Snackbar after a thumbs up or down could not be stored.
+  ///
+  /// In en, this message translates to:
+  /// **'Your rating could not be saved.'**
+  String get reviewFeedbackFailed;
+
+  /// Screen-reader label of a button under a coach comment that plays a line on the board. The label comes from the server, for example Better.
+  ///
+  /// In en, this message translates to:
+  /// **'Show line: {label}'**
+  String reviewShowLine(String label);
+
+  /// Engine fact on a move without a coach comment: the move the engine prefers.
+  ///
+  /// In en, this message translates to:
+  /// **'Better was {san}.'**
+  String reviewFactBetterWas(String san);
+
+  /// Headline of the coach tab on the start position.
+  ///
+  /// In en, this message translates to:
+  /// **'The moments that mattered'**
+  String get reviewStartPositionTitle;
+
+  /// Explanation on the coach tab on the start position.
+  ///
+  /// In en, this message translates to:
+  /// **'The coach picked the moments that decided this game. Swipe through them, or step through every move.'**
+  String get reviewStartPositionHint;
+
+  /// Button on the start position that jumps to the first moment the coach commented on.
+  ///
+  /// In en, this message translates to:
+  /// **'First key moment'**
+  String get reviewFirstMoment;
+
+  /// Button on the coach tab after the last key moment: opens the summary tab.
+  ///
+  /// In en, this message translates to:
+  /// **'See your lessons'**
+  String get reviewOpenSummary;
+
+  /// What kind of line the line viewer is showing.
+  ///
+  /// In en, this message translates to:
+  /// **'{kind, select, bestLine{Best continuation} refutation{Why the move fails} alternative{Another good option} other{Line}}'**
+  String reviewLineKind(String kind);
+
+  /// Button that leaves the line viewer.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to game'**
+  String get reviewLineBack;
+
+  /// Tooltip and screen-reader label of the step-back button of the line viewer.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous move of the line'**
+  String get reviewLinePrevious;
+
+  /// Tooltip and screen-reader label of the step-forward button of the line viewer.
+  ///
+  /// In en, this message translates to:
+  /// **'Next move of the line'**
+  String get reviewLineNext;
+
+  /// Screen-reader suffix of a move in the move list that has a coach comment.
+  ///
+  /// In en, this message translates to:
+  /// **'with coach comment'**
+  String get reviewMoveHasComment;
+
+  /// Headline of the lessons on the summary tab.
+  ///
+  /// In en, this message translates to:
+  /// **'What to take away'**
+  String get reviewLessonsTitle;
+
+  /// Chip under a lesson that jumps to the move the lesson is about.
+  ///
+  /// In en, this message translates to:
+  /// **'Move {label}'**
+  String reviewLessonEvidence(String label);
+
+  /// Shown on the summary tab when the analysis has no lessons.
+  ///
+  /// In en, this message translates to:
+  /// **'There are no lessons for this game.'**
+  String get reviewLessonsEmpty;
+
+  /// Headline of the table that counts moves by quality for both sides.
+  ///
+  /// In en, this message translates to:
+  /// **'Move quality'**
+  String get reviewQualityTitle;
+
+  /// Row label of the accuracy of both sides in the move-quality table.
+  ///
+  /// In en, this message translates to:
+  /// **'Accuracy'**
+  String get reviewAccuracy;
+
+  /// Screen-reader label of the evaluation graph.
+  ///
+  /// In en, this message translates to:
+  /// **'Evaluation graph'**
+  String get reviewGraphLabel;
+
+  /// Banner when the analysis was made in a newer format than this app version understands. Board and moves still work.
+  ///
+  /// In en, this message translates to:
+  /// **'Update the app to see this analysis.'**
+  String get reviewUpdateBanner;
+
+  /// Error message when the analysis document is damaged.
+  ///
+  /// In en, this message translates to:
+  /// **'This analysis could not be read.'**
+  String get reviewInvalidMessage;
+
+  /// Status line under the review board before the first move.
+  ///
+  /// In en, this message translates to:
+  /// **'Start position'**
+  String get reviewStartPosition;
+
+  /// Screen-reader label of the loading state of the review screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading analysis'**
+  String get reviewLoading;
 }
 
 class _AppLocalizationsDelegate

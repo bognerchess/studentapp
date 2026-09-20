@@ -36,6 +36,7 @@ and `go_router`, `app_links`, `wakelock_plus` (Flutter >= 3.44).
 | `uuid` | `^4.6.0` | 4.6.0 (2026-07-15) | MIT | yuli.dev | Draft ids and `clientGameId` for idempotent game creation. Added by WP-13. |
 | `build_runner` | `^2.16.1` (dev) | 2.16.1 (2026-09-02) | BSD-3-Clause | tools.dart.dev | Runs the generators (`tool/gen.sh`). Added by WP-13, the first package that generates code. |
 | `drift_dev` | `^2.35.0` (dev) | 2.35.0 (2026-09-09) | MIT | simonbinder.eu | drift generator, schema dumps and migration test helpers. Added by WP-13. |
+| `fl_chart` | `^1.2.0` | 1.2.0 (2026-03-13) | MIT | flchart.dev | The evaluation graph of the review screen (`lib/features/review/ui/eval_graph.dart`, the only importer). Re-verified on pub.dev on 2026-09-20: 1.2.0 is still the newest, licence MIT, needs Flutter >= 3.27.4. Pulls `equatable` (MIT, fluttercommunity.dev); `vector_math` was already there. It imports the framework's legacy Material library, so every colour is passed in explicitly, and its built-in touch handling and titles are switched off (the graph maps a tap to a ply itself). Added by WP-29. |
 
 Transitive, but worth knowing: **`sqlite3`** (MIT, simonbinder.eu; locked at
 3.5.2; 3.6.0 needs `hooks ^2.2.0` and with it `meta ^1.19.0`, and Flutter
@@ -60,7 +61,6 @@ package is involved. `docs/storage.md` has the details.
 | `gql_http_link` | 1.2.0 (2025-09-20) | MIT | gql-dart.dev | Fallback transport should `graphql` have to go. Not planned otherwise. | – |
 | `flutter_appauth` | 12.1.0 (2026-08-29) | BSD-3-Clause | dexterx.dev | OIDC authorization code flow with PKCE through ASWebAuthenticationSession. Needs Flutter >= 3.38.1. | WP-25 |
 | `flutter_secure_storage` | 11.2.0 (2026-09-16) | BSD-3-Clause | steenbakker.dev | Tokens in the Keychain (`first_unlock_this_device`). | WP-25 |
-| `fl_chart` | 1.2.0 (2026-03-13) | MIT | flchart.dev | Evaluation graph. | WP-29b |
 | `app_links` | 7.2.1 (2026-07-09) | Apache-2.0 | cow-level.ovh | Custom URL scheme and file URLs ("Open in Bogner Chess"). Apache-2.0 is compatible with GPLv3. Needs Flutter >= 3.44. | WP-23 |
 | `sentry_flutter` | 9.30.0 (2026-09-10) | MIT | sentry.io | Crash reporting, consent-gated, PII off. The bundled sentry-cocoa is MIT too. | WP-34 |
 | `connectivity_plus` | 7.3.1 (2026-07-23) | BSD-3-Clause | fluttercommunity.dev | Trigger for the submit queue when the network returns. | WP-27 |

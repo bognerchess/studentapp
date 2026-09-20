@@ -577,4 +577,242 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get boardCancelPromotion => 'Umwandlung abbrechen';
+
+  @override
+  String reviewSideName(String side) {
+    String _temp0 = intl.Intl.selectLogic(side, {
+      'white': 'Weiss',
+      'other': 'Schwarz',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String reviewAccuracySemantics(String side, String value) {
+    String _temp0 = intl.Intl.selectLogic(side, {
+      'white': 'Weiss',
+      'other': 'Schwarz',
+    });
+    return 'Genauigkeit von $_temp0: $value Prozent';
+  }
+
+  @override
+  String get reviewMenu => 'Brettoptionen';
+
+  @override
+  String get reviewShowBestArrow => 'Besten Zug zeigen';
+
+  @override
+  String get reviewShowPlayedArrow => 'Gespielten Zug zeigen';
+
+  @override
+  String get reviewFlipBoard => 'Brett drehen';
+
+  @override
+  String get reviewGoToStart => 'Zum Anfang';
+
+  @override
+  String get reviewPreviousMove => 'Vorheriger Zug';
+
+  @override
+  String get reviewNextMove => 'Nächster Zug';
+
+  @override
+  String get reviewGoToEnd => 'Zum Ende';
+
+  @override
+  String get reviewPreviousMoment => 'Vorheriger Schlüsselmoment';
+
+  @override
+  String get reviewNextMoment => 'Nächster Schlüsselmoment';
+
+  @override
+  String get reviewTabCoach => 'Coach';
+
+  @override
+  String get reviewTabMoves => 'Züge';
+
+  @override
+  String get reviewTabSummary => 'Fazit';
+
+  @override
+  String reviewClassification(String classification) {
+    String _temp0 = intl.Intl.selectLogic(classification, {
+      'book': 'Theoriezug',
+      'best': 'Bester Zug',
+      'good': 'Guter Zug',
+      'inaccuracy': 'Ungenauigkeit',
+      'mistake': 'Fehler',
+      'blunder': 'Patzer',
+      'strong': 'Starker Zug',
+      'other': 'Zug',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String reviewTheme(String theme) {
+    String _temp0 = intl.Intl.selectLogic(theme, {
+      'opening': 'Eröffnung',
+      'development': 'Entwicklung',
+      'centralBreak': 'Zentrumshebel',
+      'kingSafety': 'Königssicherheit',
+      'tactics': 'Taktik',
+      'hangingPiece': 'Hängende Figur',
+      'calculation': 'Berechnung',
+      'pieceActivity': 'Figurenaktivität',
+      'pawnStructure': 'Bauernstruktur',
+      'endgame': 'Endspiel',
+      'materialConversion': 'Vorteilsverwertung',
+      'other': 'Schach',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get reviewEvalEqual => 'Ausgeglichene Stellung';
+
+  @override
+  String reviewEvalSlight(String side) {
+    String _temp0 = intl.Intl.selectLogic(side, {
+      'white': 'Weiss steht etwas besser',
+      'other': 'Schwarz steht etwas besser',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String reviewEvalClear(String side) {
+    String _temp0 = intl.Intl.selectLogic(side, {
+      'white': 'Weiss steht klar besser',
+      'other': 'Schwarz steht klar besser',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String reviewEvalWinning(String side) {
+    String _temp0 = intl.Intl.selectLogic(side, {
+      'white': 'Weiss steht auf Gewinn',
+      'other': 'Schwarz steht auf Gewinn',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String reviewEvalMate(int count, String side) {
+    String _temp0 = intl.Intl.selectLogic(side, {
+      'white': 'Weiss',
+      'other': 'Schwarz',
+    });
+    return 'Matt in $count für $_temp0';
+  }
+
+  @override
+  String reviewEvalCheckmate(String side) {
+    String _temp0 = intl.Intl.selectLogic(side, {
+      'white': 'Schachmatt. Weiss gewinnt',
+      'black': 'Schachmatt. Schwarz gewinnt',
+      'other': 'Schachmatt',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String reviewMomentCounter(int index, int total) {
+    return 'Schlüsselmoment $index von $total';
+  }
+
+  @override
+  String get reviewCoachAiNote => 'KI-generiert. Kann Fehler enthalten.';
+
+  @override
+  String get reviewThumbUp => 'Hilfreich';
+
+  @override
+  String get reviewThumbDown => 'Nicht hilfreich';
+
+  @override
+  String get reviewFeedbackFailed =>
+      'Deine Bewertung konnte nicht gespeichert werden.';
+
+  @override
+  String reviewShowLine(String label) {
+    return 'Variante zeigen: $label';
+  }
+
+  @override
+  String reviewFactBetterWas(String san) {
+    return 'Besser war $san.';
+  }
+
+  @override
+  String get reviewStartPositionTitle => 'Die Momente, auf die es ankam';
+
+  @override
+  String get reviewStartPositionHint =>
+      'Der Coach hat die Momente herausgesucht, die diese Partie entschieden haben. Wische dich durch, oder geh jeden Zug einzeln durch.';
+
+  @override
+  String get reviewFirstMoment => 'Erster Schlüsselmoment';
+
+  @override
+  String get reviewOpenSummary => 'Zu deinen Lektionen';
+
+  @override
+  String reviewLineKind(String kind) {
+    String _temp0 = intl.Intl.selectLogic(kind, {
+      'bestLine': 'Beste Fortsetzung',
+      'refutation': 'Warum der Zug scheitert',
+      'alternative': 'Eine weitere gute Möglichkeit',
+      'other': 'Variante',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get reviewLineBack => 'Zurück zur Partie';
+
+  @override
+  String get reviewLinePrevious => 'Vorheriger Zug der Variante';
+
+  @override
+  String get reviewLineNext => 'Nächster Zug der Variante';
+
+  @override
+  String get reviewMoveHasComment => 'mit Coach-Kommentar';
+
+  @override
+  String get reviewLessonsTitle => 'Das nimmst du mit';
+
+  @override
+  String reviewLessonEvidence(String label) {
+    return 'Zug $label';
+  }
+
+  @override
+  String get reviewLessonsEmpty => 'Für diese Partie gibt es keine Lektionen.';
+
+  @override
+  String get reviewQualityTitle => 'Zugqualität';
+
+  @override
+  String get reviewAccuracy => 'Genauigkeit';
+
+  @override
+  String get reviewGraphLabel => 'Bewertungsverlauf';
+
+  @override
+  String get reviewUpdateBanner =>
+      'Aktualisiere die App, um diese Analyse zu sehen.';
+
+  @override
+  String get reviewInvalidMessage =>
+      'Diese Analyse konnte nicht gelesen werden.';
+
+  @override
+  String get reviewStartPosition => 'Ausgangsstellung';
+
+  @override
+  String get reviewLoading => 'Analyse wird geladen';
 }
