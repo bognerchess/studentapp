@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+import 'package:bogner_chess/core/chess/board_theme_preference.dart';
 import 'package:bogner_chess/core/chess/board_view.dart';
 import 'package:bogner_chess/core/l10n/board_labels.dart';
 import 'package:bogner_chess/core/l10n/l10n.dart';
@@ -184,6 +185,7 @@ class _EntryScreenState extends ConsumerState<EntryScreen>
                                 orientation: state.orientation,
                                 interaction: BoardInteraction.entry,
                                 lastMove: game.lastMove?.highlight,
+                                theme: ref.watch(boardThemeProvider),
                                 autoQueen: autoQueen,
                                 animate: state.animate,
                                 semanticsLabels: boardLabelsOf(l10n),

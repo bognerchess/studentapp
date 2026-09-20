@@ -6,6 +6,9 @@ import 'package:bogner_chess/core/l10n/l10n.dart';
 import 'package:bogner_chess/core/links/incoming_link_notices.dart';
 import 'package:bogner_chess/core/ui/theme.dart';
 import 'package:bogner_chess/core/ui/widgets/env_banner.dart';
+import 'package:bogner_chess/features/account/ui/account_deleted_notice.dart';
+import 'package:bogner_chess/features/consent/ui/first_run_consent_prompt.dart';
+import 'package:bogner_chess/features/settings/ui/update_required_gate.dart';
 import 'package:bogner_chess/router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -37,8 +40,19 @@ class BognerChessApp extends ConsumerWidget {
       ],
       // IncomingLinkNotices: "this file could not be read" for a document
       // opened from outside, on whatever screen is showing.
-      builder: (context, child) =>
-          EnvBanner(child: IncomingLinkNotices(child: child!)),
+      // UpdateRequiredGate: "please update" instead of the app when the
+      // backend no longer supports this version. AccountDeletedNotice: the
+      // last screen of an account deletion. FirstRunConsentPrompt: the
+      // one-time analytics question.
+      builder: (context, child) => EnvBanner(
+        child: UpdateRequiredGate(
+          child: AccountDeletedNotice(
+            child: FirstRunConsentPrompt(
+              child: IncomingLinkNotices(child: child!),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

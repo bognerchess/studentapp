@@ -50,6 +50,8 @@ dependencies:
   gql_exec: ^1.0.0+1
   gql_link: ^1.1.0
   http: ^1.6.0
+  # WP-30: legal documents and the AI consent text arrive as Markdown.
+  flutter_markdown_plus: ^1.0.12
 
 dev_dependencies:
   flutter_test:

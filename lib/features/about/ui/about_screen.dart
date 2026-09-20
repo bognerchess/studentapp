@@ -4,11 +4,11 @@
 
 import 'package:bogner_chess/core/app_info.dart';
 import 'package:bogner_chess/core/l10n/l10n.dart';
+import 'package:bogner_chess/core/links/link_launcher.dart';
 import 'package:bogner_chess/core/log.dart';
 import 'package:bogner_chess/core/ui/theme.dart';
 import 'package:bogner_chess/core/ui/widgets/app_scaffold.dart';
 import 'package:bogner_chess/features/about/domain/licence_document.dart';
-import 'package:bogner_chess/features/about/domain/link_launcher.dart';
 import 'package:bogner_chess/features/about/domain/source_link.dart';
 import 'package:bogner_chess/features/about/ui/licence_text_screen.dart';
 import 'package:bogner_chess/features/about/ui/open_source_licences_screen.dart';
