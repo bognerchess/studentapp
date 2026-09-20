@@ -184,7 +184,66 @@ reason, and this script is the proof that the trimming worked. It looks into
 
 It passes trivially while `chessground` is not a dependency. It needs a built
 app, so it is not part of `tool/check.sh`; CI runs it in the `ios` job after
-the simulator build.
+the simulator build, through `tool/check_compliance.sh`.
+
+## `tool/check_compliance.sh`
+
+    tool/check_compliance.sh                                 # development mode
+    tool/check_compliance.sh --app build/ios/iphonesimulator/Runner.app
+    tool/check_compliance.sh --release --app <path>/Runner.app --accept <id>
+    tool/check_compliance.sh --help
+
+`tool/check.sh` answers "is this change acceptable?". This one answers "may
+this build be conveyed?", which is the question the GPL asks every time a
+binary leaves the building, and it is the machine half of
+`docs/release-checklist.md`. It does not reimplement anything: sections 3 and 4
+call `tool/check_headers.dart --strict-swift` and
+`tool/check_bundled_assets.sh` and roll their result up. What it adds is the
+part nothing else covers:
+
+- **Section 1, forbidden dependencies.** A list of names (Firebase,
+  Crashlytics, the ad and attribution SDKs) matched against `pubspec.yaml`,
+  `pubspec.lock`, the Swift Package Manager pins and every path inside the
+  built app. A native pin that is not classified in the script's `native_pins`
+  table fails: adding native code is a licence decision, not a build detail.
+- **Section 2, a licence row for every direct dependency** in
+  `docs/dependencies.md`, with a licence from the accepted set (MIT, BSD,
+  Apache-2.0, GPL-compatible; AGPL deliberately not). The check refuses to run
+  if the table's fourth column is no longer "Licence", so it can never silently
+  read the wrong one.
+- **Section 5, NOTICE is complete**: every file whose header says "Adapted
+  from …", every tree under `third_party/`, every name in
+  `tool/asset_allowlist.txt` and every Swift Package Manager pin is named in
+  `NOTICE` (or, for the packages, in `docs/dependencies.md`).
+- **Section 6, the tag matches the build**: the release tag equals `v<version>`
+  from `pubspec.yaml`.
+- **Section 7, corresponding source**: the tree is clean, HEAD is reachable
+  from a remote, the three legal texts exist and are bundled with the app, the
+  section-7 permission is no longer a draft, and `docs/building.md` names the
+  Flutter version that `pubspec.yaml` pins.
+- **Section 8, reproducible build**: a named hook for WP-54, which verifies
+  nothing yet and says so.
+
+**Two modes, one set of checks.** Conditions that cannot be true before a
+release is cut — a tag, a clean and published tree, a built app, a section-7
+text that is no longer a DRAFT — are notes in development mode and failures
+with `--release`. Every such line ends in `[release mode would fail here]`, and
+the script prints its mode at the top, so a green run never has to be
+interpreted.
+
+**Owner decisions.** Some findings are questions, not bugs. Today there is one:
+`sentry-cocoa` arrives as a prebuilt binary xcframework rather than as source
+(`prebuilt:sentry-cocoa`). The script prints the whole story every time and, in
+release mode, fails until the decision is acknowledged with
+`--accept prebuilt:sentry-cocoa` — which puts the answer in the release log
+instead of in somebody's memory.
+
+CI runs it twice, the same way it splits everything else: on the `check` job
+without a bundle (a second or two, and a forbidden dependency or a missing
+licence row is caught in the pull request that adds it), and on the `ios` job
+with `--app`, where the bundle-dependent sections have something to read.
+`--release` is not run in CI; it belongs to the release, see
+`docs/release-checklist.md`.
 
 ## Golden tests
 
@@ -240,13 +299,15 @@ A newer push to a pull request cancels the run of the older one. The workflow
 has read access to the repository contents and uses no secrets.
 
 - **`check`**, on `ubuntu-latest`: installs the Flutter version pinned in
-  `pubspec.yaml` (`environment.flutter`) and runs `tool/check.sh`. Linux,
-  because it is the fast and cheap runner and nothing in the gate needs a Mac.
+  `pubspec.yaml` (`environment.flutter`), runs `tool/check.sh` and then
+  `tool/check_compliance.sh` without a bundle. Linux, because it is the fast
+  and cheap runner and nothing in the gate needs a Mac.
 - **`ios`**, on macOS: `flutter build ios --simulator --debug` (with
-  `config/fake.json` once that exists), `tool/check_bundled_assets.sh` on the
-  result, then `tool/golden.sh`. The runner is `macos-latest`; a comment in the
-  workflow says what to do when GitHub's image and the Xcode that the pinned
-  Flutter expects drift apart.
+  `config/fake.json` once that exists), then
+  `tool/check_compliance.sh --app` on the result, which runs
+  `tool/check_bundled_assets.sh` among other things, then `tool/golden.sh`. The
+  runner is `macos-latest`; a comment in the workflow says what to do when
+  GitHub's image and the Xcode that the pinned Flutter expects drift apart.
 
 `.github/workflows/integration.yml` is for the slow tests that drive the app
 in a simulator (`flutter test integration_test`). It runs nightly, on manual
