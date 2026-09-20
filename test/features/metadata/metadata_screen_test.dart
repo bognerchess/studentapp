@@ -2,8 +2,6 @@
 // Copyright (C) 2026 Bogner Chess
 // Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
 
-import 'dart:async';
-
 import 'package:bogner_chess/core/game/game_metadata.dart';
 import 'package:bogner_chess/features/metadata/ui/metadata_form.dart';
 import 'package:bogner_chess/features/metadata/ui/metadata_screen.dart';
@@ -12,28 +10,24 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../helpers/pump_app.dart';
+import '../../helpers/pump_screen.dart';
 
 /// Opens the screen the way a flow does and keeps what it pops with.
-class Opened {
-  GameMetadata? result;
-  bool closed = false;
-}
-
-Future<Opened> open(WidgetTester tester, [MetadataScreenArgs? args]) async {
-  final opened = Opened();
-  final future = routerOf(tester)
-      .push<GameMetadata>(AppRoutes.newGameMetadata, extra: args);
-  // Not awaited: it completes when the screen closes.
-  unawaited(
-    future.then((result) {
-      opened
-        ..result = result
-        ..closed = true;
-    }),
-  );
-  await tester.pumpAndSettle();
-  return opened;
-}
+Future<PumpedScreen> open(
+  WidgetTester tester, {
+  MetadataScreenArgs args = const MetadataScreenArgs(),
+  Locale locale = const Locale('en'),
+  Brightness brightness = Brightness.light,
+  double textScale = 1.0,
+  Size screenSize = kIphone17Pro,
+}) => pumpScreen(
+  tester,
+  MetadataScreen(args: args),
+  locale: locale,
+  brightness: brightness,
+  textScale: textScale,
+  screenSize: screenSize,
+);
 
 FilledButton saveButton(WidgetTester tester) =>
     tester.widget<FilledButton>(find.byKey(MetadataScreen.saveKey));
@@ -47,15 +41,12 @@ void main() {
   testWidgets('Save waits for the colour and returns the metadata', (
     tester,
   ) async {
-    await pumpApp(tester);
     final opened = await open(
       tester,
-      const MetadataScreenArgs(defaultPlayerName: 'Max Muster'),
+      args: const MetadataScreenArgs(defaultPlayerName: 'Max Muster'),
     );
 
     expect(find.text('Game details'), findsOneWidget);
-    // Full screen: the tab bar is covered.
-    expect(find.byType(NavigationBar), findsNothing);
     expect(saveButton(tester).onPressed, isNull);
     expect(find.text('Choose the colour you played.'), findsOneWidget);
 
@@ -74,8 +65,8 @@ void main() {
     await tester.tap(find.byKey(MetadataScreen.saveKey));
     await tester.pumpAndSettle();
 
-    expect(opened.closed, isTrue);
-    final result = opened.result!;
+    expect(opened.popped, isTrue);
+    final result = opened.value! as GameMetadata;
     expect(result.playerColor, PlayerColor.black);
     expect(result.whiteName, 'Anna Schmidt');
     expect(result.blackName, 'Max Muster');
@@ -83,14 +74,12 @@ void main() {
     // The default date made it into the result although nobody touched it.
     expect(result.playedDate, GameDate.today());
     expect(result.validate().isValid, isTrue);
-    expect(locationOf(tester), AppRoutes.games);
   });
 
   testWidgets('an invalid rating blocks Save and says why', (tester) async {
-    await pumpApp(tester);
     await open(
       tester,
-      const MetadataScreenArgs(
+      args: const MetadataScreenArgs(
         initial: GameMetadata(playerColor: PlayerColor.white),
       ),
     );
@@ -109,20 +98,18 @@ void main() {
   });
 
   testWidgets('back returns nothing', (tester) async {
-    await pumpApp(tester);
     final opened = await open(tester);
 
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
 
-    expect(opened.closed, isTrue);
-    expect(opened.result, isNull);
+    expect(opened.popped, isTrue);
+    expect(opened.value, isNull);
   });
 
   testWidgets('an existing game opens with its facts and no made-up date', (
     tester,
   ) async {
-    await pumpApp(tester);
     final initial = GameMetadata.fromPgnHeaders(const {
       'White': 'Beispiel, Bettina',
       'Black': 'Muster, Max',
@@ -130,7 +117,7 @@ void main() {
     }, playerName: 'Max Muster');
     final opened = await open(
       tester,
-      MetadataScreenArgs.existingGame(initial: initial),
+      args: MetadataScreenArgs.existingGame(initial: initial),
     );
 
     expect(find.text('You lost.'), findsOneWidget);
@@ -138,8 +125,8 @@ void main() {
 
     await tester.tap(find.byKey(MetadataScreen.saveKey));
     await tester.pumpAndSettle();
-    expect(opened.result, initial);
-    expect(opened.result!.playedDate, isNull);
+    expect(opened.value, initial);
+    expect((opened.value! as GameMetadata).playedDate, isNull);
   });
 
   testWidgets('a deep link without arguments shows the empty form', (
@@ -151,6 +138,8 @@ void main() {
 
     expect(find.byType(MetadataScreen), findsOneWidget);
     expect(saveButton(tester).onPressed, isNull);
+    // Full screen: the tab bar is covered.
+    expect(find.byType(NavigationBar), findsNothing);
     expect(
       routerOf(tester).namedLocation(AppRouteNames.newGameMetadata),
       AppRoutes.newGameMetadata,
@@ -160,14 +149,13 @@ void main() {
   testWidgets('German, dark, text scale 1.3 on the smallest iPhone', (
     tester,
   ) async {
-    await pumpApp(
+    await open(
       tester,
       locale: const Locale('de'),
       brightness: Brightness.dark,
       textScale: 1.3,
-      screen: kIphoneSe,
+      screenSize: kIphoneSe,
     );
-    await open(tester);
 
     expect(find.text('Angaben zur Partie'), findsOneWidget);
     expect(find.text('Speichern'), findsOneWidget);

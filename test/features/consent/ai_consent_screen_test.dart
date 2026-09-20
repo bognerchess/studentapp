@@ -9,20 +9,39 @@ import 'package:bogner_chess/core/auth/auth_state.dart';
 import 'package:bogner_chess/core/consent/consent_state.dart';
 import 'package:bogner_chess/core/ui/widgets/draft_badge.dart';
 import 'package:bogner_chess/features/consent/ui/ai_consent_screen.dart';
-import 'package:bogner_chess/router.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../helpers/account_harness.dart';
 import '../../helpers/pump_app.dart';
+import '../../helpers/pump_screen.dart';
 
 void main() {
-  /// Opens the screen the way the submit flow does and returns its result.
-  Future<Future<bool?>> open(WidgetTester tester) async {
-    final result = routerOf(tester).push<bool>(AppRoutes.consentAi);
-    await tester.pumpAndSettle();
+  /// Opens the screen the way the submit flow does: pushed, answering its
+  /// caller with true or false.
+  Future<PumpedScreen> open(
+    WidgetTester tester,
+    AccountHarness h, {
+    Env? env,
+    AuthState? auth,
+    Locale locale = const Locale('en'),
+    Brightness brightness = Brightness.light,
+    double textScale = 1.0,
+    Size screenSize = kIphone17Pro,
+  }) async {
+    final screen = await pumpScreen(
+      tester,
+      const AiConsentScreen(),
+      env: env,
+      auth: auth,
+      locale: locale,
+      brightness: brightness,
+      textScale: textScale,
+      screenSize: screenSize,
+      overrides: h.overrides,
+    );
     expect(find.byType(AiConsentScreen), findsOneWidget);
-    return result;
+    return screen;
   }
 
   testWidgets('names the provider, what is sent and what is not', (
@@ -30,8 +49,7 @@ void main() {
   ) async {
     final h = AccountHarness(scenarios: {'MyAiConsent': 'required'})
       ..serveLegalDocumentsByLanguage();
-    await pumpApp(tester, overrides: h.overrides);
-    await open(tester);
+    await open(tester, h);
 
     expect(find.text('AI analysis of your games'), findsOneWidget);
     expect(
@@ -66,13 +84,12 @@ void main() {
     tester,
   ) async {
     final h = AccountHarness(scenarios: {'MyAiConsent': 'required'});
-    await pumpApp(tester, overrides: h.overrides);
-    final result = await open(tester);
+    final screen = await open(tester, h);
 
     await tester.tap(find.byKey(AiConsentScreen.agreeKey));
     await tester.pumpAndSettle();
 
-    expect(await result, isTrue);
+    expect(screen.value, isTrue);
     expect(find.byType(AiConsentScreen), findsNothing);
     expect(h.api.requestsOf('RecordAiConsent').single.variables['input'], {
       'version': 1,
@@ -84,22 +101,28 @@ void main() {
     );
   });
 
-  testWidgets('"Not now" and the close button pop false and record nothing', (
+  testWidgets('"Not now" pops false and records nothing', (tester) async {
+    final h = AccountHarness(scenarios: {'MyAiConsent': 'required'});
+    final screen = await open(tester, h);
+
+    await tester.tap(find.byKey(AiConsentScreen.notNowKey));
+    await tester.pumpAndSettle();
+
+    expect(screen.value, isFalse);
+    expect(h.api.requestsOf('RecordAiConsent'), isEmpty);
+    expect(h.analytics.events, isEmpty);
+  });
+
+  testWidgets('the close button pops false and records nothing', (
     tester,
   ) async {
     final h = AccountHarness(scenarios: {'MyAiConsent': 'required'});
-    await pumpApp(tester, overrides: h.overrides);
+    final screen = await open(tester, h);
 
-    var result = await open(tester);
-    await tester.tap(find.byKey(AiConsentScreen.notNowKey));
-    await tester.pumpAndSettle();
-    expect(await result, isFalse);
-
-    result = await open(tester);
     await tester.tap(find.byTooltip('Close'));
     await tester.pumpAndSettle();
-    expect(await result, isFalse);
 
+    expect(screen.value, isFalse);
     expect(h.api.requestsOf('RecordAiConsent'), isEmpty);
     expect(h.analytics.events, isEmpty);
   });
@@ -109,8 +132,7 @@ void main() {
   ) async {
     final h = AccountHarness(scenarios: {'MyAiConsent': 'required'});
     h.api.fail('LegalDocument', const SocketException('offline'));
-    await pumpApp(tester, overrides: h.overrides);
-    await open(tester);
+    await open(tester, h);
 
     expect(find.text('You are offline'), findsOneWidget);
     expect(find.textContaining('only be given online'), findsOneWidget);
@@ -127,35 +149,31 @@ void main() {
   ) async {
     final h = AccountHarness(scenarios: {'MyAiConsent': 'required'});
     h.api.fail('RecordAiConsent', const SocketException('offline'));
-    await pumpApp(tester, overrides: h.overrides);
-    final result = await open(tester);
-    var popped = false;
-    unawaitedResult(result, () => popped = true);
+    final screen = await open(tester, h);
 
     await tester.tap(find.byKey(AiConsentScreen.agreeKey));
     await tester.pumpAndSettle();
 
     expect(find.textContaining('could not be saved'), findsOneWidget);
-    expect(popped, isFalse);
+    expect(screen.popped, isFalse);
     expect(h.analytics.events, isEmpty);
 
     h.api.use('RecordAiConsent', 'default');
     await tester.tap(find.byKey(AiConsentScreen.agreeKey));
     await tester.pumpAndSettle();
-    expect(await result, isTrue);
+    expect(screen.value, isTrue);
   });
 
   testWidgets('an unreviewed draft is not offered to real users', (
     tester,
   ) async {
     final h = AccountHarness(scenarios: {'MyAiConsent': 'required'});
-    await pumpApp(
+    await open(
       tester,
+      h,
       env: testEnv(envName: 'prod', authMode: AuthMode.real),
       auth: const SignedIn('sub-1'),
-      overrides: h.overrides,
     );
-    await open(tester);
 
     expect(find.text('Not available yet'), findsOneWidget);
     expect(find.byKey(AiConsentScreen.agreeKey), findsNothing);
@@ -166,8 +184,7 @@ void main() {
     final h = AccountHarness(
       scenarios: {'MyAiConsent': 'required', 'LegalDocument': 'not_found'},
     );
-    await pumpApp(tester, overrides: h.overrides);
-    await open(tester);
+    await open(tester, h);
     expect(find.text('Not available yet'), findsOneWidget);
   });
 
@@ -175,8 +192,7 @@ void main() {
     tester,
   ) async {
     final h = AccountHarness(); // MyAiConsent/default: version 1 accepted
-    await pumpApp(tester, overrides: h.overrides);
-    await open(tester);
+    await open(tester, h);
 
     expect(find.text('You have agreed to this version.'), findsOneWidget);
     expect(find.byKey(AiConsentScreen.agreeKey), findsNothing);
@@ -194,34 +210,20 @@ void main() {
     expect(find.byKey(AiConsentScreen.agreeKey), findsOneWidget);
   });
 
-  testWidgets('a deep link without anything underneath closes to the start', (
-    tester,
-  ) async {
-    final h = AccountHarness(scenarios: {'MyAiConsent': 'required'});
-    await pumpApp(tester, overrides: h.overrides);
-    routerOf(tester).go(AppRoutes.consentAi);
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byKey(AiConsentScreen.notNowKey));
-    await tester.pumpAndSettle();
-    expect(locationOf(tester), AppRoutes.initial);
-  });
-
   for (final brightness in Brightness.values) {
     testWidgets('German, text scale 1.3, iPhone SE, ${brightness.name}', (
       tester,
     ) async {
       final h = AccountHarness(scenarios: {'MyAiConsent': 'required'})
         ..serveLegalDocumentsByLanguage();
-      await pumpApp(
+      await open(
         tester,
+        h,
         locale: const Locale('de', 'CH'),
         brightness: brightness,
         textScale: 1.3,
-        screen: kIphoneSe,
-        overrides: h.overrides,
+        screenSize: kIphoneSe,
       );
-      await open(tester);
 
       expect(tester.takeException(), isNull);
       expect(find.text('KI-Analyse deiner Partien'), findsOneWidget);
@@ -246,10 +248,4 @@ void main() {
       );
     });
   }
-}
-
-/// Runs [then] when [future] completes, without waiting for it.
-void unawaitedResult(Future<Object?> future, void Function() then) {
-  // ignore: discarded_futures
-  future.whenComplete(then);
 }

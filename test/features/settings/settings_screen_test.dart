@@ -10,14 +10,14 @@ import 'package:bogner_chess/core/chess/board_view.dart';
 import 'package:bogner_chess/core/consent/consent_state.dart';
 import 'package:bogner_chess/core/push/push_platform.dart';
 import 'package:bogner_chess/core/push/ui/push_denied_hint.dart';
-import 'package:bogner_chess/features/account/ui/account_screen.dart';
 import 'package:bogner_chess/features/consent/ui/ai_consent_screen.dart';
 import 'package:bogner_chess/features/entry/domain/entry_settings.dart';
-import 'package:bogner_chess/features/legal/ui/legal_document_screen.dart';
+import 'package:bogner_chess/features/legal/domain/legal_documents.dart';
 import 'package:bogner_chess/features/settings/ui/settings_board.dart';
 import 'package:bogner_chess/features/settings/ui/settings_screen.dart';
 import 'package:bogner_chess/features/settings/ui/settings_usage.dart';
 import 'package:bogner_chess/router.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
@@ -26,11 +26,24 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/push/push_test_support.dart';
 import '../../helpers/account_harness.dart';
 import '../../helpers/pump_app.dart';
+import '../../helpers/pump_screen.dart';
 
-Future<void> _openSettings(WidgetTester tester) async {
-  routerOf(tester).go(AppRoutes.settings);
-  await tester.pumpAndSettle();
-}
+Future<PumpedScreen> _pumpSettings(
+  WidgetTester tester, {
+  required List<Override> overrides,
+  Locale locale = const Locale('en'),
+  Brightness brightness = Brightness.light,
+  double textScale = 1.0,
+  Size screenSize = kIphone17Pro,
+}) => pumpScreen(
+  tester,
+  const SettingsScreen(),
+  locale: locale,
+  brightness: brightness,
+  textScale: textScale,
+  screenSize: screenSize,
+  overrides: overrides,
+);
 
 Future<void> _tapVisible(WidgetTester tester, Finder finder) async {
   await tester.ensureVisible(finder);
@@ -67,8 +80,7 @@ Map<String, dynamic> _usage({
 void main() {
   testWidgets('every section is there', (tester) async {
     final h = AccountHarness();
-    await pumpApp(tester, overrides: h.overrides);
-    await _openSettings(tester);
+    await _pumpSettings(tester, overrides: h.overrides);
 
     for (final text in [
       'Account',
@@ -104,8 +116,7 @@ void main() {
           monthlyResetAt: monthlyReset,
         ),
       );
-      await pumpApp(tester, overrides: h.overrides);
-      await _openSettings(tester);
+      await _pumpSettings(tester, overrides: h.overrides);
 
       expect(find.text('Today'), findsOneWidget);
       expect(find.text('1 of 3'), findsOneWidget);
@@ -136,8 +147,7 @@ void main() {
           monthlyResetAt: DateTime.now().add(const Duration(days: 9)),
         ),
       );
-      await pumpApp(tester, overrides: h.overrides);
-      await _openSettings(tester);
+      await _pumpSettings(tester, overrides: h.overrides);
 
       expect(find.text('3 of 3'), findsOneWidget);
       expect(find.textContaining('Limit reached. Resets at'), findsOneWidget);
@@ -147,8 +157,7 @@ void main() {
       tester,
     ) async {
       final h = AccountHarness(scenarios: {'MyAnalysisUsage': 'unlimited'});
-      await pumpApp(tester, overrides: h.overrides);
-      await _openSettings(tester);
+      await _pumpSettings(tester, overrides: h.overrides);
 
       expect(find.text('Unlimited'), findsOneWidget);
       expect(find.text('1 analysis'), findsOneWidget);
@@ -161,8 +170,7 @@ void main() {
     ) async {
       final h = AccountHarness();
       h.api.fail('MyAnalysisUsage', const SocketException('offline'));
-      await pumpApp(tester, overrides: h.overrides);
-      await _openSettings(tester);
+      await _pumpSettings(tester, overrides: h.overrides);
 
       expect(find.text('The numbers could not be loaded.'), findsOneWidget);
       expect(find.text('Board'), findsOneWidget);
@@ -176,14 +184,18 @@ void main() {
     testWidgets('coming back to the tab asks for the numbers again', (
       tester,
     ) async {
+      // The whole app: this is about the shell keeping the tab alive while
+      // the screen is away, which only the real router does.
       final h = AccountHarness();
       await pumpApp(tester, overrides: h.overrides);
-      await _openSettings(tester);
+      routerOf(tester).go(AppRoutes.settings);
+      await tester.pumpAndSettle();
       expect(h.api.requestsOf('MyAnalysisUsage'), hasLength(1));
 
       routerOf(tester).go(AppRoutes.games);
       await tester.pumpAndSettle();
-      await _openSettings(tester);
+      routerOf(tester).go(AppRoutes.settings);
+      await tester.pumpAndSettle();
       expect(h.api.requestsOf('MyAnalysisUsage'), hasLength(2));
     });
   });
@@ -193,8 +205,7 @@ void main() {
       tester,
     ) async {
       final h = AccountHarness();
-      await pumpApp(tester, overrides: h.overrides);
-      await _openSettings(tester);
+      await _pumpSettings(tester, overrides: h.overrides);
 
       BoardTheme preview() =>
           tester.widget<BoardView>(find.byKey(SettingsBoard.previewKey)).theme;
@@ -235,6 +246,8 @@ void main() {
     });
 
     testWidgets('the entry board uses the chosen theme', (tester) async {
+      // The whole app: the point is that a choice made here reaches another
+      // screen.
       final h = AccountHarness();
       await pumpApp(tester, overrides: h.overrides);
       await containerOf(tester)
@@ -258,8 +271,7 @@ void main() {
     tester,
   ) async {
     final h = AccountHarness();
-    await pumpApp(tester, overrides: h.overrides);
-    await _openSettings(tester);
+    await _pumpSettings(tester, overrides: h.overrides);
 
     await _tapVisible(tester, find.byKey(SettingsScreen.autoQueenKey));
     expect(containerOf(tester).read(entryAutoQueenProvider), isTrue);
@@ -271,8 +283,7 @@ void main() {
       tester,
     ) async {
       final h = AccountHarness(scenarios: {'MyConsent': 'required'});
-      await pumpApp(tester, overrides: h.overrides);
-      await _openSettings(tester);
+      await _pumpSettings(tester, overrides: h.overrides);
 
       SwitchListTile tile() =>
           tester.widget(find.byKey(SettingsScreen.analyticsKey));
@@ -303,36 +314,44 @@ void main() {
       ]);
     });
 
-    testWidgets(
-      'AI consent: not given, given, and asked again for a new text',
-      (tester) async {
-        final h = AccountHarness(scenarios: {'MyAiConsent': 'required'});
-        await pumpApp(tester, overrides: h.overrides);
-        await _openSettings(tester);
-        expect(find.textContaining('Not agreed yet'), findsOneWidget);
+    testWidgets('AI consent: not agreed yet leads to the consent screen', (
+      tester,
+    ) async {
+      final h = AccountHarness(scenarios: {'MyAiConsent': 'required'});
+      await _pumpSettings(tester, overrides: h.overrides);
+      expect(find.textContaining('Not agreed yet'), findsOneWidget);
 
-        // "Review" opens the consent screen; agreeing there shows here.
-        await _tapVisible(tester, find.text('Review'));
-        expect(find.byType(AiConsentScreen), findsOneWidget);
-        await tester.tap(find.byKey(AiConsentScreen.agreeKey));
-        await tester.pumpAndSettle();
-        expect(find.byType(AiConsentScreen), findsNothing);
-        expect(find.text('Agreed (version 1)'), findsOneWidget);
-      },
-    );
+      await _tapVisible(tester, find.text('Review'));
+      expect(navigatedTo(tester), AppRoutes.consentAi);
+    });
+
+    testWidgets('AI consent: agreeing on the consent screen shows here', (
+      tester,
+    ) async {
+      // The whole app: the round trip between two screens is the point.
+      final h = AccountHarness(scenarios: {'MyAiConsent': 'required'});
+      await pumpApp(tester, overrides: h.overrides);
+      routerOf(tester).go(AppRoutes.settings);
+      await tester.pumpAndSettle();
+
+      await _tapVisible(tester, find.text('Review'));
+      expect(find.byType(AiConsentScreen), findsOneWidget);
+      await tester.tap(find.byKey(AiConsentScreen.agreeKey));
+      await tester.pumpAndSettle();
+      expect(find.byType(AiConsentScreen), findsNothing);
+      expect(find.text('Agreed (version 1)'), findsOneWidget);
+    });
 
     testWidgets('AI consent: a version bump says so', (tester) async {
       final h = AccountHarness(scenarios: {'MyAiConsent': 'new_version'});
-      await pumpApp(tester, overrides: h.overrides);
-      await _openSettings(tester);
+      await _pumpSettings(tester, overrides: h.overrides);
       expect(find.textContaining('The text has changed'), findsOneWidget);
     });
 
     testWidgets('AI consent: offline', (tester) async {
       final h = AccountHarness();
       h.api.fail('MyAiConsent', const SocketException('offline'));
-      await pumpApp(tester, overrides: h.overrides);
-      await _openSettings(tester);
+      await _pumpSettings(tester, overrides: h.overrides);
       expect(find.text('The status could not be loaded.'), findsOneWidget);
     });
   });
@@ -346,14 +365,13 @@ void main() {
       final platform = FakePushPlatform(status: status);
       // Not awaited: without a listener the future of close() never ends.
       addTearDown(() => unawaited(platform.controller.close()));
-      await pumpApp(
+      await _pumpSettings(
         tester,
         overrides: [
           ...h.overrides,
           pushPlatformProvider.overrideWithValue(platform),
         ],
       );
-      await _openSettings(tester);
       return platform;
     }
 
@@ -398,29 +416,25 @@ void main() {
     tester,
   ) async {
     final h = AccountHarness();
-    await pumpApp(tester, overrides: h.overrides);
-    await _openSettings(tester);
+    await _pumpSettings(tester, overrides: h.overrides);
 
     await _tapVisible(tester, find.byKey(SettingsScreen.accountKey));
-    expect(find.byType(AccountScreen), findsOneWidget);
-    await _openSettings(tester);
+    expect(navigatedTo(tester), AppRoutes.settingsAccount);
 
+    await _pumpSettings(tester, overrides: h.overrides);
     await _tapVisible(tester, find.byKey(SettingsScreen.termsKey));
-    expect(find.byType(LegalDocumentScreen), findsOneWidget);
-    expect(h.api.requestsOf('LegalDocument').single.variables['key'], 'TERMS');
-    await tester.pageBack();
-    await tester.pumpAndSettle();
+    expect(navigatedTo(tester), AppRoutes.legalDocument(LegalPage.terms.slug));
 
+    await _pumpSettings(tester, overrides: h.overrides);
     await _tapVisible(tester, find.byKey(SettingsScreen.privacyPolicyKey));
     expect(
-      h.api.requestsOf('LegalDocument').last.variables['key'],
-      'PRIVACY_POLICY',
+      navigatedTo(tester),
+      AppRoutes.legalDocument(LegalPage.privacy.slug),
     );
-    await tester.pageBack();
-    await tester.pumpAndSettle();
 
+    await _pumpSettings(tester, overrides: h.overrides);
     await _tapVisible(tester, find.byKey(SettingsScreen.aboutKey));
-    expect(locationOf(tester), AppRoutes.settingsAbout);
+    expect(navigatedTo(tester), AppRoutes.settingsAbout);
   });
 
   for (final brightness in Brightness.values) {
@@ -428,15 +442,14 @@ void main() {
       tester,
     ) async {
       final h = AccountHarness();
-      await pumpApp(
+      await _pumpSettings(
         tester,
         locale: const Locale('de', 'CH'),
         brightness: brightness,
         textScale: 1.3,
-        screen: kIphoneSe,
+        screenSize: kIphoneSe,
         overrides: h.overrides,
       );
-      await _openSettings(tester);
       expect(tester.takeException(), isNull);
 
       for (final text in [

@@ -7,12 +7,16 @@ import 'dart:async';
 import 'package:bogner_chess/core/push/push_platform.dart';
 import 'package:bogner_chess/core/push/ui/push_denied_hint.dart';
 import 'package:bogner_chess/core/push/ui/push_explainer_sheet.dart';
-import 'package:bogner_chess/router.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../helpers/pump_app.dart';
+import '../../helpers/pump_screen.dart';
 import 'push_test_support.dart';
+
+/// Whatever screen the sheet is shown over.
+const _hostKey = Key('sheet-host');
+const _host = Scaffold(key: _hostKey, body: SizedBox.expand());
 
 void main() {
   Future<Future<bool>> open(
@@ -22,14 +26,15 @@ void main() {
     double textScale = 1.0,
     Size screen = kIphone17Pro,
   }) async {
-    await pumpApp(
+    await pumpScreen(
       tester,
+      _host,
       locale: locale,
       brightness: brightness,
       textScale: textScale,
-      screen: screen,
+      screenSize: screen,
     );
-    final result = showPushExplainerSheet(rootNavigatorKey.currentContext!);
+    final result = showPushExplainerSheet(tester.element(find.byKey(_hostKey)));
     await tester.pumpAndSettle();
     return result;
   }
@@ -126,20 +131,12 @@ void main() {
       final platform = FakePushPlatform(status: status);
       // Not awaited: without a listener the future of close() never ends.
       addTearDown(() => unawaited(platform.controller.close()));
-      await pumpApp(
+      await pumpScreen(
         tester,
+        const Scaffold(body: PushDeniedHint()),
         locale: locale,
         overrides: [pushPlatformProvider.overrideWithValue(platform)],
       );
-      final context = rootNavigatorKey.currentContext!;
-      unawaited(
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => const Scaffold(body: PushDeniedHint()),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
       return platform;
     }
 

@@ -9,8 +9,6 @@ import 'package:bogner_chess/core/storage/preferences.dart';
 import 'package:bogner_chess/core/storage/storage_providers.dart';
 import 'package:bogner_chess/features/entry/data/screen_wakelock.dart';
 import 'package:bogner_chess/features/submit_queue/submit_queue_overrides.dart';
-import 'package:drift/drift.dart' show DatabaseConnection, driftRuntimeOptions;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -36,18 +34,6 @@ class FlowHarness {
   Map<String, dynamic> importInput([int index = 0]) =>
       api.requestsOf('ImportMobileGame')[index].variables['input']
           as Map<String, dynamic>;
-}
-
-/// An in-memory database that a widget test can close without leaving a
-/// timer behind.
-AppDatabase openWidgetTestDatabase() {
-  driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
-  return AppDatabase(
-    DatabaseConnection(
-      NativeDatabase.memory(),
-      closeStreamsSynchronously: true,
-    ),
-  );
 }
 
 /// The whole app as `main.dart` runs it: the real router, the drift-backed

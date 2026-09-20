@@ -12,12 +12,12 @@ import 'package:bogner_chess/core/game/library_refresh.dart';
 import 'package:bogner_chess/core/storage/app_database.dart';
 import 'package:bogner_chess/core/storage/storage_providers.dart';
 import 'package:bogner_chess/core/ui/widgets/error_retry.dart';
-import 'package:bogner_chess/features/game_detail/ui/game_detail_screen.dart';
 import 'package:bogner_chess/features/library/domain/draft_actions.dart';
 import 'package:bogner_chess/features/library/domain/game_summary_codec.dart';
 import 'package:bogner_chess/features/library/domain/library_controller.dart';
 import 'package:bogner_chess/features/library/ui/library_ids.dart';
 import 'package:bogner_chess/features/library/ui/library_row_tile.dart';
+import 'package:bogner_chess/features/library/ui/library_screen.dart';
 import 'package:bogner_chess/router.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
@@ -25,6 +25,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../helpers/fixture_link.dart';
 import '../../helpers/pump_app.dart';
+import '../../helpers/pump_screen.dart';
 
 const owner = kFakeAuthSub;
 
@@ -117,7 +118,7 @@ void main() {
     testWidgets('rows: players, date and event, result, status badge', (
       tester,
     ) async {
-      await pumpApp(tester, overrides: overrides());
+      await pumpScreen(tester, const LibraryScreen(), overrides: overrides());
 
       expect(titles(tester), [
         'Fake User – Jonas Keller',
@@ -145,7 +146,7 @@ void main() {
           ..['finishedAt'] = '2026-09-19T10:05:00.000Z';
         return body;
       });
-      await pumpApp(tester, overrides: overrides());
+      await pumpScreen(tester, const LibraryScreen(), overrides: overrides());
       expect(find.text('Analysis failed'), findsOneWidget);
     });
 
@@ -153,7 +154,12 @@ void main() {
         'up to date', (tester) async {
       await seedCachedGame(db, id: 'old-1', black: 'Cached Opponent');
       api.delay = const Duration(seconds: 2);
-      await pumpApp(tester, overrides: overrides(), settle: false);
+      await pumpScreen(
+        tester,
+        const LibraryScreen(),
+        overrides: overrides(),
+        settle: false,
+      );
       await tester.pump(const Duration(milliseconds: 100));
       await tester.pump(const Duration(milliseconds: 100));
       expect(titles(tester), ['Fake User – Cached Opponent']);
@@ -171,14 +177,10 @@ void main() {
     });
 
     testWidgets('a tap opens the game', (tester) async {
-      await pumpApp(tester, overrides: overrides());
+      await pumpScreen(tester, const LibraryScreen(), overrides: overrides());
       await tester.tap(find.text('Fake User – Jonas Keller'));
       await tester.pumpAndSettle();
-      expect(find.byType(GameDetailScreen), findsOneWidget);
-      expect(
-        tester.widget<GameDetailScreen>(find.byType(GameDetailScreen)).gameId,
-        'game-1',
-      );
+      expect(navigatedTo(tester), AppRoutes.game('game-1'));
     });
 
     testWidgets('the next page is loaded when the end comes into view', (
@@ -190,7 +192,7 @@ void main() {
           variables['after'] == null ? 'first_page' : 'last_page',
         );
       });
-      await pumpApp(tester, overrides: overrides());
+      await pumpScreen(tester, const LibraryScreen(), overrides: overrides());
 
       final requests = api.requestsOf('MyMobileGames');
       expect(requests, hasLength(2));
@@ -200,7 +202,7 @@ void main() {
     });
 
     testWidgets('pull to refresh asks the server again', (tester) async {
-      await pumpApp(tester, overrides: overrides());
+      await pumpScreen(tester, const LibraryScreen(), overrides: overrides());
       final before = api.requestsOf('MyMobileGames').length;
       await tester.drag(
         find.text('Fake User – Jonas Keller'),
@@ -215,7 +217,7 @@ void main() {
     testWidgets('libraryRefreshProvider makes the list fetch again', (
       tester,
     ) async {
-      await pumpApp(tester, overrides: overrides());
+      await pumpScreen(tester, const LibraryScreen(), overrides: overrides());
       final before = api.requestsOf('MyMobileGames').length;
 
       // What SubmitQueue calls after an upload (WP-27).
@@ -229,7 +231,7 @@ void main() {
   group('search and date filter', () {
     testWidgets('typing filters the cache at once and asks the server after '
         'a pause', (tester) async {
-      await pumpApp(tester, overrides: overrides());
+      await pumpScreen(tester, const LibraryScreen(), overrides: overrides());
       final before = api.requestsOf('MyMobileGames').length;
 
       await tester.enterText(find.byType(TextField), 'kell');
@@ -248,7 +250,7 @@ void main() {
     testWidgets('the event is searched as well; clearing brings all back', (
       tester,
     ) async {
-      await pumpApp(tester, overrides: overrides());
+      await pumpScreen(tester, const LibraryScreen(), overrides: overrides());
       await tester.enterText(find.byType(TextField), 'rapid');
       await tester.pumpAndSettle(LibraryController.searchDebounce);
       expect(titles(tester), ['Mira Østergård – Fake User']);
@@ -261,7 +263,7 @@ void main() {
     testWidgets('no match: says so, and one tap clears the filters', (
       tester,
     ) async {
-      await pumpApp(tester, overrides: overrides());
+      await pumpScreen(tester, const LibraryScreen(), overrides: overrides());
       await tester.enterText(find.byType(TextField), 'nobody');
       await tester.pumpAndSettle(LibraryController.searchDebounce);
       expect(find.text('No games found'), findsOneWidget);
@@ -279,7 +281,7 @@ void main() {
 
     testWidgets('a date range goes to the server, filters the cache and '
         'shows on the chip', (tester) async {
-      await pumpApp(tester, overrides: overrides());
+      await pumpScreen(tester, const LibraryScreen(), overrides: overrides());
       containerOf(tester)
           .read(libraryControllerProvider.notifier)
           .setDateRange(GameDate(2026, 9, 10), GameDate(2026, 9, 30));
@@ -301,10 +303,11 @@ void main() {
     testWidgets('the chip opens the date-range picker', (tester) async {
       // A wide screen: in the test font the picker's own "Start Date – End
       // Date" headline does not fit a phone.
-      await pumpApp(
+      await pumpScreen(
         tester,
+        const LibraryScreen(),
         overrides: overrides(),
-        screen: const Size(800, 1000),
+        screenSize: const Size(800, 1000),
       );
       await tester.tap(find.text('Date'));
       await tester.pumpAndSettle();
@@ -317,7 +320,7 @@ void main() {
       await seedDraft(db, opponent: 'Draft One');
       await seedDraft(db, opponent: 'Draft Two', state: DraftState.ready);
       await seedDraft(db, opponent: 'Draft Three', state: DraftState.failed);
-      await pumpApp(tester, overrides: overrides());
+      await pumpScreen(tester, const LibraryScreen(), overrides: overrides());
 
       final shown = titles(tester);
       expect(shown.take(3).toSet(), {
@@ -335,19 +338,10 @@ void main() {
       tester,
     ) async {
       final draft = await seedDraft(db, opponent: 'Draft One');
-      await pumpApp(tester, overrides: overrides());
+      await pumpScreen(tester, const LibraryScreen(), overrides: overrides());
       await tester.tap(find.text('Fake User – Draft One'));
       await tester.pumpAndSettle();
-      final uri = routerOf(tester)
-          .routerDelegate
-          .currentConfiguration
-          .last
-          .matchedLocation;
-      expect(uri, AppRoutes.newGameEntry);
-      expect(
-        routerOf(tester).routerDelegate.currentConfiguration.last.route.name,
-        AppRouteNames.newGameEntry,
-      );
+      expect(navigatedTo(tester), AppRoutes.newGameEntry);
       expect(draft.id, isNotEmpty);
     });
 
@@ -357,8 +351,9 @@ void main() {
       await seedDraft(db, opponent: 'Draft Two', state: DraftState.ready);
       final taps = <String>[];
       var handle = false;
-      await pumpApp(
+      await pumpScreen(
         tester,
+        const LibraryScreen(),
         overrides: overrides([
           libraryDraftTapHandlerProvider.overrideWithValue((context, draft) {
             taps.add(draft.state.name);
@@ -390,7 +385,7 @@ void main() {
 
     testWidgets('the filter applies to drafts too', (tester) async {
       await seedDraft(db, opponent: 'Draft One');
-      await pumpApp(tester, overrides: overrides());
+      await pumpScreen(tester, const LibraryScreen(), overrides: overrides());
       await tester.enterText(find.byType(TextField), 'kell');
       await tester.pumpAndSettle(LibraryController.searchDebounce);
       expect(titles(tester), ['Fake User – Jonas Keller']);
@@ -398,7 +393,7 @@ void main() {
 
     testWidgets('a draft can be deleted', (tester) async {
       await seedDraft(db, opponent: 'Draft One');
-      await pumpApp(tester, overrides: overrides());
+      await pumpScreen(tester, const LibraryScreen(), overrides: overrides());
       await tester.drag(
         find.text('Fake User – Draft One'),
         const Offset(-400, 0),
@@ -420,7 +415,7 @@ void main() {
     testWidgets('swipe, confirm: gone on the server and in the list', (
       tester,
     ) async {
-      await pumpApp(tester, overrides: overrides());
+      await pumpScreen(tester, const LibraryScreen(), overrides: overrides());
       await tester.drag(
         find.text('Fake User – Jonas Keller'),
         const Offset(-400, 0),
@@ -443,7 +438,7 @@ void main() {
     });
 
     testWidgets('cancel keeps the game and asks nothing', (tester) async {
-      await pumpApp(tester, overrides: overrides());
+      await pumpScreen(tester, const LibraryScreen(), overrides: overrides());
       await tester.drag(
         find.text('Fake User – Jonas Keller'),
         const Offset(-400, 0),
@@ -457,7 +452,7 @@ void main() {
 
     testWidgets('a failure keeps the game and says so', (tester) async {
       api.use('DeleteChessGame', 'technical_error');
-      await pumpApp(tester, overrides: overrides());
+      await pumpScreen(tester, const LibraryScreen(), overrides: overrides());
       await tester.drag(
         find.text('Fake User – Jonas Keller'),
         const Offset(-400, 0),
@@ -479,7 +474,7 @@ void main() {
     ) async {
       await seedCachedGame(db, id: 'old-1', black: 'Cached Opponent');
       api.fail('MyMobileGames', const SocketException('offline'));
-      await pumpApp(tester, overrides: overrides());
+      await pumpScreen(tester, const LibraryScreen(), overrides: overrides());
 
       expect(titles(tester), ['Fake User – Cached Opponent']);
       expect(
@@ -505,7 +500,7 @@ void main() {
       tester,
     ) async {
       api.fail('MyMobileGames', const SocketException('offline'));
-      await pumpApp(tester, overrides: overrides());
+      await pumpScreen(tester, const LibraryScreen(), overrides: overrides());
       expect(find.byType(ErrorRetry), findsOneWidget);
       expect(
         find.text("You're offline, and no games are saved on this device yet."),
@@ -522,7 +517,7 @@ void main() {
       await seedCachedGame(db, id: 'old-1', black: 'Cached Opponent');
       api.use('MyMobileGames', 'null_connection');
       api.fail('MyMobileGames', const ApiServerError(statusCode: 500));
-      await pumpApp(tester, overrides: overrides());
+      await pumpScreen(tester, const LibraryScreen(), overrides: overrides());
       expect(find.text('The list could not be updated.'), findsOneWidget);
     });
   });
@@ -537,12 +532,13 @@ void main() {
           await seedDraft(db, opponent: 'Two', state: DraftState.failed);
           await seedCachedGame(db, id: 'old-1', black: 'Cached Opponent');
           api.fail('MyMobileGames', const SocketException('offline'));
-          await pumpApp(
+          await pumpScreen(
             tester,
+            const LibraryScreen(),
             locale: locale,
             brightness: brightness,
             textScale: 1.3,
-            screen: kIphoneSe,
+            screenSize: kIphoneSe,
             overrides: overrides(),
           );
           expect(tester.takeException(), isNull);
@@ -567,7 +563,12 @@ void main() {
 
     testWidgets('German strings', (tester) async {
       await seedDraft(db, opponent: 'Eins');
-      await pumpApp(tester, locale: const Locale('de'), overrides: overrides());
+      await pumpScreen(
+        tester,
+        const LibraryScreen(),
+        locale: const Locale('de'),
+        overrides: overrides(),
+      );
       expect(find.text('Spieler oder Turnier suchen'), findsOneWidget);
       expect(find.text('Entwurf'), findsOneWidget);
       expect(find.text('Analyse bereit'), findsOneWidget);

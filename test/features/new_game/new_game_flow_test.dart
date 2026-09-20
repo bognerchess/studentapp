@@ -18,6 +18,7 @@ import 'package:bogner_chess/features/new_game/ui/new_game_screen.dart';
 import 'package:bogner_chess/features/submit_queue/domain/draft_meta.dart';
 import 'package:bogner_chess/features/submit_queue/domain/submit_queue_providers.dart';
 import 'package:bogner_chess/features/submit_queue/ui/submit_queue_banner.dart';
+import 'package:bogner_chess/features/submit_queue/ui/submit_queue_sheet.dart';
 import 'package:bogner_chess/router.dart';
 import 'package:dartchess/dartchess.dart' show Side;
 import 'package:flutter/services.dart';
@@ -102,19 +103,42 @@ Future<void> dismissSnackBar(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+/// [text] inside the upload sheet, and not the same line in the library
+/// behind it: the library lists waiting drafts too (WP-26), and its fixture
+/// has a game with the same players.
+Finder inSheet(String text) => find.descendant(
+  of: find.byType(SubmitQueueSheet),
+  matching: find.text(text),
+);
+
 /// Lets the snack bar's timer run out before the test ends.
 Future<void> finish(WidgetTester tester) async {
   await tester.pump(const Duration(seconds: 5));
   await tester.pumpAndSettle();
 }
 
+/// Pumps a few frames instead of settling.
+///
+/// The game screen of a running analysis carries an indeterminate progress
+/// indicator, which animates for ever: `pumpAndSettle` would never return
+/// once the flow has opened such a game.
+Future<void> pumpFrames(WidgetTester tester, [int frames = 8]) async {
+  for (var i = 0; i < frames; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+}
+
+/// What the app asks for on its own, whatever the flow does: the "update the
+/// app" gate polls `MobileConfig` (WP-30), and the library — the start screen
+/// of every one of these tests — loads its own page of games (WP-26). Neither
+/// says anything about whether a game was submitted, so a test that means
+/// "nothing was uploaded" must not trip over them.
+const _shellOperations = {'MobileConfig', 'MyMobileGames'};
+
 /// What the flow itself sent, without what the app shell asks for on its own.
-/// `MobileConfig` is the shell's own poll (the "update the app" gate, WP-30);
-/// it says nothing about whether a game was submitted, so a test that means
-/// "nothing was uploaded" must not trip over it.
 List<FixtureRequest> flowRequests(FixtureLink api) => [
   for (final request in api.requests)
-    if (request.operationName != 'MobileConfig') request,
+    if (!_shellOperations.contains(request.operationName)) request,
 ];
 
 void main() {
@@ -461,9 +485,16 @@ void main() {
         findsOneWidget,
       );
       await tester.tap(find.text('Open'));
-      await tester.pumpAndSettle();
-      expect(locationOf(tester), AppRoutes.game('game-10'));
-      await finish(tester);
+      await pumpFrames(tester);
+      expect(
+        routerOf(tester)
+            .routerDelegate
+            .currentConfiguration
+            .last
+            .matchedLocation,
+        AppRoutes.game('game-10'),
+      );
+      await pumpFrames(tester, 60);
     });
 
     testWidgets('the analysis limit is reached: the game is saved and the '
@@ -534,7 +565,7 @@ void main() {
       await tester.tap(find.byKey(SubmitQueueBanner.bannerKey));
       await tester.pumpAndSettle();
       expect(find.text('Uploads'), findsOneWidget);
-      expect(find.text('Fake User – Jonas Keller'), findsOneWidget);
+      expect(inSheet('Fake User – Jonas Keller'), findsOneWidget);
       expect(
         find.textContaining(
           'Not uploaded: The server could not read the moves',
@@ -693,7 +724,7 @@ void main() {
           await dismissSnackBar(tester);
           await tester.tap(find.byKey(SubmitQueueBanner.bannerKey));
           await tester.pumpAndSettle();
-          expect(find.text('Anna Muster – Jonas Keller'), findsOneWidget);
+          expect(inSheet('Anna Muster – Jonas Keller'), findsOneWidget);
           expect(
             find.text(
               german

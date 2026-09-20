@@ -7,9 +7,9 @@ import 'package:bogner_chess/config/env.dart';
 import 'package:bogner_chess/core/api/api_providers.dart';
 import 'package:bogner_chess/core/app_info.dart';
 import 'package:bogner_chess/core/auth/auth_state.dart';
-import 'package:bogner_chess/features/analysis_status/domain/job_tracker_providers.dart';
 import 'package:bogner_chess/core/storage/app_database.dart';
 import 'package:bogner_chess/core/storage/storage_providers.dart';
+import 'package:bogner_chess/features/analysis_status/domain/job_tracker_providers.dart';
 import 'package:bogner_chess/features/consent/ui/first_run_consent_prompt.dart';
 import 'package:bogner_chess/router.dart';
 import 'package:drift/drift.dart' show DatabaseConnection, driftRuntimeOptions;
@@ -165,8 +165,11 @@ Future<void> pumpApp(
   }
 }
 
+/// The container of the scope around whatever was pumped — the whole app
+/// ([pumpApp]) or a single screen (`pumpScreen`). `MaterialApp` is the one
+/// widget both have, and it sits below the scope.
 ProviderContainer containerOf(WidgetTester tester) =>
-    ProviderScope.containerOf(tester.element(find.byType(BognerChessApp)));
+    ProviderScope.containerOf(tester.element(find.byType(MaterialApp)));
 
 GoRouter routerOf(WidgetTester tester) =>
     containerOf(tester).read(routerProvider);

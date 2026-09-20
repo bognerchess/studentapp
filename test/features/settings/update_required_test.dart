@@ -4,7 +4,6 @@
 
 import 'dart:io';
 
-import 'package:bogner_chess/core/ui/widgets/tab_shell.dart';
 import 'package:bogner_chess/features/settings/domain/update_required.dart';
 import 'package:bogner_chess/features/settings/ui/update_required_gate.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,6 +11,14 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../helpers/account_harness.dart';
 import '../../helpers/pump_app.dart';
+import '../../helpers/pump_screen.dart';
+
+/// Stands in for the app the gate either shows or replaces.
+const _appKey = Key('the-app');
+const _app = UpdateRequiredGate(
+  child: Scaffold(key: _appKey, body: Text('the app')),
+);
+final _theApp = find.byKey(_appKey);
 
 void main() {
   group('compareVersions', () {
@@ -38,8 +45,8 @@ void main() {
   group('UpdateRequiredGate', () {
     testWidgets('a supported version sees the app', (tester) async {
       final h = AccountHarness(); // minSupportedAppVersion 0.1.0, app 1.2.3
-      await pumpApp(tester, overrides: h.overrides);
-      expect(find.byType(TabShell), findsOneWidget);
+      await pumpScreen(tester, _app, overrides: h.overrides);
+      expect(_theApp, findsOneWidget);
       expect(find.text('Please update the app'), findsNothing);
       expect(h.api.requestsOf('MobileConfig'), hasLength(1));
     });
@@ -48,10 +55,10 @@ void main() {
       tester,
     ) async {
       final h = AccountHarness(scenarios: {'MobileConfig': 'update_required'});
-      await pumpApp(tester, overrides: h.overrides);
+      await pumpScreen(tester, _app, overrides: h.overrides);
 
       expect(find.text('Please update the app'), findsOneWidget);
-      expect(find.byType(TabShell), findsNothing);
+      expect(_theApp, findsNothing);
 
       await tester.tap(find.byKey(UpdateRequiredGate.updateKey));
       await tester.pump();
@@ -60,12 +67,13 @@ void main() {
 
     testWidgets('German, text scale 1.3, iPhone SE, dark', (tester) async {
       final h = AccountHarness(scenarios: {'MobileConfig': 'update_required'});
-      await pumpApp(
+      await pumpScreen(
         tester,
+        _app,
         locale: const Locale('de'),
         brightness: Brightness.dark,
         textScale: 1.3,
-        screen: kIphoneSe,
+        screenSize: kIphoneSe,
         overrides: h.overrides,
       );
       expect(tester.takeException(), isNull);
@@ -78,8 +86,8 @@ void main() {
     ) async {
       final h = AccountHarness();
       h.api.fail('MobileConfig', const SocketException('offline'));
-      await pumpApp(tester, overrides: h.overrides);
-      expect(find.byType(TabShell), findsOneWidget);
+      await pumpScreen(tester, _app, overrides: h.overrides);
+      expect(_theApp, findsOneWidget);
 
       h.api.use('MobileConfig', 'update_required');
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
@@ -92,7 +100,7 @@ void main() {
         scenarios: {'MobileConfig': 'update_required'},
         signedIn: false,
       );
-      await pumpApp(tester, overrides: h.overrides);
+      await pumpScreen(tester, _app, overrides: h.overrides);
       expect(h.api.requestsOf('MobileConfig'), isEmpty);
       expect(find.text('Please update the app'), findsNothing);
     });

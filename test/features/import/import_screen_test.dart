@@ -20,6 +20,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../helpers/pump_app.dart';
+import '../../helpers/pump_screen.dart';
 
 String fixture(String name) =>
     io.File('test/fixtures/pgn/$name').readAsStringSync();
@@ -426,17 +427,14 @@ void main() {
     testWidgets('without onContinue, Continue pops with the result', (
       tester,
     ) async {
-      await pumpApp(tester);
-      final popped = rootNavigatorKey.currentState!.push<ImportResult>(
-        MaterialPageRoute(
-          builder: (context) => const ImportScreen(initialText: '1. d4 d5'),
-        ),
+      final screen = await pumpScreen(
+        tester,
+        const ImportScreen(initialText: '1. d4 d5'),
       );
-      await tester.pumpAndSettle();
 
       await tester.tap(byKey('import-continue'));
       await tester.pumpAndSettle();
-      final result = await popped;
+      final result = screen.value as ImportResult?;
       expect(result?.movetext, '1. d4 d5');
       expect(result?.origin, ImportOrigin.text);
       expect(find.byType(ImportScreen), findsNothing);

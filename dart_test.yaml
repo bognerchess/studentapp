@@ -1,3 +1,13 @@
+# A plain `test` may not run longer than this.
+#
+# It does not bind `testWidgets`: flutter_test passes the binding's own
+# `defaultTestTimeout` (ten minutes, and not settable from here) for those.
+# So a widget test that waits for something that never comes — a
+# `pumpAndSettle` on a screen with an endless animation, say — still costs
+# the run ten minutes. If that happens, the test is wrong, not slow: pump a
+# fixed number of frames instead of settling.
+timeout: 30s
+
 # Tags used by the test suite. An undeclared tag is a warning on every run.
 tags:
   # Pixel comparisons. They pass on macOS only, because text and anti-aliasing

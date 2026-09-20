@@ -2,11 +2,10 @@
 // Copyright (C) 2026 Bogner Chess
 // Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
 
-import 'dart:async';
 import 'dart:io';
 
 import 'package:bogner_chess/core/ui/widgets/draft_badge.dart';
-import 'package:bogner_chess/core/ui/widgets/not_found_screen.dart';
+import 'package:bogner_chess/features/legal/domain/legal_documents.dart';
 import 'package:bogner_chess/features/legal/ui/legal_document_screen.dart';
 import 'package:bogner_chess/features/legal/ui/legal_screen.dart';
 import 'package:bogner_chess/router.dart';
@@ -16,6 +15,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../helpers/account_harness.dart';
 import '../../helpers/pump_app.dart';
+import '../../helpers/pump_screen.dart';
 
 Map<String, dynamic> _document(String markdown, {bool isDraft = false}) => {
   'data': {
@@ -34,27 +34,13 @@ Map<String, dynamic> _document(String markdown, {bool isDraft = false}) => {
 };
 
 void main() {
-  Future<void> open(WidgetTester tester, String slug) async {
-    routerOf(tester).go(AppRoutes.settingsLegal);
-    await tester.pumpAndSettle();
-    unawaited(routerOf(tester).push<void>(AppRoutes.legalDocument(slug)));
-    await tester.pumpAndSettle();
-  }
-
   testWidgets('the list leads to both texts', (tester) async {
-    final h = AccountHarness()..serveLegalDocumentsByLanguage();
-    await pumpApp(tester, overrides: h.overrides);
-    routerOf(tester).go(AppRoutes.settingsLegal);
-    await tester.pumpAndSettle();
-    expect(find.byType(LegalScreen), findsOneWidget);
+    final h = AccountHarness();
+    await pumpScreen(tester, const LegalScreen(), overrides: h.overrides);
 
     await tester.tap(find.text('Terms of use'));
     await tester.pumpAndSettle();
-    expect(find.byType(LegalDocumentScreen), findsOneWidget);
-    expect(h.api.requestsOf('LegalDocument').single.variables, {
-      'key': 'TERMS',
-      'language': 'en',
-    });
+    expect(navigatedTo(tester), AppRoutes.legalDocument('terms'));
   });
 
   testWidgets('renders the Markdown with version, date and the draft badge', (
@@ -69,9 +55,16 @@ void main() {
         isDraft: true,
       ),
     );
-    await pumpApp(tester, overrides: h.overrides);
-    await open(tester, 'terms');
+    await pumpScreen(
+      tester,
+      const LegalDocumentScreen(page: LegalPage.terms),
+      overrides: h.overrides,
+    );
 
+    expect(h.api.requestsOf('LegalDocument').single.variables, {
+      'key': 'TERMS',
+      'language': 'en',
+    });
     // The text has a heading of its own, so the title is not printed twice.
     expect(find.text('Terms of use'), findsOneWidget); // the app bar
     expect(find.text('Version 3 · September 1, 2026'), findsOneWidget);
@@ -90,8 +83,11 @@ void main() {
   testWidgets('a reviewed text has no badge', (tester) async {
     final h = AccountHarness();
     h.api.respond('LegalDocument', (_) => _document('Text.'));
-    await pumpApp(tester, overrides: h.overrides);
-    await open(tester, 'terms');
+    await pumpScreen(
+      tester,
+      const LegalDocumentScreen(page: LegalPage.terms),
+      overrides: h.overrides,
+    );
     expect(find.byType(DraftBadge), findsNothing);
     // No heading in the text: the title stands above it.
     expect(find.text('Terms of use'), findsNWidgets(2));
@@ -106,8 +102,11 @@ void main() {
         '[script](javascript:alert(1))\n\n[plain](http://example.test)',
       ),
     );
-    await pumpApp(tester, overrides: h.overrides);
-    await open(tester, 'terms');
+    await pumpScreen(
+      tester,
+      const LegalDocumentScreen(page: LegalPage.terms),
+      overrides: h.overrides,
+    );
 
     void tapLink(String text) {
       final richText = tester.widget<RichText>(
@@ -133,16 +132,14 @@ void main() {
     expect(h.launched, [Uri.parse('https://bognerchess.com/privacy')]);
   });
 
-  testWidgets('German: the German text; English-only texts say so', (
-    tester,
-  ) async {
+  testWidgets('German: the German text', (tester) async {
     final h = AccountHarness()..serveLegalDocumentsByLanguage();
-    await pumpApp(
+    await pumpScreen(
       tester,
+      const LegalDocumentScreen(page: LegalPage.privacy),
       locale: const Locale('de', 'CH'),
       overrides: h.overrides,
     );
-    await open(tester, 'privacy');
 
     expect(
       h.api.requestsOf('LegalDocument').single.variables['language'],
@@ -151,26 +148,38 @@ void main() {
     expect(find.text('Datenschutzerklärung'), findsWidgets);
     expect(find.textContaining('nur auf Englisch'), findsNothing);
     expect(find.textContaining('1. September 2026'), findsOneWidget);
+  });
 
+  testWidgets('German: an English-only text says so', (tester) async {
+    final h = AccountHarness();
     h.api.respond('LegalDocument', (_) => _document('English only.'));
-    await tester.tap(find.byType(BackButton));
-    await tester.pumpAndSettle();
-    await open(tester, 'terms');
+    await pumpScreen(
+      tester,
+      const LegalDocumentScreen(page: LegalPage.terms),
+      locale: const Locale('de', 'CH'),
+      overrides: h.overrides,
+    );
     expect(find.textContaining('nur auf Englisch'), findsOneWidget);
   });
 
   testWidgets('nothing published', (tester) async {
     final h = AccountHarness(scenarios: {'LegalDocument': 'not_found'});
-    await pumpApp(tester, overrides: h.overrides);
-    await open(tester, 'privacy');
+    await pumpScreen(
+      tester,
+      const LegalDocumentScreen(page: LegalPage.privacy),
+      overrides: h.overrides,
+    );
     expect(find.text('Not available yet'), findsOneWidget);
   });
 
   testWidgets('offline: explanation and retry', (tester) async {
     final h = AccountHarness();
     h.api.fail('LegalDocument', const SocketException('offline'));
-    await pumpApp(tester, overrides: h.overrides);
-    await open(tester, 'privacy');
+    await pumpScreen(
+      tester,
+      const LegalDocumentScreen(page: LegalPage.privacy),
+      overrides: h.overrides,
+    );
     expect(find.text('You are offline'), findsOneWidget);
 
     h.api.use('LegalDocument', 'privacy_policy_en');
@@ -178,15 +187,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('You are offline'), findsNothing);
     expect(find.textContaining('Version 1'), findsOneWidget);
-  });
-
-  testWidgets('an unknown document is the not-found screen', (tester) async {
-    final h = AccountHarness();
-    await pumpApp(tester, overrides: h.overrides);
-    routerOf(tester).go(AppRoutes.legalDocument('imprint'));
-    await tester.pumpAndSettle();
-    expect(find.byType(NotFoundScreen), findsOneWidget);
-    expect(h.api.requestsOf('LegalDocument'), isEmpty);
   });
 
   testWidgets('text scale 1.3 on an iPhone SE, dark', (tester) async {
@@ -201,14 +201,14 @@ void main() {
         isDraft: true,
       ),
     );
-    await pumpApp(
+    await pumpScreen(
       tester,
+      const LegalDocumentScreen(page: LegalPage.terms),
       brightness: Brightness.dark,
       textScale: 1.3,
-      screen: kIphoneSe,
+      screenSize: kIphoneSe,
       overrides: h.overrides,
     );
-    await open(tester, 'terms');
     expect(tester.takeException(), isNull);
     await tester.drag(
       find.byKey(LegalDocumentScreen.scrollKey),

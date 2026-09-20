@@ -22,6 +22,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../helpers/fixture_link.dart';
 import '../../helpers/pump_app.dart';
+import '../../helpers/pump_screen.dart';
 
 const owner = kFakeAuthSub;
 
@@ -61,11 +62,6 @@ void acceptRequests(FixtureLink api) {
     return body;
   });
 }
-
-/// Where the top of the stack is: `locationOf` reports the shell's branch,
-/// not a route that was pushed above it.
-String topLocation(WidgetTester tester) =>
-    routerOf(tester).routerDelegate.currentConfiguration.last.matchedLocation;
 
 /// The `GameById` answer for [gameId]: its row of the list fixture plus the
 /// moves of the detail fixture. [patch] changes the game before it goes out.
@@ -112,8 +108,7 @@ void main() {
     ...more,
   ];
 
-  /// Opens the game screen of [gameId] through the router, as a tap on a
-  /// library row does.
+  /// Mounts the game screen of [gameId], as a tap on a library row opens it.
   Future<void> openGame(
     WidgetTester tester, {
     String gameId = freshGame,
@@ -123,15 +118,16 @@ void main() {
     double textScale = 1.0,
     Size screen = kIphone17Pro,
   }) async {
-    await pumpApp(
+    await pumpScreen(
       tester,
+      GameDetailScreen(gameId: gameId),
       overrides: overrides(more),
       locale: locale,
       brightness: brightness,
       textScale: textScale,
-      screen: screen,
+      screenSize: screen,
+      settle: false,
     );
-    unawaited(routerOf(tester).push(AppRoutes.game(gameId)));
     await pumpFrames(tester);
   }
 
@@ -236,7 +232,7 @@ void main() {
 
       await tester.tap(find.bySemanticsIdentifier(GameDetailIds.openAnalysis));
       await pumpFrames(tester);
-      expect(topLocation(tester), AppRoutes.gameReview(analysedGame));
+      expect(navigatedTo(tester), AppRoutes.gameReview(analysedGame));
     });
 
     testWidgets('queued: position and the "you can leave" line', (
@@ -463,12 +459,12 @@ void main() {
       await openGame(tester);
       await tapAnalyse(tester);
 
-      expect(topLocation(tester), AppRoutes.consentAi);
+      expect(navigatedTo(tester), AppRoutes.consentAi);
       expect(api.requestsOf('RequestGameAnalysis'), hasLength(1));
 
       // The consent screen pops with true (WP-30 records the consent).
       acceptRequests(api);
-      routerOf(tester).pop(true);
+      popNavigatedTo(tester, true);
       await pumpFrames(tester);
 
       expect(api.requestsOf('RequestGameAnalysis'), hasLength(2));
@@ -482,7 +478,7 @@ void main() {
       await openGame(tester);
       await tapAnalyse(tester);
 
-      routerOf(tester).pop(false);
+      popNavigatedTo(tester, false);
       await pumpFrames(tester);
       expect(api.requestsOf('RequestGameAnalysis'), hasLength(1));
       expect(
@@ -517,7 +513,7 @@ void main() {
   });
 
   group('delete', () {
-    testWidgets('confirm: gone on the server, gone from the library', (
+    testWidgets('confirm: gone on the server, and the screen closes', (
       tester,
     ) async {
       await openGame(tester, gameId: analysedGame);
@@ -532,8 +528,23 @@ void main() {
         api.requestsOf('DeleteChessGame').single.variables.toString(),
         contains(analysedGame),
       );
-      expect(topLocation(tester), AppRoutes.games);
+      // Closed: back to whatever opened it, which is the library.
+      expect(navigatedTo(tester), kCallerRoute);
       expect(find.text('Game deleted'), findsOneWidget);
+    });
+
+    testWidgets('and the library no longer has it', (tester) async {
+      // The whole app: what the library shows after the screen is gone.
+      await pumpApp(tester, overrides: overrides(), settle: false);
+      await pumpFrames(tester);
+      unawaited(routerOf(tester).push(AppRoutes.game(analysedGame)));
+      await pumpFrames(tester);
+
+      await tester.tap(find.bySemanticsIdentifier(GameDetailIds.delete));
+      await pumpFrames(tester);
+      await tester.tap(find.text('Delete'));
+      await pumpFrames(tester);
+
       expect(find.text('Fake User – Jonas Keller'), findsNothing);
       expect(find.byType(LibraryRowTile), findsNWidgets(2));
     });
@@ -545,7 +556,7 @@ void main() {
       await tester.tap(find.text('Cancel'));
       await pumpFrames(tester);
       expect(api.requestsOf('DeleteChessGame'), isEmpty);
-      expect(topLocation(tester), AppRoutes.game(analysedGame));
+      expect(navigatedTo(tester), isNull);
     });
   });
 

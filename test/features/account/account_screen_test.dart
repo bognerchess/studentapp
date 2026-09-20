@@ -13,26 +13,51 @@ import 'package:bogner_chess/features/account/ui/account_screen.dart';
 import 'package:bogner_chess/features/account/ui/delete_account_screen.dart';
 import 'package:bogner_chess/features/auth/ui/sign_in_screen.dart';
 import 'package:bogner_chess/router.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../helpers/account_harness.dart';
 import '../../helpers/pump_app.dart';
+import '../../helpers/pump_screen.dart';
 
-Future<void> _openAccount(WidgetTester tester) async {
-  routerOf(tester).go(AppRoutes.settingsAccount);
-  await tester.pumpAndSettle();
-  expect(find.byType(AccountScreen), findsOneWidget);
-}
+Future<PumpedScreen> _pumpAccount(
+  WidgetTester tester, {
+  required List<Override> overrides,
+  AuthState? auth,
+  Locale locale = const Locale('en'),
+  Brightness brightness = Brightness.light,
+  double textScale = 1.0,
+  Size screenSize = kIphone17Pro,
+}) => pumpScreen(
+  tester,
+  const AccountScreen(),
+  auth: auth,
+  locale: locale,
+  brightness: brightness,
+  textScale: textScale,
+  screenSize: screenSize,
+  overrides: overrides,
+);
 
-Future<void> _openDelete(WidgetTester tester) async {
-  await _openAccount(tester);
-  await tester.ensureVisible(find.byKey(AccountScreen.deleteKey));
-  await tester.pumpAndSettle();
-  await tester.tap(find.byKey(AccountScreen.deleteKey));
-  await tester.pumpAndSettle();
-  expect(find.byType(DeleteAccountScreen), findsOneWidget);
-}
+/// The delete screen, under the app's "your account has been deleted" notice
+/// — the one piece of `app.dart` this screen needs, and nothing else.
+Future<PumpedScreen> _pumpDelete(
+  WidgetTester tester, {
+  required List<Override> overrides,
+  Locale locale = const Locale('en'),
+  Brightness brightness = Brightness.light,
+  double textScale = 1.0,
+  Size screenSize = kIphone17Pro,
+}) => pumpScreen(
+  tester,
+  const AccountDeletedNotice(child: DeleteAccountScreen()),
+  locale: locale,
+  brightness: brightness,
+  textScale: textScale,
+  screenSize: screenSize,
+  overrides: overrides,
+);
 
 Future<void> _typeAndConfirm(WidgetTester tester, String word) async {
   await tester.enterText(find.byKey(DeleteAccountScreen.fieldKey), word);
@@ -74,8 +99,7 @@ void main() {
       tester,
     ) async {
       final h = AccountHarness();
-      await pumpApp(tester, overrides: h.overrides);
-      await _openAccount(tester);
+      await _pumpAccount(tester, overrides: h.overrides);
 
       expect(find.text('Fake User'), findsOneWidget);
       expect(find.text('fake.user@example.test'), findsOneWidget);
@@ -85,7 +109,7 @@ void main() {
 
     testWidgets('says when the e-mail address is not verified', (tester) async {
       final h = AccountHarness();
-      await pumpApp(
+      await _pumpAccount(
         tester,
         auth: const SignedIn(
           's',
@@ -94,7 +118,6 @@ void main() {
         ),
         overrides: h.overrides,
       );
-      await _openAccount(tester);
       expect(find.text('new@example.test'), findsOneWidget);
       expect(find.textContaining('not confirmed yet'), findsOneWidget);
     });
@@ -103,8 +126,7 @@ void main() {
       tester,
     ) async {
       final h = AccountHarness();
-      await pumpApp(tester, overrides: h.overrides);
-      await _openAccount(tester);
+      await _pumpAccount(tester, overrides: h.overrides);
 
       await tester.tap(find.byKey(AccountScreen.signOutKey));
       await tester.pumpAndSettle();
@@ -117,14 +139,11 @@ void main() {
       expect(find.byType(AccountScreen), findsOneWidget);
     });
 
-    testWidgets('sign-out leads to the sign-in screen and keeps drafts', (
-      tester,
-    ) async {
+    testWidgets('sign-out wipes the account but keeps drafts', (tester) async {
       final h = AccountHarness();
       await h.database.draftsDao.create(kFakeAuthSub, pgn: '1. e4');
       await h.database.kvDao.set('k', 'v', ownerSub: kFakeAuthSub);
-      await pumpApp(tester, overrides: h.overrides);
-      await _openAccount(tester);
+      await _pumpAccount(tester, overrides: h.overrides);
 
       await tester.tap(find.byKey(AccountScreen.signOutKey));
       await tester.pumpAndSettle();
@@ -132,10 +151,36 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(h.auth.state, const SignedOut());
-      expect(find.byType(SignInScreen), findsOneWidget);
       expect(await h.database.kvDao.get('k', ownerSub: kFakeAuthSub), isNull);
       expect(await _draftsOf(h, kFakeAuthSub), hasLength(1));
       expect(h.api.requestsOf('DeleteMyAccount'), isEmpty);
+    });
+
+    testWidgets('sign-out leads to the sign-in screen', (tester) async {
+      // The whole app: the redirect is the router's, not the screen's.
+      final h = AccountHarness();
+      await pumpApp(tester, overrides: h.overrides);
+      routerOf(tester).go(AppRoutes.settingsAccount);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(AccountScreen.signOutKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(AccountScreen.signOutConfirmKey));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SignInScreen), findsOneWidget);
+      expect(locationOf(tester), AppRoutes.signIn);
+    });
+
+    testWidgets('the delete button opens the delete screen', (tester) async {
+      final h = AccountHarness();
+      await _pumpAccount(tester, overrides: h.overrides);
+
+      await tester.ensureVisible(find.byKey(AccountScreen.deleteKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(AccountScreen.deleteKey));
+      await tester.pumpAndSettle();
+      expect(find.byType(DeleteAccountScreen), findsOneWidget);
     });
   });
 
@@ -144,8 +189,7 @@ void main() {
       tester,
     ) async {
       final h = AccountHarness();
-      await pumpApp(tester, overrides: h.overrides);
-      await _openDelete(tester);
+      await _pumpDelete(tester, overrides: h.overrides);
 
       expect(
         find.text('This deletes your bognerchess.com account'),
@@ -160,8 +204,7 @@ void main() {
 
     testWidgets('the button works only once DELETE is typed', (tester) async {
       final h = AccountHarness();
-      await pumpApp(tester, overrides: h.overrides);
-      await _openDelete(tester);
+      await _pumpDelete(tester, overrides: h.overrides);
 
       FilledButton button() =>
           tester.widget(find.byKey(DeleteAccountScreen.confirmKey));
@@ -180,56 +223,72 @@ void main() {
       expect(h.api.requestsOf('DeleteMyAccount'), isEmpty);
     });
 
-    testWidgets(
-      'accepted: local data gone, signed out, confirmation, sign-in',
-      (tester) async {
-        final h = AccountHarness();
-        await h.database.draftsDao.create(kFakeAuthSub, pgn: '1. e4');
-        await h.database.draftsDao.create('somebody-else', pgn: '1. d4');
-        await h.database.kvDao.set(
+    testWidgets('accepted: local data gone, signed out, confirmation', (
+      tester,
+    ) async {
+      final h = AccountHarness();
+      await h.database.draftsDao.create(kFakeAuthSub, pgn: '1. e4');
+      await h.database.draftsDao.create('somebody-else', pgn: '1. d4');
+      await h.database.kvDao.set(
+        AnalyticsConsentNotifier.answerKey,
+        'granted',
+        ownerSub: kFakeAuthSub,
+      );
+      await _pumpDelete(tester, overrides: h.overrides);
+
+      await _typeAndConfirm(tester, 'DELETE');
+
+      // The token the backend expects, whatever the language of the UI.
+      expect(h.api.requestsOf('DeleteMyAccount').single.variables['input'], {
+        'confirmation': 'DELETE',
+      });
+      expect(h.analytics.names, ['account_deleted']);
+      expect(h.auth.state, const SignedOut());
+      expect(await _draftsOf(h, kFakeAuthSub), isEmpty);
+      expect(await _draftsOf(h, 'somebody-else'), isEmpty);
+      expect(
+        await h.database.kvDao.get(
           AnalyticsConsentNotifier.answerKey,
-          'granted',
           ownerSub: kFakeAuthSub,
-        );
-        await pumpApp(tester, overrides: h.overrides);
-        await _openDelete(tester);
+        ),
+        isNull,
+      );
 
-        await _typeAndConfirm(tester, 'DELETE');
+      expect(find.text('Your account has been deleted'), findsOneWidget);
+      await tester.tap(find.byKey(AccountDeletedNotice.doneKey));
+      await tester.pumpAndSettle();
+      expect(find.text('Your account has been deleted'), findsNothing);
+    });
 
-        // The token the backend expects, whatever the language of the UI.
-        expect(h.api.requestsOf('DeleteMyAccount').single.variables['input'], {
-          'confirmation': 'DELETE',
-        });
-        expect(h.analytics.names, ['account_deleted']);
-        expect(h.auth.state, const SignedOut());
-        expect(await _draftsOf(h, kFakeAuthSub), isEmpty);
-        expect(await _draftsOf(h, 'somebody-else'), isEmpty);
-        expect(
-          await h.database.kvDao.get(
-            AnalyticsConsentNotifier.answerKey,
-            ownerSub: kFakeAuthSub,
-          ),
-          isNull,
-        );
+    testWidgets('and the app is at the sign-in screen afterwards', (
+      tester,
+    ) async {
+      // The whole app: what "Done" reveals is the router's redirect.
+      final h = AccountHarness();
+      await pumpApp(tester, overrides: h.overrides);
+      routerOf(tester).go(AppRoutes.settingsAccount);
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(AccountScreen.deleteKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(AccountScreen.deleteKey));
+      await tester.pumpAndSettle();
+      await _typeAndConfirm(tester, 'DELETE');
 
-        // The confirmation covers the redirect that happened underneath.
-        expect(find.text('Your account has been deleted'), findsOneWidget);
-        expect(find.byType(SignInScreen).hitTestable(), findsNothing);
+      // The confirmation covers the redirect that happened underneath.
+      expect(find.text('Your account has been deleted'), findsOneWidget);
+      expect(find.byType(SignInScreen).hitTestable(), findsNothing);
 
-        await tester.tap(find.byKey(AccountDeletedNotice.doneKey));
-        await tester.pumpAndSettle();
-        expect(find.text('Your account has been deleted'), findsNothing);
-        expect(find.byType(SignInScreen), findsOneWidget);
-        expect(locationOf(tester), AppRoutes.signIn);
-      },
-    );
+      await tester.tap(find.byKey(AccountDeletedNotice.doneKey));
+      await tester.pumpAndSettle();
+      expect(find.byType(SignInScreen), findsOneWidget);
+      expect(locationOf(tester), AppRoutes.signIn);
+    });
 
     testWidgets('a deletion that is already completed is the same to the app', (
       tester,
     ) async {
       final h = AccountHarness(scenarios: {'DeleteMyAccount': 'completed'});
-      await pumpApp(tester, overrides: h.overrides);
-      await _openDelete(tester);
+      await _pumpDelete(tester, overrides: h.overrides);
       await _typeAndConfirm(tester, 'DELETE');
       expect(find.text('Your account has been deleted'), findsOneWidget);
       expect(h.auth.state, const SignedOut());
@@ -249,8 +308,7 @@ void main() {
         final h = AccountHarness();
         h.api.respond('DeleteMyAccount', (_) => _blocked(reason));
         await h.database.draftsDao.create(kFakeAuthSub, pgn: '1. e4');
-        await pumpApp(tester, overrides: h.overrides);
-        await _openDelete(tester);
+        await _pumpDelete(tester, overrides: h.overrides);
         await _typeAndConfirm(tester, 'DELETE');
 
         expect(
@@ -276,7 +334,7 @@ void main() {
 
         await tester.tap(find.byKey(DeleteAccountScreen.backKey));
         await tester.pumpAndSettle();
-        expect(find.byType(AccountScreen), findsOneWidget);
+        expect(find.byType(DeleteAccountScreen), findsNothing);
       });
     }
 
@@ -284,8 +342,7 @@ void main() {
       tester,
     ) async {
       final h = AccountHarness(scenarios: {'DeleteMyAccount': 'blocked'});
-      await pumpApp(tester, overrides: h.overrides);
-      await _openDelete(tester);
+      await _pumpDelete(tester, overrides: h.overrides);
       await _typeAndConfirm(tester, 'DELETE');
       expect(find.text('This account cannot be deleted here'), findsOneWidget);
     });
@@ -295,8 +352,7 @@ void main() {
     ) async {
       final h = AccountHarness();
       h.api.fail('DeleteMyAccount', const SocketException('offline'));
-      await pumpApp(tester, overrides: h.overrides);
-      await _openDelete(tester);
+      await _pumpDelete(tester, overrides: h.overrides);
       await _typeAndConfirm(tester, 'DELETE');
 
       expect(find.textContaining('You are offline.'), findsOneWidget);
@@ -320,8 +376,7 @@ void main() {
         tester,
       ) async {
         final h = AccountHarness(scenarios: {'DeleteMyAccount': scenario});
-        await pumpApp(tester, overrides: h.overrides);
-        await _openDelete(tester);
+        await _pumpDelete(tester, overrides: h.overrides);
         await _typeAndConfirm(tester, 'DELETE');
 
         expect(
@@ -338,8 +393,7 @@ void main() {
     ) async {
       final h = AccountHarness();
       await h.database.close(); // every query throws from here on
-      await pumpApp(tester, overrides: h.overrides);
-      await _openDelete(tester);
+      await _pumpDelete(tester, overrides: h.overrides);
       await _typeAndConfirm(tester, 'DELETE');
       expect(h.auth.state, const SignedOut());
       expect(find.text('Your account has been deleted'), findsOneWidget);
@@ -351,15 +405,14 @@ void main() {
       ) async {
         final h = AccountHarness();
         h.api.respond('DeleteMyAccount', (_) => _blocked('active_membership'));
-        await pumpApp(
+        await _pumpAccount(
           tester,
           locale: const Locale('de', 'CH'),
           brightness: brightness,
           textScale: 1.3,
-          screen: kIphoneSe,
+          screenSize: kIphoneSe,
           overrides: h.overrides,
         );
-        await _openAccount(tester);
         expect(tester.takeException(), isNull);
         expect(find.text('Abmelden'), findsOneWidget);
 

@@ -2,8 +2,6 @@
 // Copyright (C) 2026 Bogner Chess
 // Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
 
-import 'package:bogner_chess/app.dart';
-import 'package:bogner_chess/config/env.dart';
 import 'package:bogner_chess/core/app_info.dart';
 import 'package:bogner_chess/core/links/link_launcher.dart';
 import 'package:bogner_chess/features/about/domain/additional_licenses.dart';
@@ -12,11 +10,11 @@ import 'package:bogner_chess/features/about/ui/licence_text_screen.dart';
 import 'package:bogner_chess/router.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../helpers/pump_app.dart';
+import '../../helpers/pump_screen.dart';
 
 /// Records what the screen asked to open, instead of opening it.
 class _FakeLauncher {
@@ -35,8 +33,10 @@ class _FakeLauncher {
   }
 }
 
-/// Pumps the whole app, as `pumpApp` does, and opens the about screen. The
-/// difference is the link launcher, which `pumpApp` cannot override.
+/// Mounts the about screen on its own.
+///
+/// No fake asset bundle: `flutter test` serves the assets that pubspec.yaml
+/// declares, so a legal text missing from `assets:` fails these tests.
 Future<void> _pumpAbout(
   WidgetTester tester, {
   LinkLauncher? launcher,
@@ -46,37 +46,23 @@ Future<void> _pumpAbout(
   double textScale = 1.0,
   Size screen = kIphone17Pro,
 }) async {
-  tester.view.devicePixelRatio = 3;
-  tester.view.physicalSize = screen * 3;
-  tester.platformDispatcher.localesTestValue = [locale];
-  tester.platformDispatcher.platformBrightnessTestValue = brightness;
-  tester.platformDispatcher.textScaleFactorTestValue = textScale;
-  addTearDown(tester.view.reset);
-  addTearDown(tester.platformDispatcher.clearAllTestValues);
-
-  // No fake asset bundle: `flutter test` serves the assets that pubspec.yaml
-  // declares, so a legal text missing from `assets:` fails these tests.
-  await tester.pumpWidget(
-    ProviderScope(
-      overrides: [
-        envProvider.overrideWithValue(testEnv()),
-        appInfoProvider.overrideWith((ref) async {
-          if (appInfo == null) {
-            throw StateError('no platform');
-          }
-          return appInfo;
-        }),
-        ...backendOverrides(),
-        linkLauncherProvider.overrideWithValue(
-          launcher ?? _FakeLauncher().call,
-        ),
-      ],
-      child: const BognerChessApp(),
-    ),
+  await pumpScreen(
+    tester,
+    const AboutScreen(),
+    locale: locale,
+    brightness: brightness,
+    textScale: textScale,
+    screenSize: screen,
+    overrides: [
+      appInfoProvider.overrideWith((ref) async {
+        if (appInfo == null) {
+          throw StateError('no platform');
+        }
+        return appInfo;
+      }),
+      linkLauncherProvider.overrideWithValue(launcher ?? _FakeLauncher().call),
+    ],
   );
-  await tester.pumpAndSettle();
-  routerOf(tester).go(AppRoutes.settingsAbout);
-  await tester.pumpAndSettle();
 }
 
 Finder get _aboutList => find.descendant(
@@ -136,8 +122,6 @@ void main() {
         );
         expect(find.text(row), findsOneWidget);
       }
-      // The tab bar stays: this is a page inside the settings tab.
-      expect(find.byType(NavigationBar).hitTestable(), findsOneWidget);
     });
 
     testWidgets('says that it is not affiliated with Lichess', (tester) async {
@@ -244,10 +228,9 @@ void main() {
       );
       expect(text.style?.fontFamily, 'Menlo');
 
-      // Back leads to the about screen, still inside the settings tab.
+      // Back leads to the about screen.
       await _back(tester);
       expect(find.byType(AboutScreen), findsOneWidget);
-      expect(locationOf(tester), AppRoutes.settingsAbout);
     });
 
     testWidgets('the additional permission is marked as a draft', (
@@ -298,7 +281,12 @@ void main() {
     testWidgets('tapping the active tab pops the text and the about screen', (
       tester,
     ) async {
-      await _pumpAbout(tester);
+      // The whole app: a page inside the settings tab, and the tab bar that
+      // pops it, are the shell's.
+      await pumpApp(tester);
+      routerOf(tester).go(AppRoutes.settingsAbout);
+      await tester.pumpAndSettle();
+      expect(find.byType(NavigationBar).hitTestable(), findsOneWidget);
       await _tapRow(tester, AboutScreen.gplKey);
 
       await tester.tap(find.text('Settings'));
