@@ -1933,5 +1933,475 @@
   "submitQueueHoldRequestFailed": "The request did not get through.",
   "@submitQueueHoldRequestFailed": {
     "description": "Reason an analysis was not started."
+  },
+  "librarySearchHint": "Search player or event",
+  "@librarySearchHint": {
+    "description": "Hint in the search field of the game library."
+  },
+  "librarySearchClear": "Clear search",
+  "@librarySearchClear": {
+    "description": "Tooltip of the button that empties the search field."
+  },
+  "libraryFilterDates": "Date",
+  "@libraryFilterDates": {
+    "description": "Chip that opens the date-range filter of the library while no range is set."
+  },
+  "libraryFilterDatesRange": "{from} – {to}",
+  "@libraryFilterDatesRange": {
+    "description": "Chip label while a date range is set.",
+    "placeholders": {
+      "from": {
+        "type": "String",
+        "example": "01/09/2026"
+      },
+      "to": {
+        "type": "String",
+        "example": "30/09/2026"
+      }
+    }
+  },
+  "libraryFilterDatesClear": "Clear date filter",
+  "@libraryFilterDatesClear": {
+    "description": "Tooltip of the chip's delete button."
+  },
+  "libraryDatePickerHelp": "Games played between",
+  "@libraryDatePickerHelp": {
+    "description": "Heading of the date-range picker."
+  },
+  "libraryNoMatchesTitle": "No games found",
+  "@libraryNoMatchesTitle": {
+    "description": "Headline when search or date filter match nothing."
+  },
+  "libraryNoMatchesMessage": "Try another name or a wider date range.",
+  "@libraryNoMatchesMessage": {
+    "description": "Explanation under libraryNoMatchesTitle."
+  },
+  "libraryClearFilters": "Clear filters",
+  "@libraryClearFilters": {
+    "description": "Button that removes search text and date range."
+  },
+  "libraryOfflineBanner": "You're offline. These are the games saved on this device.",
+  "@libraryOfflineBanner": {
+    "description": "Banner above the library list when the server cannot be reached."
+  },
+  "libraryOfflineEmpty": "You're offline, and no games are saved on this device yet.",
+  "@libraryOfflineEmpty": {
+    "description": "Message of the error state of an empty library without a connection."
+  },
+  "libraryRefreshFailedBanner": "The list could not be updated.",
+  "@libraryRefreshFailedBanner": {
+    "description": "Banner above the library list when the refresh failed for another reason than being offline."
+  },
+  "libraryPlayersVs": "{white} – {black}",
+  "@libraryPlayersVs": {
+    "description": "Title of a library row: the two players.",
+    "placeholders": {
+      "white": {
+        "type": "String",
+        "example": "Anna Muster"
+      },
+      "black": {
+        "type": "String",
+        "example": "Jonas Keller"
+      }
+    }
+  },
+  "libraryWhite": "White",
+  "@libraryWhite": {
+    "description": "Stands in for a missing name of the player with the white pieces."
+  },
+  "libraryBlack": "Black",
+  "@libraryBlack": {
+    "description": "Stands in for a missing name of the player with the black pieces."
+  },
+  "libraryDateUnknown": "No date",
+  "@libraryDateUnknown": {
+    "description": "Shown in a library row when the game has no date."
+  },
+  "libraryStatusDraft": "Draft",
+  "@libraryStatusDraft": {
+    "description": "Badge of a game that is still being entered on this device."
+  },
+  "libraryStatusWaiting": "Waiting to upload",
+  "@libraryStatusWaiting": {
+    "description": "Badge of a finished game that was not sent to the server yet."
+  },
+  "libraryStatusUploadFailed": "Upload failed",
+  "@libraryStatusUploadFailed": {
+    "description": "Badge of a game the app gave up sending."
+  },
+  "libraryStatusAnalysing": "Analysing…",
+  "@libraryStatusAnalysing": {
+    "description": "Badge of a game whose analysis job is queued or running."
+  },
+  "libraryStatusReady": "Analysis ready",
+  "@libraryStatusReady": {
+    "description": "Badge of a game with a finished analysis."
+  },
+  "libraryStatusFailed": "Analysis failed",
+  "@libraryStatusFailed": {
+    "description": "Badge of a game whose last analysis job failed."
+  },
+  "libraryStatusNotAnalysed": "Not analysed",
+  "@libraryStatusNotAnalysed": {
+    "description": "Badge of a game without an analysis."
+  },
+  "libraryDeleteTitle": "Delete this game?",
+  "@libraryDeleteTitle": {
+    "description": "Title of the confirmation before a game is deleted."
+  },
+  "libraryDeleteMessage": "The game and its analysis are removed from your account, on the website too. This cannot be undone.",
+  "@libraryDeleteMessage": {
+    "description": "Body of the delete confirmation."
+  },
+  "libraryDeleteDraftTitle": "Delete this draft?",
+  "@libraryDeleteDraftTitle": {
+    "description": "Title of the confirmation before a draft is deleted."
+  },
+  "libraryDeleteDraftMessage": "The moves you entered will be lost.",
+  "@libraryDeleteDraftMessage": {
+    "description": "Body of the draft delete confirmation."
+  },
+  "libraryDeleteConfirm": "Delete",
+  "@libraryDeleteConfirm": {
+    "description": "Destructive button of the delete confirmation; also the name of the VoiceOver action on a row."
+  },
+  "libraryDeleteCancel": "Cancel",
+  "@libraryDeleteCancel": {
+    "description": "Button that closes the delete confirmation without deleting."
+  },
+  "libraryDeleted": "Game deleted",
+  "@libraryDeleted": {
+    "description": "Snack bar after a game was deleted."
+  },
+  "libraryDraftDeleted": "Draft deleted",
+  "@libraryDraftDeleted": {
+    "description": "Snack bar after a draft was deleted."
+  },
+  "libraryDeleteFailed": "That could not be deleted. Try again.",
+  "@libraryDeleteFailed": {
+    "description": "Snack bar when deleting failed."
+  },
+  "libraryDraftWaitingInfo": "This game is sent as soon as you're online.",
+  "@libraryDraftWaitingInfo": {
+    "description": "Snack bar after a tap on a draft that waits for upload."
+  },
+  "libraryDraftFailedInfo": "This game could not be uploaded.",
+  "@libraryDraftFailedInfo": {
+    "description": "Snack bar after a tap on a draft whose upload failed."
+  },
+  "libraryLoadingMore": "Loading more games",
+  "@libraryLoadingMore": {
+    "description": "Screen-reader label of the spinner at the end of the library list."
+  },
+  "gameDetailNotFoundTitle": "Game not found",
+  "@gameDetailNotFoundTitle": {
+    "description": "Headline when the opened game does not exist on the server."
+  },
+  "gameDetailNotFoundMessage": "It may have been deleted on another device.",
+  "@gameDetailNotFoundMessage": {
+    "description": "Explanation under gameDetailNotFoundTitle."
+  },
+  "gameDetailOutcomeWin": "You won",
+  "@gameDetailOutcomeWin": {
+    "description": "Result of the game from the user's side, after the score."
+  },
+  "gameDetailOutcomeLoss": "You lost",
+  "@gameDetailOutcomeLoss": {
+    "description": "Result of the game from the user's side, after the score."
+  },
+  "gameDetailOutcomeDraw": "Draw",
+  "@gameDetailOutcomeDraw": {
+    "description": "Result of the game, after the score."
+  },
+  "gameDetailMoves": "{count, plural, =1{1 move} other{{count} moves}}",
+  "@gameDetailMoves": {
+    "description": "Length of the game in full moves, on the game screen.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "34"
+      }
+    }
+  },
+  "gameDetailFinalPosition": "Final position",
+  "@gameDetailFinalPosition": {
+    "description": "Heading above the board with the last position of the game."
+  },
+  "gameDetailDelete": "Delete game",
+  "@gameDetailDelete": {
+    "description": "Tooltip of the delete button on the game screen."
+  },
+  "gameDetailAnalyse": "Analyse this game",
+  "@gameDetailAnalyse": {
+    "description": "Primary button that requests the analysis of the game."
+  },
+  "gameDetailAnalyseHint": "The coach goes through your game and explains the key moments. It takes a few minutes.",
+  "@gameDetailAnalyseHint": {
+    "description": "Text above the analyse button."
+  },
+  "gameDetailOpenAnalysis": "Open analysis",
+  "@gameDetailOpenAnalysis": {
+    "description": "Primary button that opens the review of an analysed game."
+  },
+  "gameDetailReadyMessage": "Your analysis is ready.",
+  "@gameDetailReadyMessage": {
+    "description": "Title of the card on the game screen once the analysis is done."
+  },
+  "gameDetailQueuedTitle": "Waiting in the queue",
+  "@gameDetailQueuedTitle": {
+    "description": "Title of the progress card while the analysis job is queued."
+  },
+  "gameDetailQueuedNext": "Your game is next.",
+  "@gameDetailQueuedNext": {
+    "description": "Progress text for a queued job with nothing ahead of it."
+  },
+  "gameDetailQueuedPosition": "{count, plural, =1{1 game is ahead of yours.} other{{count} games are ahead of yours.}}",
+  "@gameDetailQueuedPosition": {
+    "description": "Progress text for a queued job: how many of the user's jobs come first.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "gameDetailRunningTitle": "Analysing your game",
+  "@gameDetailRunningTitle": {
+    "description": "Title of the progress card while the analysis job runs."
+  },
+  "gameDetailStageEngine": "The engine is checking every move.",
+  "@gameDetailStageEngine": {
+    "description": "Progress text for the engine stage of the analysis."
+  },
+  "gameDetailStageCoach": "The coach is writing the comments.",
+  "@gameDetailStageCoach": {
+    "description": "Progress text for the coach stage of the analysis."
+  },
+  "gameDetailStageOther": "This takes a few minutes.",
+  "@gameDetailStageOther": {
+    "description": "Progress text when the stage is not known."
+  },
+  "gameDetailLeaveHint": "You can leave the app. We'll notify you when the analysis is ready.",
+  "@gameDetailLeaveHint": {
+    "description": "Reassurance at the bottom of the progress card."
+  },
+  "gameDetailFailedTitle": "The analysis failed",
+  "@gameDetailFailedTitle": {
+    "description": "Title of the card on the game screen after a failed job."
+  },
+  "gameDetailFailedMessage": "Something went wrong on our side. This attempt does not count towards your limit.",
+  "@gameDetailFailedMessage": {
+    "description": "Body of the failed card. A failed job is refunded."
+  },
+  "gameDetailSheetClose": "Close",
+  "@gameDetailSheetClose": {
+    "description": "Button that closes an information sheet on the game screen."
+  },
+  "gameDetailLimitTitleDay": "Daily limit reached",
+  "@gameDetailLimitTitleDay": {
+    "description": "Title of the sheet shown when the daily analysis limit is used up."
+  },
+  "gameDetailLimitTitleMonth": "Monthly limit reached",
+  "@gameDetailLimitTitleMonth": {
+    "description": "Title of the sheet shown when the monthly analysis limit is used up."
+  },
+  "gameDetailLimitTitleOther": "Analysis limit reached",
+  "@gameDetailLimitTitleOther": {
+    "description": "Title of the limit sheet when the kind of limit is not known."
+  },
+  "gameDetailLimitBodyDay": "{limit, plural, =1{You can have 1 game analysed per day, and you've used it today.} other{You can have {limit} games analysed per day, and you've used them all today.}}",
+  "@gameDetailLimitBodyDay": {
+    "description": "First paragraph of the daily limit sheet.",
+    "placeholders": {
+      "limit": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "gameDetailLimitBodyMonth": "{limit, plural, =1{You can have 1 game analysed per month, and you've used it this month.} other{You can have {limit} games analysed per month, and you've used them all this month.}}",
+  "@gameDetailLimitBodyMonth": {
+    "description": "First paragraph of the monthly limit sheet.",
+    "placeholders": {
+      "limit": {
+        "type": "int",
+        "example": "30"
+      }
+    }
+  },
+  "gameDetailLimitBodyOther": "{limit, plural, =1{You have used your 1 analysis.} other{You have used all {limit} analyses.}}",
+  "@gameDetailLimitBodyOther": {
+    "description": "First paragraph of the limit sheet when the kind of limit is not known.",
+    "placeholders": {
+      "limit": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "gameDetailLimitReset": "You can request analyses again from {when}.",
+  "@gameDetailLimitReset": {
+    "description": "Second paragraph of the limit sheet. 'when' is a local time, or a date and a time.",
+    "placeholders": {
+      "when": {
+        "type": "String",
+        "example": "00:00"
+      }
+    }
+  },
+  "gameDetailLimitSaved": "Your game is saved. You can have it analysed later.",
+  "@gameDetailLimitSaved": {
+    "description": "Third paragraph of the limit sheet."
+  },
+  "gameDetailLimitFree": "Entering, importing and reviewing games is never limited.",
+  "@gameDetailLimitFree": {
+    "description": "Footer of the limit sheet."
+  },
+  "gameDetailQueueFullTitle": "Too many analyses at once",
+  "@gameDetailQueueFullTitle": {
+    "description": "Title of the sheet shown when the user has too many jobs waiting."
+  },
+  "gameDetailQueueFullBody": "{max, plural, =1{Only 1 of your games can be analysed at a time. Wait until it is finished, then try again.} other{Only {max} of your games can be analysed at a time. Wait until one is finished, then try again.}}",
+  "@gameDetailQueueFullBody": {
+    "description": "Body of the queue-full sheet.",
+    "placeholders": {
+      "max": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "gameDetailRateLimited": "{seconds, plural, =1{Too many requests. Try again in 1 second.} other{Too many requests. Try again in {seconds} seconds.}}",
+  "@gameDetailRateLimited": {
+    "description": "Snack bar when the server rate-limits the analysis request.",
+    "placeholders": {
+      "seconds": {
+        "type": "int",
+        "example": "30"
+      }
+    }
+  },
+  "gameDetailEmailTitle": "Confirm your e-mail address",
+  "@gameDetailEmailTitle": {
+    "description": "Title of the sheet shown when analyses need a verified e-mail address."
+  },
+  "gameDetailEmailBody": "To have games analysed, open the link in the e-mail we sent you when you registered. Then come back and tap the button below.",
+  "@gameDetailEmailBody": {
+    "description": "Body of the e-mail verification sheet."
+  },
+  "gameDetailEmailAction": "I've confirmed it",
+  "@gameDetailEmailAction": {
+    "description": "Button of the e-mail verification sheet: checks again and requests the analysis."
+  },
+  "gameDetailEmailStill": "Your address is not confirmed yet.",
+  "@gameDetailEmailStill": {
+    "description": "Shown in the e-mail verification sheet when the check still fails."
+  },
+  "gameDetailConsentNeeded": "The analysis needs your consent to AI processing.",
+  "@gameDetailConsentNeeded": {
+    "description": "Snack bar after the user closed the AI consent screen without agreeing."
+  },
+  "gameDetailRequestFailed": "The analysis could not be requested. Try again.",
+  "@gameDetailRequestFailed": {
+    "description": "Snack bar when the analysis request failed."
+  },
+  "gameDetailRequestOffline": "You're offline. Connect to the internet and try again.",
+  "@gameDetailRequestOffline": {
+    "description": "Snack bar when the analysis request failed without a connection."
+  },
+  "usageTitle": "Analyses",
+  "@usageTitle": {
+    "description": "Heading of the usage block (settings)."
+  },
+  "usageDailyLeft": "{remaining} of {limit} analyses left today · resets at {time}",
+  "@usageDailyLeft": {
+    "description": "Usage line: what is left of the daily limit and the local time of the reset.",
+    "placeholders": {
+      "remaining": {
+        "type": "int",
+        "example": "2"
+      },
+      "limit": {
+        "type": "int",
+        "example": "3"
+      },
+      "time": {
+        "type": "String",
+        "example": "00:00"
+      }
+    }
+  },
+  "usageDailyNone": "No analyses left today · resets at {time}",
+  "@usageDailyNone": {
+    "description": "Usage line when the daily limit is used up.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "00:00"
+      }
+    }
+  },
+  "usageMonthlyLeft": "{remaining} of {limit} analyses left this month · resets on {date}",
+  "@usageMonthlyLeft": {
+    "description": "Usage line: what is left of the monthly limit and the date of the reset.",
+    "placeholders": {
+      "remaining": {
+        "type": "int",
+        "example": "18"
+      },
+      "limit": {
+        "type": "int",
+        "example": "30"
+      },
+      "date": {
+        "type": "String",
+        "example": "1 Oct"
+      }
+    }
+  },
+  "usageMonthlyNone": "No analyses left this month · resets on {date}",
+  "@usageMonthlyNone": {
+    "description": "Usage line when the monthly limit is used up.",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "1 Oct"
+      }
+    }
+  },
+  "usageUnlimited": "Unlimited analyses",
+  "@usageUnlimited": {
+    "description": "Usage block for an account without limits."
+  },
+  "usageUnavailable": "The numbers are not available right now.",
+  "@usageUnavailable": {
+    "description": "Usage block when the quota could not be loaded."
+  },
+  "analysisNoticeReady": "Your analysis is ready.",
+  "@analysisNoticeReady": {
+    "description": "Snack bar shown anywhere in the app when an analysis job finished."
+  },
+  "analysisNoticeReadyOpponent": "Your game against {name} has been analysed.",
+  "@analysisNoticeReadyOpponent": {
+    "description": "Snack bar shown anywhere in the app when an analysis job finished and the opponent is known.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Jonas Keller"
+      }
+    }
+  },
+  "analysisNoticeOpen": "Open",
+  "@analysisNoticeOpen": {
+    "description": "Action of the analysis-ready snack bar: opens the review."
+  },
+  "analysisNoticeFailed": "An analysis failed. It doesn't count towards your limit.",
+  "@analysisNoticeFailed": {
+    "description": "Snack bar shown anywhere in the app when an analysis job failed."
+  },
+  "analysisNoticeView": "View",
+  "@analysisNoticeView": {
+    "description": "Action of the analysis-failed snack bar: opens the game."
   }
 }

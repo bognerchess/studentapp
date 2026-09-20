@@ -8,8 +8,8 @@ import 'package:bogner_chess/core/ui/widgets/not_found_screen.dart';
 import 'package:bogner_chess/features/account/ui/account_screen.dart';
 import 'package:bogner_chess/features/auth/ui/sign_in_screen.dart';
 import 'package:bogner_chess/features/consent/ui/ai_consent_screen.dart';
+import 'package:bogner_chess/features/game_detail/ui/game_detail_screen.dart';
 import 'package:bogner_chess/features/legal/ui/legal_screen.dart';
-import 'package:bogner_chess/features/library/ui/game_screen.dart';
 import 'package:bogner_chess/features/library/ui/library_screen.dart';
 import 'package:bogner_chess/features/review/ui/review_screen.dart';
 import 'package:bogner_chess/router.dart';
@@ -132,7 +132,7 @@ void main() {
       await tester.pageBack();
       await tester.pumpAndSettle();
       expect(locationOf(tester), '/games/game-42');
-      expect(find.byType(GameScreen), findsOneWidget);
+      expect(find.byType(GameDetailScreen), findsOneWidget);
 
       await tester.pageBack();
       await tester.pumpAndSettle();
@@ -146,7 +146,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        tester.widget<GameScreen>(find.byType(GameScreen)).gameId,
+        tester.widget<GameDetailScreen>(find.byType(GameDetailScreen)).gameId,
         'a/b c',
       );
     });

@@ -2417,6 +2417,540 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The request did not get through.'**
   String get submitQueueHoldRequestFailed;
+
+  /// Hint in the search field of the game library.
+  ///
+  /// In en, this message translates to:
+  /// **'Search player or event'**
+  String get librarySearchHint;
+
+  /// Tooltip of the button that empties the search field.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get librarySearchClear;
+
+  /// Chip that opens the date-range filter of the library while no range is set.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get libraryFilterDates;
+
+  /// Chip label while a date range is set.
+  ///
+  /// In en, this message translates to:
+  /// **'{from} – {to}'**
+  String libraryFilterDatesRange(String from, String to);
+
+  /// Tooltip of the chip's delete button.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear date filter'**
+  String get libraryFilterDatesClear;
+
+  /// Heading of the date-range picker.
+  ///
+  /// In en, this message translates to:
+  /// **'Games played between'**
+  String get libraryDatePickerHelp;
+
+  /// Headline when search or date filter match nothing.
+  ///
+  /// In en, this message translates to:
+  /// **'No games found'**
+  String get libraryNoMatchesTitle;
+
+  /// Explanation under libraryNoMatchesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Try another name or a wider date range.'**
+  String get libraryNoMatchesMessage;
+
+  /// Button that removes search text and date range.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear filters'**
+  String get libraryClearFilters;
+
+  /// Banner above the library list when the server cannot be reached.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re offline. These are the games saved on this device.'**
+  String get libraryOfflineBanner;
+
+  /// Message of the error state of an empty library without a connection.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re offline, and no games are saved on this device yet.'**
+  String get libraryOfflineEmpty;
+
+  /// Banner above the library list when the refresh failed for another reason than being offline.
+  ///
+  /// In en, this message translates to:
+  /// **'The list could not be updated.'**
+  String get libraryRefreshFailedBanner;
+
+  /// Title of a library row: the two players.
+  ///
+  /// In en, this message translates to:
+  /// **'{white} – {black}'**
+  String libraryPlayersVs(String white, String black);
+
+  /// Stands in for a missing name of the player with the white pieces.
+  ///
+  /// In en, this message translates to:
+  /// **'White'**
+  String get libraryWhite;
+
+  /// Stands in for a missing name of the player with the black pieces.
+  ///
+  /// In en, this message translates to:
+  /// **'Black'**
+  String get libraryBlack;
+
+  /// Shown in a library row when the game has no date.
+  ///
+  /// In en, this message translates to:
+  /// **'No date'**
+  String get libraryDateUnknown;
+
+  /// Badge of a game that is still being entered on this device.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft'**
+  String get libraryStatusDraft;
+
+  /// Badge of a finished game that was not sent to the server yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to upload'**
+  String get libraryStatusWaiting;
+
+  /// Badge of a game the app gave up sending.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload failed'**
+  String get libraryStatusUploadFailed;
+
+  /// Badge of a game whose analysis job is queued or running.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysing…'**
+  String get libraryStatusAnalysing;
+
+  /// Badge of a game with a finished analysis.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysis ready'**
+  String get libraryStatusReady;
+
+  /// Badge of a game whose last analysis job failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysis failed'**
+  String get libraryStatusFailed;
+
+  /// Badge of a game without an analysis.
+  ///
+  /// In en, this message translates to:
+  /// **'Not analysed'**
+  String get libraryStatusNotAnalysed;
+
+  /// Title of the confirmation before a game is deleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this game?'**
+  String get libraryDeleteTitle;
+
+  /// Body of the delete confirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'The game and its analysis are removed from your account, on the website too. This cannot be undone.'**
+  String get libraryDeleteMessage;
+
+  /// Title of the confirmation before a draft is deleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this draft?'**
+  String get libraryDeleteDraftTitle;
+
+  /// Body of the draft delete confirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'The moves you entered will be lost.'**
+  String get libraryDeleteDraftMessage;
+
+  /// Destructive button of the delete confirmation; also the name of the VoiceOver action on a row.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get libraryDeleteConfirm;
+
+  /// Button that closes the delete confirmation without deleting.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get libraryDeleteCancel;
+
+  /// Snack bar after a game was deleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Game deleted'**
+  String get libraryDeleted;
+
+  /// Snack bar after a draft was deleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft deleted'**
+  String get libraryDraftDeleted;
+
+  /// Snack bar when deleting failed.
+  ///
+  /// In en, this message translates to:
+  /// **'That could not be deleted. Try again.'**
+  String get libraryDeleteFailed;
+
+  /// Snack bar after a tap on a draft that waits for upload.
+  ///
+  /// In en, this message translates to:
+  /// **'This game is sent as soon as you\'re online.'**
+  String get libraryDraftWaitingInfo;
+
+  /// Snack bar after a tap on a draft whose upload failed.
+  ///
+  /// In en, this message translates to:
+  /// **'This game could not be uploaded.'**
+  String get libraryDraftFailedInfo;
+
+  /// Screen-reader label of the spinner at the end of the library list.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading more games'**
+  String get libraryLoadingMore;
+
+  /// Headline when the opened game does not exist on the server.
+  ///
+  /// In en, this message translates to:
+  /// **'Game not found'**
+  String get gameDetailNotFoundTitle;
+
+  /// Explanation under gameDetailNotFoundTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'It may have been deleted on another device.'**
+  String get gameDetailNotFoundMessage;
+
+  /// Result of the game from the user's side, after the score.
+  ///
+  /// In en, this message translates to:
+  /// **'You won'**
+  String get gameDetailOutcomeWin;
+
+  /// Result of the game from the user's side, after the score.
+  ///
+  /// In en, this message translates to:
+  /// **'You lost'**
+  String get gameDetailOutcomeLoss;
+
+  /// Result of the game, after the score.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw'**
+  String get gameDetailOutcomeDraw;
+
+  /// Length of the game in full moves, on the game screen.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 move} other{{count} moves}}'**
+  String gameDetailMoves(int count);
+
+  /// Heading above the board with the last position of the game.
+  ///
+  /// In en, this message translates to:
+  /// **'Final position'**
+  String get gameDetailFinalPosition;
+
+  /// Tooltip of the delete button on the game screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete game'**
+  String get gameDetailDelete;
+
+  /// Primary button that requests the analysis of the game.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyse this game'**
+  String get gameDetailAnalyse;
+
+  /// Text above the analyse button.
+  ///
+  /// In en, this message translates to:
+  /// **'The coach goes through your game and explains the key moments. It takes a few minutes.'**
+  String get gameDetailAnalyseHint;
+
+  /// Primary button that opens the review of an analysed game.
+  ///
+  /// In en, this message translates to:
+  /// **'Open analysis'**
+  String get gameDetailOpenAnalysis;
+
+  /// Title of the card on the game screen once the analysis is done.
+  ///
+  /// In en, this message translates to:
+  /// **'Your analysis is ready.'**
+  String get gameDetailReadyMessage;
+
+  /// Title of the progress card while the analysis job is queued.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting in the queue'**
+  String get gameDetailQueuedTitle;
+
+  /// Progress text for a queued job with nothing ahead of it.
+  ///
+  /// In en, this message translates to:
+  /// **'Your game is next.'**
+  String get gameDetailQueuedNext;
+
+  /// Progress text for a queued job: how many of the user's jobs come first.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 game is ahead of yours.} other{{count} games are ahead of yours.}}'**
+  String gameDetailQueuedPosition(int count);
+
+  /// Title of the progress card while the analysis job runs.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysing your game'**
+  String get gameDetailRunningTitle;
+
+  /// Progress text for the engine stage of the analysis.
+  ///
+  /// In en, this message translates to:
+  /// **'The engine is checking every move.'**
+  String get gameDetailStageEngine;
+
+  /// Progress text for the coach stage of the analysis.
+  ///
+  /// In en, this message translates to:
+  /// **'The coach is writing the comments.'**
+  String get gameDetailStageCoach;
+
+  /// Progress text when the stage is not known.
+  ///
+  /// In en, this message translates to:
+  /// **'This takes a few minutes.'**
+  String get gameDetailStageOther;
+
+  /// Reassurance at the bottom of the progress card.
+  ///
+  /// In en, this message translates to:
+  /// **'You can leave the app. We\'ll notify you when the analysis is ready.'**
+  String get gameDetailLeaveHint;
+
+  /// Title of the card on the game screen after a failed job.
+  ///
+  /// In en, this message translates to:
+  /// **'The analysis failed'**
+  String get gameDetailFailedTitle;
+
+  /// Body of the failed card. A failed job is refunded.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong on our side. This attempt does not count towards your limit.'**
+  String get gameDetailFailedMessage;
+
+  /// Button that closes an information sheet on the game screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get gameDetailSheetClose;
+
+  /// Title of the sheet shown when the daily analysis limit is used up.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily limit reached'**
+  String get gameDetailLimitTitleDay;
+
+  /// Title of the sheet shown when the monthly analysis limit is used up.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly limit reached'**
+  String get gameDetailLimitTitleMonth;
+
+  /// Title of the limit sheet when the kind of limit is not known.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysis limit reached'**
+  String get gameDetailLimitTitleOther;
+
+  /// First paragraph of the daily limit sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'{limit, plural, =1{You can have 1 game analysed per day, and you\'ve used it today.} other{You can have {limit} games analysed per day, and you\'ve used them all today.}}'**
+  String gameDetailLimitBodyDay(int limit);
+
+  /// First paragraph of the monthly limit sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'{limit, plural, =1{You can have 1 game analysed per month, and you\'ve used it this month.} other{You can have {limit} games analysed per month, and you\'ve used them all this month.}}'**
+  String gameDetailLimitBodyMonth(int limit);
+
+  /// First paragraph of the limit sheet when the kind of limit is not known.
+  ///
+  /// In en, this message translates to:
+  /// **'{limit, plural, =1{You have used your 1 analysis.} other{You have used all {limit} analyses.}}'**
+  String gameDetailLimitBodyOther(int limit);
+
+  /// Second paragraph of the limit sheet. 'when' is a local time, or a date and a time.
+  ///
+  /// In en, this message translates to:
+  /// **'You can request analyses again from {when}.'**
+  String gameDetailLimitReset(String when);
+
+  /// Third paragraph of the limit sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Your game is saved. You can have it analysed later.'**
+  String get gameDetailLimitSaved;
+
+  /// Footer of the limit sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Entering, importing and reviewing games is never limited.'**
+  String get gameDetailLimitFree;
+
+  /// Title of the sheet shown when the user has too many jobs waiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many analyses at once'**
+  String get gameDetailQueueFullTitle;
+
+  /// Body of the queue-full sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'{max, plural, =1{Only 1 of your games can be analysed at a time. Wait until it is finished, then try again.} other{Only {max} of your games can be analysed at a time. Wait until one is finished, then try again.}}'**
+  String gameDetailQueueFullBody(int max);
+
+  /// Snack bar when the server rate-limits the analysis request.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds, plural, =1{Too many requests. Try again in 1 second.} other{Too many requests. Try again in {seconds} seconds.}}'**
+  String gameDetailRateLimited(int seconds);
+
+  /// Title of the sheet shown when analyses need a verified e-mail address.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm your e-mail address'**
+  String get gameDetailEmailTitle;
+
+  /// Body of the e-mail verification sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'To have games analysed, open the link in the e-mail we sent you when you registered. Then come back and tap the button below.'**
+  String get gameDetailEmailBody;
+
+  /// Button of the e-mail verification sheet: checks again and requests the analysis.
+  ///
+  /// In en, this message translates to:
+  /// **'I\'ve confirmed it'**
+  String get gameDetailEmailAction;
+
+  /// Shown in the e-mail verification sheet when the check still fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Your address is not confirmed yet.'**
+  String get gameDetailEmailStill;
+
+  /// Snack bar after the user closed the AI consent screen without agreeing.
+  ///
+  /// In en, this message translates to:
+  /// **'The analysis needs your consent to AI processing.'**
+  String get gameDetailConsentNeeded;
+
+  /// Snack bar when the analysis request failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The analysis could not be requested. Try again.'**
+  String get gameDetailRequestFailed;
+
+  /// Snack bar when the analysis request failed without a connection.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re offline. Connect to the internet and try again.'**
+  String get gameDetailRequestOffline;
+
+  /// Heading of the usage block (settings).
+  ///
+  /// In en, this message translates to:
+  /// **'Analyses'**
+  String get usageTitle;
+
+  /// Usage line: what is left of the daily limit and the local time of the reset.
+  ///
+  /// In en, this message translates to:
+  /// **'{remaining} of {limit} analyses left today · resets at {time}'**
+  String usageDailyLeft(int remaining, int limit, String time);
+
+  /// Usage line when the daily limit is used up.
+  ///
+  /// In en, this message translates to:
+  /// **'No analyses left today · resets at {time}'**
+  String usageDailyNone(String time);
+
+  /// Usage line: what is left of the monthly limit and the date of the reset.
+  ///
+  /// In en, this message translates to:
+  /// **'{remaining} of {limit} analyses left this month · resets on {date}'**
+  String usageMonthlyLeft(int remaining, int limit, String date);
+
+  /// Usage line when the monthly limit is used up.
+  ///
+  /// In en, this message translates to:
+  /// **'No analyses left this month · resets on {date}'**
+  String usageMonthlyNone(String date);
+
+  /// Usage block for an account without limits.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited analyses'**
+  String get usageUnlimited;
+
+  /// Usage block when the quota could not be loaded.
+  ///
+  /// In en, this message translates to:
+  /// **'The numbers are not available right now.'**
+  String get usageUnavailable;
+
+  /// Snack bar shown anywhere in the app when an analysis job finished.
+  ///
+  /// In en, this message translates to:
+  /// **'Your analysis is ready.'**
+  String get analysisNoticeReady;
+
+  /// Snack bar shown anywhere in the app when an analysis job finished and the opponent is known.
+  ///
+  /// In en, this message translates to:
+  /// **'Your game against {name} has been analysed.'**
+  String analysisNoticeReadyOpponent(String name);
+
+  /// Action of the analysis-ready snack bar: opens the review.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get analysisNoticeOpen;
+
+  /// Snack bar shown anywhere in the app when an analysis job failed.
+  ///
+  /// In en, this message translates to:
+  /// **'An analysis failed. It doesn\'t count towards your limit.'**
+  String get analysisNoticeFailed;
+
+  /// Action of the analysis-failed snack bar: opens the game.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get analysisNoticeView;
 }
 
 class _AppLocalizationsDelegate

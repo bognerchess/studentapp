@@ -45,10 +45,16 @@ Link buildApiLink({
 /// A client that never reads from or writes to its cache. What has to survive
 /// lives in drift; a normalised GraphQL cache would be a second source of
 /// truth. The store is in memory, so nothing touches the disk either way.
-GraphQLClient createGraphQLClient(Link link) => GraphQLClient(
+/// [requestTimeout] arms a timer per request. Tests pass `null`: a fixture
+/// link answers from memory, so the timeout can never fire, and a widget test
+/// that ends with a pending timer fails.
+GraphQLClient createGraphQLClient(
+  Link link, {
+  Duration? requestTimeout = kDefaultApiTimeout,
+}) => GraphQLClient(
   link: link,
   cache: GraphQLCache(store: InMemoryStore()),
-  queryRequestTimeout: kDefaultApiTimeout,
+  queryRequestTimeout: requestTimeout,
   defaultPolicies: DefaultPolicies(
     query: Policies(
       fetch: FetchPolicy.noCache,

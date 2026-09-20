@@ -24,7 +24,18 @@ AppDatabase openTestDatabase(FakeClock clock) {
   // instances on the same file corrupt it. Every instance here has an
   // in-memory database of its own.
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
-  return AppDatabase(NativeDatabase.memory(), clock: clock.call);
+  return AppDatabase(
+    // `closeStreamsSynchronously`: without it drift tears its streams down on
+    // a timer, and a widget test that ends while one is pending fails with
+    // "A Timer is still pending even after the widget tree was disposed".
+    // Harmless for a plain unit test, required for anything that pumps a
+    // widget tree.
+    DatabaseConnection(
+      NativeDatabase.memory(),
+      closeStreamsSynchronously: true,
+    ),
+    clock: clock.call,
+  );
 }
 
 const alice = 'sub-alice';

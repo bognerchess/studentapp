@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+import 'package:bogner_chess/core/api/api_client.dart';
 import 'package:bogner_chess/core/api/api_providers.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:gql_exec/gql_exec.dart';
@@ -56,7 +57,14 @@ class FixtureLink extends Link {
 
   /// `ProviderScope(overrides: link.overrides)`: every repository of
   /// `api_providers.dart` then talks to this link.
-  List<Override> get overrides => [apiLinkProvider.overrideWithValue(this)];
+  List<Override> get overrides => [
+    apiLinkProvider.overrideWithValue(this),
+    // No request timeout: this link answers from memory, so the timer can
+    // never fire, and a widget test that ends with one pending fails.
+    apiExecutorProvider.overrideWith(
+      (ref) => ApiExecutor(createGraphQLClient(this, requestTimeout: null)),
+    ),
+  ];
 
   /// Answers [operation] with `<operation>/<scenario>.json` from now on.
   void use(String operation, String scenario) {

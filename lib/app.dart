@@ -7,6 +7,7 @@ import 'package:bogner_chess/core/links/incoming_link_notices.dart';
 import 'package:bogner_chess/core/ui/theme.dart';
 import 'package:bogner_chess/core/ui/widgets/env_banner.dart';
 import 'package:bogner_chess/features/account/ui/account_deleted_notice.dart';
+import 'package:bogner_chess/features/analysis_status/ui/analysis_notices.dart';
 import 'package:bogner_chess/features/consent/ui/first_run_consent_prompt.dart';
 import 'package:bogner_chess/features/settings/ui/update_required_gate.dart';
 import 'package:bogner_chess/router.dart';
@@ -43,12 +44,15 @@ class BognerChessApp extends ConsumerWidget {
       // UpdateRequiredGate: "please update" instead of the app when the
       // backend no longer supports this version. AccountDeletedNotice: the
       // last screen of an account deletion. FirstRunConsentPrompt: the
-      // one-time analytics question.
+      // one-time analytics question. AnalysisNotices: "your analysis is
+      // ready", and the owner of the job tracker — innermost, so it is
+      // inside everything that can replace the app rather than running
+      // behind a screen that is not there.
       builder: (context, child) => EnvBanner(
         child: UpdateRequiredGate(
           child: AccountDeletedNotice(
             child: FirstRunConsentPrompt(
-              child: IncomingLinkNotices(child: child!),
+              child: IncomingLinkNotices(child: AnalysisNotices(child: child!)),
             ),
           ),
         ),

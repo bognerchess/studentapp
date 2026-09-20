@@ -66,6 +66,7 @@ Future<void> _pumpAbout(
           }
           return appInfo;
         }),
+        ...backendOverrides(),
         linkLauncherProvider.overrideWithValue(
           launcher ?? _FakeLauncher().call,
         ),

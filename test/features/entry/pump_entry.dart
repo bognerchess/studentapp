@@ -123,6 +123,7 @@ Future<EntryHarness> pumpEntry(
         appInfoProvider.overrideWith(
           (ref) async => const AppInfo(version: '1.2.3', buildNumber: '45'),
         ),
+        ...backendOverrides(),
         entryDraftStoreProvider.overrideWithValue(harness.store),
         screenWakelockProvider.overrideWithValue(harness.wakelock),
         preferencesProvider.overrideWithValue(harness.preferences),

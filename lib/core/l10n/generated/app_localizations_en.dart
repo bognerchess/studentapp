@@ -1511,4 +1511,362 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get submitQueueHoldRequestFailed => 'The request did not get through.';
+
+  @override
+  String get librarySearchHint => 'Search player or event';
+
+  @override
+  String get librarySearchClear => 'Clear search';
+
+  @override
+  String get libraryFilterDates => 'Date';
+
+  @override
+  String libraryFilterDatesRange(String from, String to) {
+    return '$from – $to';
+  }
+
+  @override
+  String get libraryFilterDatesClear => 'Clear date filter';
+
+  @override
+  String get libraryDatePickerHelp => 'Games played between';
+
+  @override
+  String get libraryNoMatchesTitle => 'No games found';
+
+  @override
+  String get libraryNoMatchesMessage =>
+      'Try another name or a wider date range.';
+
+  @override
+  String get libraryClearFilters => 'Clear filters';
+
+  @override
+  String get libraryOfflineBanner =>
+      'You\'re offline. These are the games saved on this device.';
+
+  @override
+  String get libraryOfflineEmpty =>
+      'You\'re offline, and no games are saved on this device yet.';
+
+  @override
+  String get libraryRefreshFailedBanner => 'The list could not be updated.';
+
+  @override
+  String libraryPlayersVs(String white, String black) {
+    return '$white – $black';
+  }
+
+  @override
+  String get libraryWhite => 'White';
+
+  @override
+  String get libraryBlack => 'Black';
+
+  @override
+  String get libraryDateUnknown => 'No date';
+
+  @override
+  String get libraryStatusDraft => 'Draft';
+
+  @override
+  String get libraryStatusWaiting => 'Waiting to upload';
+
+  @override
+  String get libraryStatusUploadFailed => 'Upload failed';
+
+  @override
+  String get libraryStatusAnalysing => 'Analysing…';
+
+  @override
+  String get libraryStatusReady => 'Analysis ready';
+
+  @override
+  String get libraryStatusFailed => 'Analysis failed';
+
+  @override
+  String get libraryStatusNotAnalysed => 'Not analysed';
+
+  @override
+  String get libraryDeleteTitle => 'Delete this game?';
+
+  @override
+  String get libraryDeleteMessage =>
+      'The game and its analysis are removed from your account, on the website too. This cannot be undone.';
+
+  @override
+  String get libraryDeleteDraftTitle => 'Delete this draft?';
+
+  @override
+  String get libraryDeleteDraftMessage => 'The moves you entered will be lost.';
+
+  @override
+  String get libraryDeleteConfirm => 'Delete';
+
+  @override
+  String get libraryDeleteCancel => 'Cancel';
+
+  @override
+  String get libraryDeleted => 'Game deleted';
+
+  @override
+  String get libraryDraftDeleted => 'Draft deleted';
+
+  @override
+  String get libraryDeleteFailed => 'That could not be deleted. Try again.';
+
+  @override
+  String get libraryDraftWaitingInfo =>
+      'This game is sent as soon as you\'re online.';
+
+  @override
+  String get libraryDraftFailedInfo => 'This game could not be uploaded.';
+
+  @override
+  String get libraryLoadingMore => 'Loading more games';
+
+  @override
+  String get gameDetailNotFoundTitle => 'Game not found';
+
+  @override
+  String get gameDetailNotFoundMessage =>
+      'It may have been deleted on another device.';
+
+  @override
+  String get gameDetailOutcomeWin => 'You won';
+
+  @override
+  String get gameDetailOutcomeLoss => 'You lost';
+
+  @override
+  String get gameDetailOutcomeDraw => 'Draw';
+
+  @override
+  String gameDetailMoves(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count moves',
+      one: '1 move',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get gameDetailFinalPosition => 'Final position';
+
+  @override
+  String get gameDetailDelete => 'Delete game';
+
+  @override
+  String get gameDetailAnalyse => 'Analyse this game';
+
+  @override
+  String get gameDetailAnalyseHint =>
+      'The coach goes through your game and explains the key moments. It takes a few minutes.';
+
+  @override
+  String get gameDetailOpenAnalysis => 'Open analysis';
+
+  @override
+  String get gameDetailReadyMessage => 'Your analysis is ready.';
+
+  @override
+  String get gameDetailQueuedTitle => 'Waiting in the queue';
+
+  @override
+  String get gameDetailQueuedNext => 'Your game is next.';
+
+  @override
+  String gameDetailQueuedPosition(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count games are ahead of yours.',
+      one: '1 game is ahead of yours.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get gameDetailRunningTitle => 'Analysing your game';
+
+  @override
+  String get gameDetailStageEngine => 'The engine is checking every move.';
+
+  @override
+  String get gameDetailStageCoach => 'The coach is writing the comments.';
+
+  @override
+  String get gameDetailStageOther => 'This takes a few minutes.';
+
+  @override
+  String get gameDetailLeaveHint =>
+      'You can leave the app. We\'ll notify you when the analysis is ready.';
+
+  @override
+  String get gameDetailFailedTitle => 'The analysis failed';
+
+  @override
+  String get gameDetailFailedMessage =>
+      'Something went wrong on our side. This attempt does not count towards your limit.';
+
+  @override
+  String get gameDetailSheetClose => 'Close';
+
+  @override
+  String get gameDetailLimitTitleDay => 'Daily limit reached';
+
+  @override
+  String get gameDetailLimitTitleMonth => 'Monthly limit reached';
+
+  @override
+  String get gameDetailLimitTitleOther => 'Analysis limit reached';
+
+  @override
+  String gameDetailLimitBodyDay(int limit) {
+    String _temp0 = intl.Intl.pluralLogic(
+      limit,
+      locale: localeName,
+      other:
+          'You can have $limit games analysed per day, and you\'ve used them all today.',
+      one: 'You can have 1 game analysed per day, and you\'ve used it today.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String gameDetailLimitBodyMonth(int limit) {
+    String _temp0 = intl.Intl.pluralLogic(
+      limit,
+      locale: localeName,
+      other:
+          'You can have $limit games analysed per month, and you\'ve used them all this month.',
+      one: 'You can have 1 game analysed per month, and you\'ve used it this month.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String gameDetailLimitBodyOther(int limit) {
+    String _temp0 = intl.Intl.pluralLogic(
+      limit,
+      locale: localeName,
+      other: 'You have used all $limit analyses.',
+      one: 'You have used your 1 analysis.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String gameDetailLimitReset(String when) {
+    return 'You can request analyses again from $when.';
+  }
+
+  @override
+  String get gameDetailLimitSaved =>
+      'Your game is saved. You can have it analysed later.';
+
+  @override
+  String get gameDetailLimitFree =>
+      'Entering, importing and reviewing games is never limited.';
+
+  @override
+  String get gameDetailQueueFullTitle => 'Too many analyses at once';
+
+  @override
+  String gameDetailQueueFullBody(int max) {
+    String _temp0 = intl.Intl.pluralLogic(
+      max,
+      locale: localeName,
+      other:
+          'Only $max of your games can be analysed at a time. Wait until one is finished, then try again.',
+      one: 'Only 1 of your games can be analysed at a time. Wait until it is finished, then try again.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String gameDetailRateLimited(int seconds) {
+    String _temp0 = intl.Intl.pluralLogic(
+      seconds,
+      locale: localeName,
+      other: 'Too many requests. Try again in $seconds seconds.',
+      one: 'Too many requests. Try again in 1 second.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get gameDetailEmailTitle => 'Confirm your e-mail address';
+
+  @override
+  String get gameDetailEmailBody =>
+      'To have games analysed, open the link in the e-mail we sent you when you registered. Then come back and tap the button below.';
+
+  @override
+  String get gameDetailEmailAction => 'I\'ve confirmed it';
+
+  @override
+  String get gameDetailEmailStill => 'Your address is not confirmed yet.';
+
+  @override
+  String get gameDetailConsentNeeded =>
+      'The analysis needs your consent to AI processing.';
+
+  @override
+  String get gameDetailRequestFailed =>
+      'The analysis could not be requested. Try again.';
+
+  @override
+  String get gameDetailRequestOffline =>
+      'You\'re offline. Connect to the internet and try again.';
+
+  @override
+  String get usageTitle => 'Analyses';
+
+  @override
+  String usageDailyLeft(int remaining, int limit, String time) {
+    return '$remaining of $limit analyses left today · resets at $time';
+  }
+
+  @override
+  String usageDailyNone(String time) {
+    return 'No analyses left today · resets at $time';
+  }
+
+  @override
+  String usageMonthlyLeft(int remaining, int limit, String date) {
+    return '$remaining of $limit analyses left this month · resets on $date';
+  }
+
+  @override
+  String usageMonthlyNone(String date) {
+    return 'No analyses left this month · resets on $date';
+  }
+
+  @override
+  String get usageUnlimited => 'Unlimited analyses';
+
+  @override
+  String get usageUnavailable => 'The numbers are not available right now.';
+
+  @override
+  String get analysisNoticeReady => 'Your analysis is ready.';
+
+  @override
+  String analysisNoticeReadyOpponent(String name) {
+    return 'Your game against $name has been analysed.';
+  }
+
+  @override
+  String get analysisNoticeOpen => 'Open';
+
+  @override
+  String get analysisNoticeFailed =>
+      'An analysis failed. It doesn\'t count towards your limit.';
+
+  @override
+  String get analysisNoticeView => 'View';
 }

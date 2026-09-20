@@ -13,11 +13,11 @@ import 'package:bogner_chess/features/account/ui/account_screen.dart';
 import 'package:bogner_chess/features/auth/ui/sign_in_screen.dart';
 import 'package:bogner_chess/features/consent/ui/ai_consent_screen.dart';
 import 'package:bogner_chess/features/entry/ui/entry_screen.dart';
+import 'package:bogner_chess/features/game_detail/ui/game_detail_screen.dart';
 import 'package:bogner_chess/features/import/ui/import_screen.dart';
 import 'package:bogner_chess/features/legal/domain/legal_documents.dart';
 import 'package:bogner_chess/features/legal/ui/legal_document_screen.dart';
 import 'package:bogner_chess/features/legal/ui/legal_screen.dart';
-import 'package:bogner_chess/features/library/ui/game_screen.dart';
 import 'package:bogner_chess/features/library/ui/library_screen.dart';
 import 'package:bogner_chess/features/metadata/ui/metadata_screen.dart';
 import 'package:bogner_chess/features/new_game/domain/new_game_save_request.dart';
@@ -265,7 +265,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                     path: ':${AppRoutes.gameIdParam}',
                     name: AppRouteNames.game,
                     parentNavigatorKey: rootNavigatorKey,
-                    builder: (context, state) => GameScreen(
+                    builder: (context, state) => GameDetailScreen(
                       gameId: state.pathParameters[AppRoutes.gameIdParam]!,
                     ),
                     routes: [

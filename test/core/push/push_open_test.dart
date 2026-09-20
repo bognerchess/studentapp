@@ -54,9 +54,12 @@ void main() {
 
     expect(pathOf(h), AppRoutes.gameReview('game-1'));
     expect(h.listener.calls, ['game-1/job-1']);
-    final (name, props) = h.analytics.events.single;
-    expect(name, 'analysis_ready_opened');
-    expect(props, {'source': 'push', 'cold_start': false});
+    // Not `.single`: opening the review records `review_opened` too, from
+    // the screen the tap navigated to (WP-26). This test is about the push.
+    final opened = h.analytics.events
+        .where((event) => event.$1 == 'analysis_ready_opened')
+        .single;
+    expect(opened.$2, {'source': 'push', 'cold_start': false});
   });
 
   testWidgets('a tap that started the app: the event waits on the native '
@@ -69,7 +72,13 @@ void main() {
 
     expect(pathOf(h), AppRoutes.gameReview('game-1'));
     expect(h.listener.calls, ['game-1/job-1']);
-    expect(h.analytics.events.single.$2['cold_start'], isTrue);
+    expect(
+      h.analytics.events
+          .where((event) => event.$1 == 'analysis_ready_opened')
+          .single
+          .$2['cold_start'],
+      isTrue,
+    );
   });
 
   testWidgets('signed out, the review opens after the sign-in', (tester) async {
