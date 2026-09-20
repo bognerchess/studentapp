@@ -30,8 +30,16 @@ class MockServer {
   MockServer._(this.backend, this._servers, this._log);
 
   /// Binds to the loopback interface. Port 0 picks a free port, see [port].
+  ///
+  /// [anyInterface] binds to every interface instead, so that a phone on the
+  /// same network can reach it (run the app with
+  /// `--dart-define=API_URL=http://192.168.x.y:5299/graphql`, the address of
+  /// this machine). Loopback is the default on purpose: this server answers
+  /// anything, checks no password, and has no business being on a network it
+  /// was not deliberately put on.
   static Future<MockServer> start({
     int port = 0,
+    bool anyInterface = false,
     MockBackend? backend,
     void Function(String line)? log,
   }) async {
@@ -40,21 +48,24 @@ class MockServer {
     final server = MockServer._(state, servers, log);
     final first = await shelf_io.serve(
       server._handle,
-      InternetAddress.loopbackIPv4,
+      anyInterface ? InternetAddress.anyIPv4 : InternetAddress.loopbackIPv4,
       port,
     );
     servers.add(first);
-    // The iOS simulator may resolve "localhost" to ::1 first.
-    try {
-      servers.add(
-        await shelf_io.serve(
-          server._handle,
-          InternetAddress.loopbackIPv6,
-          first.port,
-        ),
-      );
-    } on SocketException {
-      // No IPv6 loopback, or the port is taken there: IPv4 is enough.
+    // The iOS simulator may resolve "localhost" to ::1 first. anyIPv4 already
+    // covers every IPv4 address, so only loopback needs the second socket.
+    if (!anyInterface) {
+      try {
+        servers.add(
+          await shelf_io.serve(
+            server._handle,
+            InternetAddress.loopbackIPv6,
+            first.port,
+          ),
+        );
+      } on SocketException {
+        // No IPv6 loopback, or the port is taken there: IPv4 is enough.
+      }
     }
     return server;
   }

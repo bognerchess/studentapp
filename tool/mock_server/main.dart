@@ -13,6 +13,9 @@ The mock of the Bogner Chess GraphQL API (development tooling).
 Usage: dart run tool/mock_server/main.dart [options]
 
   --port <n>          port to listen on (default 5299, what config/fake.json expects)
+  --lan               listen on every interface, not only loopback, so that a
+                      phone on the same network can reach it. Run the app with
+                      --dart-define=API_URL=http://<this mac>:5299/graphql
   --fixtures <dir>    the test/fixtures directory (default: found from the working directory)
   --job-polls <n>     polls a job stays RUNNING before it is DONE (default 2; QUEUED for 1 poll before)
   --job-seconds <n>   finish a job after n seconds instead of counting polls
@@ -36,6 +39,7 @@ Future<void> main(List<String> arguments) async {
     return;
   }
   final MockServer server;
+  final bool lan = args.flag('--lan');
   try {
     final jobSeconds = args.integer('--job-seconds');
     final backend = MockBackend(
@@ -55,6 +59,7 @@ Future<void> main(List<String> arguments) async {
     args.assertNothingLeft();
     server = await MockServer.start(
       port: port,
+      anyInterface: lan,
       backend: backend,
       log: quiet ? null : (line) => stdout.writeln('[mock] $line'),
     );
@@ -68,6 +73,16 @@ Future<void> main(List<String> arguments) async {
     return;
   }
   stdout.writeln('[mock] GraphQL on ${server.graphqlUri} (ctrl-c stops it)');
+  if (lan) {
+    for (final address in await lanAddresses()) {
+      stdout.writeln(
+        '[mock] reachable at http://$address:${server.port}/graphql',
+      );
+    }
+    stdout.writeln(
+      '[mock] on every interface: it answers anything and checks no password.',
+    );
+  }
 
   Future<void> stop(ProcessSignal signal) async {
     await server.close();
@@ -76,6 +91,18 @@ Future<void> main(List<String> arguments) async {
 
   ProcessSignal.sigint.watch().listen(stop);
   ProcessSignal.sigterm.watch().listen(stop);
+}
+
+/// The IPv4 addresses of this machine that another device could use.
+Future<List<String>> lanAddresses() async {
+  final interfaces = await NetworkInterface.list(
+    includeLoopback: false,
+    type: InternetAddressType.IPv4,
+  );
+  return [
+    for (final interface in interfaces)
+      for (final address in interface.addresses) address.address,
+  ];
 }
 
 /// A few options do not justify a dependency on `package:args`.
