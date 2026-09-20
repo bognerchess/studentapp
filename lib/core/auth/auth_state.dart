@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Bogner Chess
 // Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
 
-import 'package:bogner_chess/config/env.dart';
+import 'package:bogner_chess/core/auth/auth_providers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -28,18 +28,33 @@ final class SignedOut extends AuthState {
 }
 
 final class SignedIn extends AuthState {
-  const SignedIn(this.sub);
+  const SignedIn(this.sub, {this.email, this.emailVerified, this.name});
 
-  /// The OIDC subject of the signed-in user.
+  /// The OIDC subject of the signed-in user. Local data is scoped by it.
   final String sub;
 
-  @override
-  bool operator ==(Object other) => other is SignedIn && other.sub == sub;
+  /// From the id token; null when the token did not carry the claim.
+  final String? email;
+
+  /// From the id token. False right after registering, until the link in the
+  /// verification mail was opened and the tokens were refreshed.
+  final bool? emailVerified;
+
+  /// Display name (`name`, else `preferred_username`).
+  final String? name;
 
   @override
-  int get hashCode => Object.hash(SignedIn, sub);
+  bool operator ==(Object other) =>
+      other is SignedIn &&
+      other.sub == sub &&
+      other.email == email &&
+      other.emailVerified == emailVerified &&
+      other.name == name;
 
-  // The subject is an identifier of a person: keep it out of logs.
+  @override
+  int get hashCode => Object.hash(SignedIn, sub, email, emailVerified, name);
+
+  // Subject, e-mail and name identify a person: keep them out of logs.
   @override
   String toString() => 'SignedIn';
 }
@@ -47,14 +62,16 @@ final class SignedIn extends AuthState {
 /// The subject used with `AUTH_MODE=fake`. The mock server knows the same id.
 const String kFakeAuthSub = 'fake-user-1';
 
-/// Seam for WP-25, which replaces [build] with the state of the real
-/// `AuthRepository`. Until then: signed in with fake auth, signed out
-/// otherwise.
+/// The state of [authRepositoryProvider]'s repository, as a provider. The
+/// router redirects on it, and everything that scopes data to a user reads
+/// the subject from it.
 class AuthStateNotifier extends Notifier<AuthState> {
   @override
   AuthState build() {
-    final env = ref.watch(envProvider);
-    return env.usesFakeAuth ? const SignedIn(kFakeAuthSub) : const SignedOut();
+    final repository = ref.watch(authRepositoryProvider);
+    final subscription = repository.states.listen((next) => state = next);
+    ref.onDispose(subscription.cancel);
+    return repository.state;
   }
 }
 

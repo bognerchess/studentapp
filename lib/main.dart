@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:bogner_chess/app.dart';
 import 'package:bogner_chess/config/env.dart';
+import 'package:bogner_chess/core/auth/auth_providers.dart';
 import 'package:bogner_chess/core/crash/crash_reporter.dart';
 import 'package:bogner_chess/core/links/incoming_link_service.dart';
 import 'package:bogner_chess/core/log.dart';
@@ -52,16 +53,25 @@ void main() {
       // see (About -> Open-source licences).
       registerAdditionalLicenses();
 
-      // Links and documents from outside the app ("Open in Bogner Chess").
-      // What arrived before this line, on a cold start, is delivered first.
-      container.read(incomingLinkServiceProvider).start();
+      // The router needs to know who is signed in before its first redirect.
+      // restore() reads the Keychain and makes no network request; it never
+      // throws. Still inside the guarded zone, as runApp has to be.
+      Future<void> start() async {
+        await container.read(authRepositoryProvider).restore();
 
-      runApp(
-        UncontrolledProviderScope(
-          container: container,
-          child: const BognerChessApp(),
-        ),
-      );
+        // Links and documents from outside the app ("Open in Bogner Chess").
+        // What arrived before this line, on a cold start, is delivered first.
+        container.read(incomingLinkServiceProvider).start();
+
+        runApp(
+          UncontrolledProviderScope(
+            container: container,
+            child: const BognerChessApp(),
+          ),
+        );
+      }
+
+      unawaited(start());
     },
     // Everything asynchronous that nobody caught.
     (error, stack) => report(error, stack, 'zone', true),

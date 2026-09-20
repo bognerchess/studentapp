@@ -1001,6 +1001,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cancel promotion'**
   String get boardCancelPromotion;
+
+  /// Sign-in screen: one sentence under the app name that says what the app is for.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter or import your games, have them analysed and review them with coach comments.'**
+  String get signInTagline;
+
+  /// Sign-in screen: button that opens the login page with e-mail and password.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get signInPrimary;
+
+  /// Sign-in screen: button that opens the registration page.
+  ///
+  /// In en, this message translates to:
+  /// **'Create account'**
+  String get signInRegister;
+
+  /// Sign-in screen: Sign in with Apple button. Use Apple's official wording for the language.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Apple'**
+  String get signInApple;
+
+  /// Sign-in screen: Sign in with Google button.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get signInGoogle;
+
+  /// Sign-in screen: divider between the Apple/Google buttons and the e-mail buttons.
+  ///
+  /// In en, this message translates to:
+  /// **'or'**
+  String get signInOr;
+
+  /// Sign-in screen: note that app and website share one account. Keep the domain as it is.
+  ///
+  /// In en, this message translates to:
+  /// **'The same account works on bognerchess.com.'**
+  String get signInSameAccount;
+
+  /// Sign-in screen: shown (and announced by VoiceOver) while the system browser sheet is open.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the sign-in page …'**
+  String get signInBusy;
+
+  /// Sign-in screen: title of the message shown when the identity server could not be reached.
+  ///
+  /// In en, this message translates to:
+  /// **'No connection'**
+  String get signInErrorOfflineTitle;
+
+  /// Sign-in screen: body of the offline message.
+  ///
+  /// In en, this message translates to:
+  /// **'The sign-in page could not be reached. Check your internet connection and try again.'**
+  String get signInErrorOfflineMessage;
+
+  /// Sign-in screen: title of the message shown when sign-in failed for a reason other than the connection.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in did not work'**
+  String get signInErrorTitle;
+
+  /// Sign-in screen: body of the generic sign-in error.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong on our side. Please try again in a moment.'**
+  String get signInErrorMessage;
+
+  /// Sign-in screen: text button that opens the help for people who registered but have not clicked the confirmation link.
+  ///
+  /// In en, this message translates to:
+  /// **'E-mail not confirmed yet?'**
+  String get signInVerifyToggle;
+
+  /// Sign-in screen: title of the e-mail confirmation help.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm your e-mail address'**
+  String get signInVerifyTitle;
+
+  /// Sign-in screen: body of the e-mail confirmation help. The link usually opens outside the app.
+  ///
+  /// In en, this message translates to:
+  /// **'We sent you an e-mail with a confirmation link. Open the link (it may open in Safari, that is fine), then come back here and sign in.'**
+  String get signInVerifyBody;
+
+  /// Sign-in screen: button in the e-mail confirmation help; starts a normal sign-in.
+  ///
+  /// In en, this message translates to:
+  /// **'I have confirmed it – sign in'**
+  String get signInVerifyAction;
 }
 
 class _AppLocalizationsDelegate

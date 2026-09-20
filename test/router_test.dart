@@ -56,9 +56,10 @@ void main() {
     testWidgets('fake auth starts signed in', (tester) async {
       await pumpApp(tester);
 
+      // Since WP-25 the fake user also has an e-mail address and a name.
       expect(
         containerOf(tester).read(authStateProvider),
-        const SignedIn(kFakeAuthSub),
+        isA<SignedIn>().having((s) => s.sub, 'sub', kFakeAuthSub),
       );
       expect(find.byType(LibraryScreen), findsOneWidget);
     });

@@ -577,4 +577,57 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get boardCancelPromotion => 'Umwandlung abbrechen';
+
+  @override
+  String get signInTagline =>
+      'Gib deine Partien ein oder importiere sie, lass sie analysieren und geh sie mit Trainerkommentaren durch.';
+
+  @override
+  String get signInPrimary => 'Anmelden';
+
+  @override
+  String get signInRegister => 'Konto erstellen';
+
+  @override
+  String get signInApple => 'Mit Apple fortfahren';
+
+  @override
+  String get signInGoogle => 'Mit Google fortfahren';
+
+  @override
+  String get signInOr => 'oder';
+
+  @override
+  String get signInSameAccount =>
+      'Dasselbe Konto gilt auch auf bognerchess.com.';
+
+  @override
+  String get signInBusy => 'Warte auf die Anmeldeseite …';
+
+  @override
+  String get signInErrorOfflineTitle => 'Keine Verbindung';
+
+  @override
+  String get signInErrorOfflineMessage =>
+      'Die Anmeldeseite ist nicht erreichbar. Prüfe deine Internetverbindung und versuch es noch einmal.';
+
+  @override
+  String get signInErrorTitle => 'Anmeldung hat nicht geklappt';
+
+  @override
+  String get signInErrorMessage =>
+      'Da ist bei uns etwas schiefgegangen. Bitte versuch es gleich noch einmal.';
+
+  @override
+  String get signInVerifyToggle => 'E-Mail noch nicht bestätigt?';
+
+  @override
+  String get signInVerifyTitle => 'Bestätige deine E-Mail-Adresse';
+
+  @override
+  String get signInVerifyBody =>
+      'Wir haben dir eine E-Mail mit einem Bestätigungslink geschickt. Öffne den Link (er darf sich in Safari öffnen), komm dann hierher zurück und melde dich an.';
+
+  @override
+  String get signInVerifyAction => 'Ich habe bestätigt – anmelden';
 }
