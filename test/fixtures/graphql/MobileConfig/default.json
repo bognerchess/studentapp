@@ -1,0 +1,24 @@
+{
+  "data": {
+    "mobileConfig": {
+      "minSupportedAppVersion": "0.1.0",
+      "maxAnalysisSchemaVersion": 1,
+      "supportedCoachLanguages": [
+        "en",
+        "de"
+      ],
+      "jobPollIntervalSeconds": 3,
+      "featureFlags": [
+        {
+          "key": "push",
+          "enabled": false
+        },
+        {
+          "key": "eval_graph",
+          "enabled": true
+        }
+      ],
+      "currentAiConsentVersion": 1
+    }
+  }
+}

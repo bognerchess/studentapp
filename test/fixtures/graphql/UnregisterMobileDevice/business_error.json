@@ -1,0 +1,13 @@
+{
+  "data": {
+    "unregisterMobileDevice": {
+      "mobileDevice": null,
+      "errors": [
+        {
+          "__typename": "BusinessError",
+          "message": "web_api_errors.entity_not_found"
+        }
+      ]
+    }
+  }
+}

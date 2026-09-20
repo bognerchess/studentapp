@@ -1,0 +1,13 @@
+{
+  "data": {
+    "requestGameAnalysis": {
+      "analysisJob": null,
+      "errors": [
+        {
+          "__typename": "EmailNotVerifiedError",
+          "message": "web_api_errors.email_not_verified"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,27 @@
+mutation DeleteMyAccount($input: DeleteMyAccountInput!) {
+  deleteMyAccount(input: $input) {
+    accountDeletion {
+      id
+      status
+      requestedAt
+      completedAt
+    }
+    errors {
+      __typename
+      ... on AccountDeletionBlockedError {
+        message
+        reason
+      }
+      ... on BusinessError {
+        message
+      }
+      ... on InputValidationError {
+        message
+        propertyName
+      }
+      ... on TechnicalError {
+        message
+      }
+    }
+  }
+}

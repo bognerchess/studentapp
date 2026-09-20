@@ -42,6 +42,13 @@ dependencies:
   # WP-25: OIDC sign-in and the Keychain token store (lib/core/auth).
   flutter_appauth: ^12.1.0
   flutter_secure_storage: ^11.2.0
+  # WP-10/12: the GraphQL client (lib/core/api, its only importer). gql,
+  # gql_exec and gql_link are what the generated code and the links import.
+  graphql: ^5.2.4
+  gql: ^1.0.1
+  gql_exec: ^1.0.0+1
+  gql_link: ^1.1.0
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:
@@ -53,6 +60,12 @@ dev_dependencies:
   fake_async: ^1.3.3
   # WP-25: in-memory preferences for tests.
   shared_preferences_platform_interface: ^2.4.2
+  # WP-10: typed GraphQL operations (graphql/ -> lib/core/api/generated).
+  graphql_codegen: ^3.0.2
+  # WP-11: the mock server in tool/mock_server. Never imported from lib/.
+  shelf: ^1.4.2
+  # WP-10: the sha256 pin of graphql/schema.graphql (test only).
+  crypto: ^3.0.7
 
 flutter:
   uses-material-design: true

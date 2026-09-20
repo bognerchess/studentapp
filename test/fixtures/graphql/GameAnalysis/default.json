@@ -1,0 +1,31 @@
+{
+  "data": {
+    "gameAnalysis": {
+      "id": "analysis-1",
+      "chessGameId": "game-1",
+      "schemaVersion": 1,
+      "schemaMinor": 0,
+      "createdAt": "2026-09-19T09:20:07.000Z",
+      "document": {
+        "$fixture": "analysis/v1/forty-move-game.json"
+      },
+      "commentFeedback": [
+        {
+          "id": "feedback-1",
+          "commentId": "322b7d97-32b5-4bc3-9f81-475368d0ef1c",
+          "rating": "UP"
+        },
+        {
+          "id": "feedback-2",
+          "commentId": "0e60df92-f823-4d99-a5e3-82cbad3c3ba1",
+          "rating": "DOWN"
+        },
+        {
+          "id": "feedback-3",
+          "commentId": "7387da67-d9d2-4f5d-b152-56ba6d80d558",
+          "rating": "SIDEWAYS"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "data": {
+    "myConsent": {
+      "key": "ANALYTICS_CONSENT",
+      "currentVersion": 1,
+      "acceptedVersion": null,
+      "required": true,
+      "withdrawnAt": null
+    }
+  }
+}

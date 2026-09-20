@@ -1,0 +1,10 @@
+{
+  "data": {
+    "deleteChessGame": {
+      "chessGame": {
+        "id": "game-1"
+      },
+      "errors": null
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "data": {
+    "gameAnalysis": {
+      "id": "analysis-1",
+      "chessGameId": "game-1",
+      "schemaVersion": 2,
+      "schemaMinor": 0,
+      "createdAt": "2026-09-19T09:20:07.000Z",
+      "document": {
+        "$fixture": "analysis/forward-compat/v2-major.json"
+      },
+      "commentFeedback": []
+    }
+  }
+}

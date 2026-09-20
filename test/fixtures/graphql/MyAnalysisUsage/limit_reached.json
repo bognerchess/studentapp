@@ -1,0 +1,15 @@
+{
+  "data": {
+    "myAnalysisUsage": {
+      "policy": "DEFAULT",
+      "dailyLimit": 3,
+      "dailyUsed": 3,
+      "dailyResetAt": "2026-09-19T22:00:00.000Z",
+      "monthlyLimit": 30,
+      "monthlyUsed": 12,
+      "monthlyResetAt": "2026-09-30T22:00:00.000Z",
+      "queuedJobs": 1,
+      "maxQueuedJobs": 2
+    }
+  }
+}

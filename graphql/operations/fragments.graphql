@@ -1,0 +1,65 @@
+# Shared selections. The mappers in lib/core/api/mappers/ work on these
+# fragments, so every operation that returns a game or a job selects the same
+# fields.
+
+fragment JobFields on AnalysisJob {
+  id
+  chessGameId
+  status
+  stage
+  queuePosition
+  requestedAt
+  finishedAt
+  failureCode
+}
+
+fragment GameFields on ChessGame {
+  id
+  clientGameId
+  playerColor
+  result
+  resultText
+  playedDate
+  eventName
+  timeControl
+  opponentName
+  whitePlayerName
+  blackPlayerName
+  whiteElo
+  blackElo
+  created
+  hasAnalysis
+  latestAnalysisJob {
+    ...JobFields
+  }
+}
+
+fragment ConsentFields on ConsentStatus {
+  key
+  currentVersion
+  acceptedVersion
+  required
+  withdrawnAt
+}
+
+fragment AiConsentFields on AiConsentStatus {
+  currentVersion
+  acceptedVersion
+  required
+}
+
+fragment DeviceFields on MobileDevice {
+  id
+  deviceId
+  environment
+  appVersion
+  locale
+  lastSeenAt
+  revokedAt
+}
+
+fragment FeedbackFields on CoachCommentFeedback {
+  id
+  commentId
+  rating
+}

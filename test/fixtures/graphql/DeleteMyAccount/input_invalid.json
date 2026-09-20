@@ -1,0 +1,14 @@
+{
+  "data": {
+    "deleteMyAccount": {
+      "accountDeletion": null,
+      "errors": [
+        {
+          "__typename": "InputValidationError",
+          "message": "web_api_errors.account_deletion_confirmation_mismatch",
+          "propertyName": "Confirmation"
+        }
+      ]
+    }
+  }
+}

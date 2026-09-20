@@ -1,0 +1,12 @@
+{
+  "data": {
+    "importMobileGame": {
+      "chessGame": null,
+      "errors": [
+        {
+          "__typename": "SomethingNewError"
+        }
+      ]
+    }
+  }
+}

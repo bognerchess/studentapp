@@ -1,0 +1,15 @@
+{
+  "data": {
+    "legalDocument": {
+      "id": "legal-ai_consent-de-1",
+      "key": "AI_CONSENT",
+      "version": 1,
+      "language": "de",
+      "title": "KI-Analyse deiner Partien",
+      "bodyMarkdown": "Wenn du eine Analyse anforderst, werden die Züge deiner Partie und die Spielernamen an unseren Analysedienst gesendet. Ein Sprachmodell schreibt die Trainerkommentare. **Es werden keine Kontodaten an den Modellanbieter gesendet.**\n\nDu kannst diese Einwilligung jederzeit in den Einstellungen widerrufen.",
+      "providerName": "Example AI Provider",
+      "publishedAt": "2026-09-01T00:00:00.000Z",
+      "isDraft": true
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "data": {
+    "importMobileGame": {
+      "chessGame": null,
+      "errors": [
+        {
+          "__typename": "InputValidationError",
+          "message": "web_api_errors.pgn_too_long",
+          "propertyName": "Pgn"
+        }
+      ]
+    }
+  }
+}

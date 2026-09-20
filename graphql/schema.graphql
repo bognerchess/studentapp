@@ -1,0 +1,730 @@
+# Mobile subset of the BognerChess Web API schema.
+# GENERATED from Stamy.Web.Api/schema.graphql by scripts/export-mobile-schema.sh. Do not edit.
+
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+type Query {
+  "One analysis job of the caller; null when it does not exist or belongs to someone else."
+  analysisJob(id: ID!): AnalysisJob @cost(weight: "10")
+  "The caller's jobs that are still queued or running, oldest first."
+  myActiveAnalysisJobs: [AnalysisJob!]! @cost(weight: "10")
+  "The latest finished analysis of one of the caller's games; null when there is none. `maxSchemaVersion` is the highest document `schemaVersion` the client can render. It never hides a result: a newer document is still returned, and the client compares `schemaVersion` with its own maximum to show an \"update the app\" banner instead of rendering it."
+  gameAnalysis(gameId: ID!, maxSchemaVersion: Int! = 1): GameAnalysis
+    @cost(weight: "10")
+  "The caller's analysis quota: limits, usage and reset instants."
+  myAnalysisUsage: AnalysisUsage! @cost(weight: "10")
+  "Remote configuration of the mobile app for the caller's account."
+  mobileConfig: MobileConfig! @cost(weight: "10")
+  "The caller's games, newest first (games without a date last). `search` is a case-insensitive \"contains\" on opponent, white player, black player and event name; `playedFrom` and `playedTo` are inclusive and leave out games without a date."
+  myMobileGames(
+    search: String
+    playedFrom: LocalDate
+    playedTo: LocalDate
+    "Returns the first _n_ elements from the list."
+    first: Int
+    "Returns the elements in the list that come after the specified cursor."
+    after: String
+    "Returns the last _n_ elements from the list."
+    last: Int
+    "Returns the elements in the list that come before the specified cursor."
+    before: String
+  ): MyMobileGamesConnection
+    @listSize(
+      assumedSize: 50
+      slicingArguments: ["first", "last"]
+      slicingArgumentDefaultValue: 10
+      sizedFields: ["edges", "nodes"]
+      requireOneSlicingArgument: false
+    )
+    @cost(weight: "10")
+  "The current version of a legal text: the highest published version, in `language` when that translation exists and in English otherwise. DRAFT placeholders are served as well and carry `isDraft = true`."
+  legalDocument(key: LegalDocumentKey!, language: String! = "en"): LegalDocument
+    @cost(weight: "10")
+  "Whether the caller still has to accept the current AI consent text."
+  myAiConsent: AiConsentStatus! @cost(weight: "10")
+  "The caller's consent state for any legal document key (e.g. analytics)."
+  myConsent(key: LegalDocumentKey!): ConsentStatus! @cost(weight: "10")
+  myChessGameById(id: ID!): ChessGame @cost(weight: "10")
+}
+
+type Mutation {
+  "In-app account deletion (App Store guideline 5.1.1(v)). `confirmation` must be \"DELETE\". A PENDING status means the personal data is gone and an external step is still being retried."
+  deleteMyAccount(input: DeleteMyAccountInput!): DeleteMyAccountPayload!
+    @cost(weight: "10")
+  "Queues a whole-game analysis. Quota, queue cap, rate limit, verified email and AI consent are domain outcomes and come back as typed errors, never as transport errors."
+  requestGameAnalysis(input: RequestGameAnalysisInput!): RequestGameAnalysisPayload!
+    @cost(weight: "10")
+  "Thumbs up / down on one coach comment; a null rating clears it (the payload is then empty)."
+  submitCoachCommentFeedback(input: SubmitCoachCommentFeedbackInput!): SubmitCoachCommentFeedbackPayload!
+    @cost(weight: "10")
+  "Records that the caller accepted the given AI consent version."
+  recordAiConsent(input: RecordAiConsentInput!): RecordAiConsentPayload!
+    @cost(weight: "10")
+  "Records an acceptance or a withdrawal for any legal document key (e.g. analytics)."
+  recordConsent(input: RecordConsentInput!): RecordConsentPayload!
+    @cost(weight: "10")
+  "Registers (or refreshes) this installation for push. Call it after sign-in and whenever the APNs token changes; the device moves to the caller if someone else used it before."
+  registerMobileDevice(input: RegisterMobileDeviceInput!): RegisterMobileDevicePayload!
+    @cost(weight: "10")
+  "Stops push for this installation (sign-out). Idempotent: an unknown device yields an empty payload."
+  unregisterMobileDevice(input: UnregisterMobileDeviceInput!): UnregisterMobileDevicePayload!
+    @cost(weight: "10")
+  "First-party product analytics, at most 50 events per call. Events counted as `rejected` (unknown name, oversized props, withdrawn analytics consent) are dropped for good; do not retry them."
+  trackMobileEvents(input: TrackMobileEventsInput!): TrackMobileEventsPayload!
+    @cost(weight: "10")
+  "Stores a game entered or imported in the mobile app after checking that every move is legal. Idempotent per `clientGameId`, so the offline submit-later queue can retry safely."
+  importMobileGame(input: ImportMobileGameInput!): ImportMobileGamePayload!
+    @cost(weight: "10")
+  deleteChessGame(input: DeleteChessGameInput!): DeleteChessGamePayload!
+    @cost(weight: "10")
+}
+
+type AccountDeletion {
+  id: ID!
+  status: AccountDeletionStatus!
+  requestedAt: DateTime!
+  completedAt: DateTime
+}
+
+type AccountDeletionBlockedError implements Error {
+  message: String!
+  reason: String!
+}
+
+type AiConsentRequiredError implements Error {
+  message: String!
+  requiredVersion: Int!
+}
+
+type AiConsentStatus {
+  "The AI consent version the client has to present; 0 when none is published."
+  currentVersion: Int!
+  "Highest version the caller has accepted and not withdrawn."
+  acceptedVersion: Int
+  "True until the caller has accepted `currentVersion`; analysis requests are refused meanwhile."
+  required: Boolean!
+}
+
+type AnalysisJob {
+  id: ID!
+  chessGameId: ID!
+  chessGame: ChessGame! @cost(weight: "10")
+  status: AnalysisJobStatus! @cost(weight: "10")
+  "Pipeline stage reported while the job runs, e.g. \"engine\"."
+  stage: String
+  "Number of queued jobs of the whole account that are ahead of this one (0 = next). Null unless the status is QUEUED."
+  queuePosition: Int @cost(weight: "10")
+  requestedAt: DateTime!
+  finishedAt: DateTime
+  failureCode: String
+}
+
+type AnalysisLimitReachedError implements Error {
+  message: String!
+  window: LimitWindow!
+  limit: Int!
+  used: Int!
+  resetAt: DateTime!
+}
+
+type AnalysisQueueFullError implements Error {
+  message: String!
+  maxQueuedJobs: Int!
+}
+
+type AnalysisUsage {
+  policy: LimitPolicyKind!
+  "Analyses per calendar day; null means unlimited."
+  dailyLimit: Int
+  dailyUsed: Int!
+  "Next local midnight in the account's quota time zone."
+  dailyResetAt: DateTime!
+  "Analyses per calendar month; null means unlimited."
+  monthlyLimit: Int
+  monthlyUsed: Int!
+  "First local midnight of the next month in the account's quota time zone."
+  monthlyResetAt: DateTime!
+  "The caller's active jobs (queued or running)."
+  queuedJobs: Int!
+  "A further request is refused with AnalysisQueueFullError once `queuedJobs` reaches this."
+  maxQueuedJobs: Int!
+}
+
+type BusinessError implements Error {
+  message: String!
+}
+
+type ChessGame {
+  personId: ID!
+  playedDate: LocalDate
+  eventName: String
+  site: String
+  round: String
+  playerColor: ChessGamePlayerColor!
+  opponentName: String
+  result: ChessGameResult!
+  resultText: String!
+  startingFen: String
+  rawPgn: String!
+  analysisPgn: String
+  chessGameEventId: ID
+  opponentId: ID
+  playerElo: Int
+  opponentElo: Int
+  aiAnalysis: ChessGameAiAnalysis
+  precisionAnalysis: ChessGamePrecisionAnalysis
+  isThirdPartyGame: Boolean!
+  whitePlayerId: ID
+  whitePlayerName: String
+  whiteElo: Int
+  blackPlayerId: ID
+  blackPlayerName: String
+  blackElo: Int
+  isBotGame: Boolean!
+  botId: String
+  clientGameId: String
+  timeControl: String
+  accountId: ID!
+  id: ID!
+  created: DateTime!
+  modified: DateTime!
+  createdBy: ID!
+  modifiedBy: ID!
+  "The most recently requested whole-game analysis job of this game."
+  latestAnalysisJob: AnalysisJob @cost(weight: "10")
+  "True once a finished analysis can be fetched with `gameAnalysis`."
+  hasAnalysis: Boolean! @cost(weight: "10")
+}
+
+type ChessGameAiAnalysis {
+  chessGameId: ID!
+  chessGame: ChessGame
+  whiteElo: Int!
+  blackElo: Int!
+  probabilityGapThreshold: Decimal!
+  engineName: String
+  engineVersion: String
+  analysedAt: DateTime!
+  criticalMoves: [ChessGameCriticalMove!]!
+  accountId: ID!
+  id: ID!
+  created: DateTime!
+  modified: DateTime!
+  createdBy: ID!
+  modifiedBy: ID!
+}
+
+type ChessGameCriticalMove {
+  chessGameAiAnalysisId: ID!
+  chessGameAiAnalysis: ChessGameAiAnalysis
+  ply: Int!
+  sortOrder: Int!
+  moveNumber: Int!
+  color: ChessGamePlayerColor!
+  san: String!
+  uci: String
+  fenBefore: String
+  fenAfter: String
+  playerElo: Int!
+  predictedElo: Int!
+  actualEloProbability: Decimal!
+  predictedEloProbability: Decimal!
+  probabilityGap: Decimal!
+  classification: ChessGameCriticalMoveClassification!
+  explanation: String
+  accountId: ID!
+  id: ID!
+  created: DateTime!
+  modified: DateTime!
+  createdBy: ID!
+  modifiedBy: ID!
+}
+
+type ChessGamePrecisionAnalysis {
+  chessGameId: ID!
+  chessGame: ChessGame
+  whitePrecision: Decimal!
+  blackPrecision: Decimal!
+  depth: Int!
+  engineName: String
+  engineVersion: String
+  analysedAt: DateTime!
+  moves: [ChessGamePrecisionMove!]!
+  accountId: ID!
+  id: ID!
+  created: DateTime!
+  modified: DateTime!
+  createdBy: ID!
+  modifiedBy: ID!
+}
+
+type ChessGamePrecisionMove {
+  chessGamePrecisionAnalysisId: ID!
+  chessGamePrecisionAnalysis: ChessGamePrecisionAnalysis
+  ply: Int!
+  sortOrder: Int!
+  moveNumber: Int!
+  color: ChessGamePlayerColor!
+  san: String!
+  uci: String
+  bestMoveUci: String
+  bestMoveSan: String
+  matched: Boolean!
+  accountId: ID!
+  id: ID!
+  created: DateTime!
+  modified: DateTime!
+  createdBy: ID!
+  modifiedBy: ID!
+}
+
+type CoachCommentFeedback {
+  id: ID!
+  "Id of the comment inside the analysis document."
+  commentId: ID!
+  rating: CommentRating!
+}
+
+type ConsentStatus {
+  key: LegalDocumentKey!
+  "Highest published version of the document; 0 when none is published."
+  currentVersion: Int!
+  "Highest version the caller has accepted and not withdrawn."
+  acceptedVersion: Int
+  "True until the caller has accepted `currentVersion`."
+  required: Boolean!
+  "When the caller last withdrew or refused; null while an acceptance is live."
+  withdrawnAt: DateTime
+}
+
+type DeleteChessGamePayload {
+  chessGame: ChessGame
+  errors: [DeleteChessGameError!]
+}
+
+type DeleteMyAccountPayload {
+  accountDeletion: AccountDeletion
+  errors: [DeleteMyAccountError!]
+}
+
+type EmailNotVerifiedError implements Error {
+  message: String!
+}
+
+type FeatureFlag {
+  key: String!
+  enabled: Boolean!
+}
+
+type GameAnalysis {
+  "The caller's own feedback on comments of this analysis."
+  commentFeedback: [CoachCommentFeedback!]! @cost(weight: "10")
+  id: ID!
+  chessGameId: ID!
+  "Major version of the document contract. A client that only knows an older major shows an update hint."
+  schemaVersion: Int!
+  schemaMinor: Int!
+  createdAt: DateTime!
+  modelId: String!
+  promptVersion: String!
+  "The analysis document exactly as chess-ai produced it."
+  document: Any!
+}
+
+type ImportMobileGamePayload {
+  chessGame: ChessGame
+  errors: [ImportMobileGameError!]
+}
+
+type InputValidationError implements Error {
+  message: String!
+  propertyName: String!
+}
+
+type LegalDocument {
+  id: ID!
+  key: LegalDocumentKey!
+  version: Int!
+  "Language of this text; may be the \"en\" fallback."
+  language: String!
+  title: String!
+  bodyMarkdown: String!
+  providerName: String
+  publishedAt: DateTime!
+  "True for placeholder texts that have not been legally reviewed."
+  isDraft: Boolean!
+}
+
+type MobileConfig {
+  "Older app versions must ask the user to update."
+  minSupportedAppVersion: String!
+  "Highest analysis document `schema_version` the backend serves."
+  maxAnalysisSchemaVersion: Int!
+  supportedCoachLanguages: [String!]!
+  "Initial interval of the client's foreground job poller."
+  jobPollIntervalSeconds: Int!
+  featureFlags: [FeatureFlag!]!
+  "The AI consent version the client has to present; 0 when none is published."
+  currentAiConsentVersion: Int!
+}
+
+type MobileDevice {
+  id: ID!
+  deviceId: String!
+  environment: ApnsEnvironment!
+  appVersion: String
+  locale: String
+  lastSeenAt: DateTime!
+  "Set once the device was unregistered."
+  revokedAt: DateTime
+}
+
+type MobileEventBatch {
+  accepted: Int!
+  rejected: Int!
+}
+
+"A connection to a list of items."
+type MyMobileGamesConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [MyMobileGamesEdge!]
+  "A flattened list of the nodes."
+  nodes: [ChessGame!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type MyMobileGamesEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: ChessGame!
+}
+
+"Information about pagination in a connection."
+type PageInfo {
+  "Indicates whether more edges exist following the set defined by the clients arguments."
+  hasNextPage: Boolean!
+  "Indicates whether more edges exist prior the set defined by the clients arguments."
+  hasPreviousPage: Boolean!
+  "When paginating backwards, the cursor to continue."
+  startCursor: String
+  "When paginating forwards, the cursor to continue."
+  endCursor: String
+}
+
+type PgnInvalidError implements Error {
+  message: String!
+  moveNumber: Int
+  san: String
+}
+
+type RateLimitedError implements Error {
+  message: String!
+  retryAfterSeconds: Int!
+}
+
+type RecordAiConsentPayload {
+  aiConsentStatus: AiConsentStatus
+  errors: [RecordAiConsentError!]
+}
+
+type RecordConsentPayload {
+  consentStatus: ConsentStatus
+  errors: [RecordConsentError!]
+}
+
+type RegisterMobileDevicePayload {
+  mobileDevice: MobileDevice
+  errors: [RegisterMobileDeviceError!]
+}
+
+type RequestGameAnalysisPayload {
+  analysisJob: AnalysisJob
+  errors: [RequestGameAnalysisError!]
+}
+
+type SubmitCoachCommentFeedbackPayload {
+  coachCommentFeedback: CoachCommentFeedback
+  errors: [SubmitCoachCommentFeedbackError!]
+}
+
+type TechnicalError implements Error {
+  message: String!
+}
+
+type TrackMobileEventsPayload {
+  eventBatch: MobileEventBatch
+  errors: [TrackMobileEventsError!]
+}
+
+type UnregisterMobileDevicePayload {
+  mobileDevice: MobileDevice
+  errors: [UnregisterMobileDeviceError!]
+}
+
+interface Error {
+  message: String!
+}
+
+union DeleteChessGameError =
+  | TechnicalError
+  | BusinessError
+  | InputValidationError
+
+union DeleteMyAccountError =
+  | AccountDeletionBlockedError
+  | BusinessError
+  | InputValidationError
+  | TechnicalError
+
+union ImportMobileGameError =
+  | PgnInvalidError
+  | RateLimitedError
+  | InputValidationError
+  | BusinessError
+  | TechnicalError
+
+union RecordAiConsentError =
+  | BusinessError
+  | InputValidationError
+  | TechnicalError
+
+union RecordConsentError = BusinessError | InputValidationError | TechnicalError
+
+union RegisterMobileDeviceError =
+  | RateLimitedError
+  | BusinessError
+  | InputValidationError
+  | TechnicalError
+
+union RequestGameAnalysisError =
+  | AnalysisLimitReachedError
+  | AnalysisQueueFullError
+  | RateLimitedError
+  | EmailNotVerifiedError
+  | AiConsentRequiredError
+  | BusinessError
+  | InputValidationError
+  | TechnicalError
+
+union SubmitCoachCommentFeedbackError =
+  | BusinessError
+  | InputValidationError
+  | TechnicalError
+
+union TrackMobileEventsError =
+  | RateLimitedError
+  | BusinessError
+  | InputValidationError
+  | TechnicalError
+
+union UnregisterMobileDeviceError =
+  | BusinessError
+  | InputValidationError
+  | TechnicalError
+
+input DeleteChessGameInput {
+  chessGameId: ID!
+}
+
+input DeleteMyAccountInput {
+  "Must be \"DELETE\"."
+  confirmation: String!
+}
+
+input ImportMobileGameInput {
+  "Client-generated idempotency key: sending the same id again returns the first game."
+  clientGameId: String!
+  pgn: String!
+  playerColor: ChessGamePlayerColor!
+  "Overrides the PGN `Result` tag."
+  result: ChessGameResult
+  "Overrides the PGN `Date` tag."
+  playedDate: LocalDate
+  eventName: String
+  "E.g. \"600+5\". Overrides the PGN `TimeControl` tag."
+  timeControl: String
+  whitePlayerName: String
+  blackPlayerName: String
+  opponentName: String
+  playerElo: Int
+  opponentElo: Int
+  "How the game was entered; `WEB` is not accepted here."
+  source: ChessGameSource!
+}
+
+input MobileEventInput {
+  "One of the allow-listed event names; anything else is rejected."
+  name: String!
+  "Client clock; clamped to at most 7 days away from the server clock."
+  occurredAt: DateTime!
+  "Flat JSON object with event properties, at most 2 KB. No personal data."
+  props: Any
+}
+
+input RecordAiConsentInput {
+  "The AI consent version the user accepted (`myAiConsent.currentVersion`)."
+  version: Int!
+  deviceId: String
+}
+
+input RecordConsentInput {
+  key: LegalDocumentKey!
+  "The document version the user was shown. It must be a published version."
+  version: Int!
+  "False withdraws (or refuses) the consent."
+  accepted: Boolean!
+  deviceId: String
+}
+
+input RegisterMobileDeviceInput {
+  "Client-generated installation id (not a hardware id)."
+  deviceId: String!
+  "APNs device token (hex). Null while the user has not granted push permission; a stored token is kept in that case."
+  apnsToken: String
+  environment: ApnsEnvironment!
+  appVersion: String
+  "E.g. \"de-CH\"."
+  locale: String
+}
+
+input RequestGameAnalysisInput {
+  chessGameId: ID!
+  "Client-generated installation id (advisory, used for abuse checks)."
+  deviceId: String
+  "Coach language; one of `mobileConfig.supportedCoachLanguages`."
+  language: String! = "en"
+}
+
+input SubmitCoachCommentFeedbackInput {
+  "Id of the comment inside the analysis document."
+  commentId: ID!
+  "Null clears the caller's feedback on this comment."
+  rating: CommentRating
+}
+
+input TrackMobileEventsInput {
+  deviceId: String!
+  sessionId: String!
+  appVersion: String
+  "At most 50 events per call."
+  events: [MobileEventInput!]!
+}
+
+input UnregisterMobileDeviceInput {
+  deviceId: String!
+}
+
+enum AccountDeletionStatus {
+  PENDING
+  COMPLETED
+  BLOCKED
+  FAILED
+}
+
+enum AnalysisJobStatus {
+  QUEUED
+  RUNNING
+  DONE
+  FAILED
+}
+
+enum ApnsEnvironment {
+  SANDBOX
+  PRODUCTION
+}
+
+enum ChessGameCriticalMoveClassification {
+  PLAYED_ABOVE_ELO
+  PLAYED_BELOW_ELO
+}
+
+enum ChessGamePlayerColor {
+  WHITE
+  BLACK
+}
+
+enum ChessGameResult {
+  WHITE_WINS
+  BLACK_WINS
+  DRAW
+  ONGOING
+}
+
+enum ChessGameSource {
+  WEB
+  MOBILE_BOARD
+  MOBILE_PGN
+  MOBILE_SHARE
+}
+
+enum CommentRating {
+  UP
+  DOWN
+}
+
+enum LegalDocumentKey {
+  AI_CONSENT
+  PRIVACY_POLICY
+  TERMS
+  ANALYTICS_CONSENT
+}
+
+enum LimitPolicyKind {
+  DEFAULT
+  CUSTOM
+  UNLIMITED
+}
+
+enum LimitWindow {
+  DAY
+  MONTH
+}
+
+"The `Any` scalar type represents any valid GraphQL value."
+scalar Any @specifiedBy(url: "https://scalars.graphql.org/chillicream/any.html")
+
+"The `DateTime` scalar type represents a date and time with time zone offset information."
+scalar DateTime
+  @specifiedBy(url: "https://scalars.graphql.org/chillicream/date-time.html")
+
+"The `Decimal` scalar type represents a decimal floating-point number with high precision."
+scalar Decimal
+  @specifiedBy(url: "https://scalars.graphql.org/chillicream/decimal.html")
+
+"The `LocalDate` scalar type represents a date without time or time zone information."
+scalar LocalDate
+  @specifiedBy(url: "https://scalars.graphql.org/chillicream/local-date.html")
+
+"The purpose of the `cost` directive is to define a `weight` for GraphQL types, fields, and arguments. Static analysis can use these weights when calculating the overall cost of a query or response."
+directive @cost(
+  "The `weight` argument defines what value to add to the overall cost for every appearance, or possible appearance, of a type, field, argument, etc."
+  weight: String!
+) on
+  | SCALAR
+  | OBJECT
+  | FIELD_DEFINITION
+  | ARGUMENT_DEFINITION
+  | ENUM
+  | INPUT_FIELD_DEFINITION
+
+"The purpose of the `@listSize` directive is to either inform the static analysis about the size of returned lists (if that information is statically available), or to point the analysis to where to find that information."
+directive @listSize(
+  "The `assumedSize` argument can be used to statically define the maximum length of a list returned by a field."
+  assumedSize: Int
+  "The `slicingArguments` argument can be used to define which of the field's arguments with numeric type are slicing arguments, so that their value determines the size of the list returned by that field. It may specify a list of multiple slicing arguments."
+  slicingArguments: [String!]
+  "The `slicingArgumentDefaultValue` argument can be used to define a default value for a slicing argument, which is used if the argument is not present in a query."
+  slicingArgumentDefaultValue: Int
+  "The `sizedFields` argument can be used to define that the value of the `assumedSize` argument or of a slicing argument does not affect the size of a list returned by a field itself, but that of a list returned by one of its sub-fields."
+  sizedFields: [String!]
+  "The `requireOneSlicingArgument` argument can be used to inform the static analysis that it should expect that exactly one of the defined slicing arguments is present in a query. If that is not the case (i.e., if none or multiple slicing arguments are present), the static analysis may throw an error."
+  requireOneSlicingArgument: Boolean = true
+) on FIELD_DEFINITION

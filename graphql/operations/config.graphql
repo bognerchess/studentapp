@@ -1,0 +1,13 @@
+query MobileConfig {
+  mobileConfig {
+    minSupportedAppVersion
+    maxAnalysisSchemaVersion
+    supportedCoachLanguages
+    jobPollIntervalSeconds
+    featureFlags {
+      key
+      enabled
+    }
+    currentAiConsentVersion
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "data": {
+    "importMobileGame": {
+      "chessGame": null,
+      "errors": [
+        {
+          "__typename": "PgnInvalidError",
+          "message": "web_api_errors.pgn_invalid",
+          "moveNumber": null,
+          "san": null
+        }
+      ]
+    }
+  }
+}
