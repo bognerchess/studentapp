@@ -5,6 +5,15 @@ name: PR
 # runner and nothing in the gate needs a Mac. `ios` is everything that does
 # need one: the simulator build, the look into the built bundle, and the
 # golden tests. docs/testing.md explains the split.
+#
+# tool/check_compliance.sh runs in both, split the same way: on Linux it costs
+# a second or two and catches a forbidden dependency, a missing licence row or
+# a missing NOTICE entry in the pull request that adds it, which is the only
+# moment when fixing it is cheap. On macOS it runs again with the built bundle,
+# because the asset allow-list and the "what actually ships" scan need one. The
+# release-only conditions (a tag, a published commit, a section-7 text that is
+# no longer a draft) are reported here and enforced by --release, which the
+# release runs, not this workflow. docs/release-checklist.md is that half.
 
 on:
   pull_request:
@@ -39,6 +48,11 @@ jobs:
         run: flutter --version
       - name: The gate
         run: tool/check.sh
+      - name: Licence compliance (everything that needs no built app)
+        # Development mode: the release-only conditions are reported, not
+        # enforced. tool/check.sh has already resolved the packages, so this
+        # adds a second or two to the job.
+        run: tool/check_compliance.sh
 
   ios:
     name: ios (simulator build, bundled assets, goldens)
@@ -72,8 +86,11 @@ jobs:
           else
             flutter build ios --simulator --debug
           fi
-      - name: Only allow-listed assets are in the bundle
-        run: tool/check_bundled_assets.sh build/ios/iphonesimulator/Runner.app
+      - name: Licence compliance, including the built bundle
+        # Runs tool/check_bundled_assets.sh on the result and scans the whole
+        # bundle for forbidden names. Still development mode: a pull request
+        # has no release tag and is not expected to have one.
+        run: tool/check_compliance.sh --app build/ios/iphonesimulator/Runner.app
       - name: Golden tests
         # Passes with a note while there are no golden tests yet.
         run: tool/golden.sh

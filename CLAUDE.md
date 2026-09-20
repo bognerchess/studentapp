@@ -33,6 +33,7 @@ Planning documents live in the private hub next to this repo: `../product-hub/do
 
 ```bash
 tool/check.sh     # the gate, identical to CI: format, analyze, headers, layers, codegen-clean, tests (--fast skips codegen and tests; --format rewrites)
+tool/check_compliance.sh   # the licence gate: forbidden dependencies, licence rows, headers, the asset allow-list, NOTICE, tag, corresponding source (--release before a build ships; docs/release-checklist.md is the human half)
 tool/gen.sh       # after changing .graphql, drift tables, freezed models or ARB files
 dart run tool/mock_server/main.dart --port 5299   # mock GraphQL API for config/fake.json; --help lists options and scenarios
 flutter build ios --simulator --debug --dart-define-from-file=config/fake.json
