@@ -7,12 +7,16 @@
 // Expanded into Runner/Runner.entitlements as the value of aps-environment.
 APS_ENVIRONMENT = development
 
-// Simulator builds are not signed at all. That is what lets CI and every
-// contributor build and launch the app without an Apple account. A debug build
-// for a real device is still signed automatically and needs DEVELOPMENT_TEAM.
-CODE_SIGNING_ALLOWED[sdk=iphonesimulator*] = NO
+// Simulator builds are signed ad hoc ("-", Xcode's "Sign to Run Locally").
+// That needs no team, no certificate and no Apple account, so CI and every
+// contributor can build and launch the app. It is not switched off entirely,
+// because an unsigned build carries no entitlements, and without the App
+// Group entitlement the app and the share extension get no common container
+// in the simulator. A debug build for a real device is still signed
+// automatically and needs DEVELOPMENT_TEAM.
+CODE_SIGNING_ALLOWED[sdk=iphonesimulator*] = YES
 CODE_SIGNING_REQUIRED[sdk=iphonesimulator*] = NO
-CODE_SIGN_IDENTITY[sdk=iphonesimulator*] =
+CODE_SIGN_IDENTITY[sdk=iphonesimulator*] = -
 
 // Last, so that a developer's local values win over everything above.
 #include? "Local.xcconfig"

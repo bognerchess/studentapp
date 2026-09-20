@@ -20,10 +20,12 @@ So the settings that define this app are in `ios/Config/`:
 | File | Content |
 | --- | --- |
 | `Shared.xcconfig` | Bundle id, version numbers, deployment target, device family, signing style, entitlements path. |
-| `Debug.xcconfig` | Includes `Shared.xcconfig`. APNs sandbox. Signing switched off for the simulator. |
+| `Debug.xcconfig` | Includes `Shared.xcconfig`. APNs sandbox. Ad-hoc signing for the simulator. |
 | `Release.xcconfig` | Includes `Shared.xcconfig`. APNs production, except for the Profile configuration. |
 | `Local.xcconfig` | **Untracked, optional.** Your `DEVELOPMENT_TEAM`. Included last by Debug and Release with `#include?`, so it may be missing and it wins when present. |
 | `Local.example.xcconfig` | A template for the file above. |
+| `ShareExtension.xcconfig` | What differs for the share extension: bundle id, `Info.plist` path, extension-only API, `SKIP_INSTALL`. |
+| `ShareExtension-Debug.xcconfig`, `ShareExtension-Release.xcconfig` | Base configurations of the `ShareExtension` target: `Generated.xcconfig`, then `Debug.xcconfig` or `Release.xcconfig`, then `ShareExtension.xcconfig`. |
 
 ### How the files reach the build
 
@@ -43,10 +45,17 @@ Profile is written as a conditional in `Config/Release.xcconfig`
 
 `Config/Debug.xcconfig` and `Config/Release.xcconfig` are also the base
 configurations of the *project* (not only of the Runner target). That is how
-targets without a Flutter xcconfig get the same deployment target, device
-family, signing settings and team: `RunnerTests` today, the share extension
-later. Such a target overrides what must differ (its bundle id) in its own
-target settings.
+targets without an xcconfig of their own get the same deployment target,
+device family, signing settings and team: `RunnerTests`, which overrides what
+must differ (its bundle id) in its own target settings.
+
+The `ShareExtension` target has a base configuration of its own, because the
+project-level one is not enough for it: its version strings refer to
+`FLUTTER_BUILD_NAME` and `FLUTTER_BUILD_NUMBER`, which exist only where
+`Generated.xcconfig` is included. `ShareExtension-Debug.xcconfig` and
+`ShareExtension-Release.xcconfig` (the latter also for Profile) build the same
+chain as the Runner target gets and end with `ShareExtension.xcconfig`. The
+target has **no build settings at all** in `project.pbxproj`.
 
 ### The precedence rule to remember
 
@@ -90,15 +99,20 @@ automatic project migrations working.
   there, which is allowed to be lower than the app's and cannot be configured.
 - **`TARGETED_DEVICE_FAMILY = 1`.** iPhone only. An iPad runs the app in iPhone
   compatibility mode.
-- **Signing.** `CODE_SIGN_STYLE = Automatic` everywhere. In Debug, signing is
-  switched off for the simulator SDK only, so that CI and every contributor can
-  build and launch without an Apple account. A debug build for a real device,
-  and every Release or Profile build that is not made with `--no-codesign`,
-  is signed automatically and needs a team.
+- **Signing.** `CODE_SIGN_STYLE = Automatic` everywhere. In Debug, builds for
+  the simulator SDK are signed ad hoc (`CODE_SIGN_IDENTITY = -`, what Xcode
+  calls "Sign to Run Locally"), so that CI and every contributor can build and
+  launch without an Apple account, a certificate or a team. They were unsigned
+  until the share extension arrived; an unsigned build carries no
+  entitlements, and without the App Group entitlement the app and the
+  extension have no common container in the simulator. A debug build for a
+  real device, and every Release or Profile build that is not made with
+  `--no-codesign`, is signed automatically and needs a team.
 - **`CODE_SIGN_ENTITLEMENTS = $(BC_ENTITLEMENTS_$(TARGET_NAME))`.** Entitlements
   differ per target, and the shared file applies to several targets. The nested
   lookup gives `Runner/Runner.entitlements` for the target named `Runner`
-  (`BC_ENTITLEMENTS_Runner`) and nothing for a target without such a line.
+  (`BC_ENTITLEMENTS_Runner`), `ShareExtension/ShareExtension.entitlements` for
+  `ShareExtension` and nothing for a target without such a line.
 - **`APS_ENVIRONMENT`.** `development` in Debug and Profile, `production` in
   Release. `Runner.entitlements` contains `$(APS_ENVIRONMENT)`, which Xcode
   expands when it signs.
@@ -179,19 +193,126 @@ app's "On My iPhone") works the same way and lies outside the app's container.
 
 ## Entitlements
 
-`ios/Runner/Runner.entitlements` has one key, `aps-environment`, with the value
-`$(APS_ENVIRONMENT)` from the xcconfig files. It allows the app to register
-with the Apple Push Notification service. Two things to know:
+`ios/Runner/Runner.entitlements` has two keys:
 
-- Simulator debug builds are not signed, so the entitlement is **not** in a
-  simulator build. `xcrun simctl push <device> com.bognerchess.mobile payload.json`
-  delivers a notification anyway, because it bypasses APNs.
-- With automatic signing, the provisioning profile has the last word on the
-  value in a signed app: an App Store or TestFlight export carries `production`
-  whatever the file says.
+- `aps-environment`, with the value `$(APS_ENVIRONMENT)` from the xcconfig
+  files. It allows the app to register with the Apple Push Notification
+  service. With automatic signing, the provisioning profile has the last word
+  on the value in a signed app: an App Store or TestFlight export carries
+  `production` whatever the file says.
+- `com.apple.security.application-groups` with the one group
+  `group.com.bognerchess.mobile.share`. `ios/ShareExtension/ShareExtension.entitlements`
+  has the same key and nothing else. The group gives the app and the share
+  extension a common directory, which is the only thing they share.
 
-The App Group for the share extension is not here yet; it arrives with the
-extension.
+Simulator debug builds are signed ad hoc and carry both entitlements in
+simulated form (a `__TEXT,__entitlements` section in the executable). That is
+enough for the App Group container. It is not enough for a real APNs token;
+`xcrun simctl push <device> com.bognerchess.mobile payload.json` delivers a
+notification anyway, because it bypasses APNs.
+
+## The share extension
+
+`ios/ShareExtension` is a second target, `ShareExtension`
+(`com.bognerchess.mobile.share`), embedded in `Runner.app/PlugIns`. It makes
+"Bogner Chess" appear in the share sheet of other apps for **plain text** (how
+Chess.com and Lichess share a PGN, and what a text selection in Safari or Mail
+is) and for **`.pgn` and text files**. It does not link Flutter and is about
+280 lines of Swift, half of them the message HUD.
+
+| Step | Where |
+| --- | --- |
+| iOS offers the extension | `NSExtensionActivationRule` in `ShareExtension/Info.plist`: exactly one shared item with exactly one attachment that conforms to `com.chess.pgn` or `public.plain-text`. A web page, a bare link or an image does not activate it. |
+| The extension reads the item | `ShareViewController.swift`: at most 2 MiB (a file through a `FileHandle`, so a huge one is never loaded), bytes unchanged, because decoding is Dart's business. |
+| Hand-over | Written atomically to `shared.pgn` in the App Group container. A PGN that still waits is replaced by the newer one. |
+| Opening the app | `com.bognerchess.mobile://shared-pgn`. See below. |
+| The app collects it | `ios/Runner/SharedPgnInbox.swift`, method channel `com.bognerchess.mobile/shared_pgn`, one method `take` without arguments: moves the file aside, reads at most 2 MiB + 1 byte, deletes it, returns the bytes or null. Dart (`lib/core/links/shared_pgn_source.dart`, `IncomingLinkService.collectSharedPgn`) asks when the link arrives, **when the app starts and whenever it returns to the foreground**, then goes the way of an opened document: size and text checks, `pendingImportProvider`, the import screen; signed out, the text waits until after sign-in. |
+
+**Opening the app is best effort.** iOS gives share extensions no supported
+way to open their app: `NSExtensionContext.open(_:)` answers false for them,
+and `UIApplication.shared` is unavailable. The long-standing technique is to
+find the application object in the responder chain. Since iOS 18 its deprecated
+`openURL:` answers false without trying ("BUG IN CLIENT OF UIKIT … needs to
+migrate"), so the extension calls the current
+`open(_:options:completionHandler:)` there, which works on iOS 18 according to
+every report we found; Apple's engineers call it unsupported, and nothing
+promises it for later versions. The design therefore does not depend on it:
+when iOS reports that the app was not opened (or does not answer within two
+seconds), the extension shows "Saved. Open Bogner Chess to continue." for a
+few seconds, and the app finds the file the next time it comes to the
+foreground. The message, the "too large" and the "could not be read" texts are
+in German and English in the Swift file, because the extension cannot read the
+Flutter ARB files.
+
+The target was added to `project.pbxproj` by a script, not by hand and not in
+Xcode: `ios/Scripts/add_share_extension.rb` (Ruby gem `xcodeproj` 1.27.0). It
+is kept so that the change can be read and repeated. Two things in it matter
+to Flutter: the copy phase **"Embed Foundation Extensions" is the first build
+phase of Runner**, above Flutter's "Run Script" and "Thin Binary" (after them
+Xcode reports a dependency cycle;
+<https://docs.flutter.dev/platform-integration/ios/app-extensions> says the
+same), and the target has the same three configurations as Runner (Debug,
+Release, Profile), without which `flutter build` fails.
+
+### What a signed build needs (human gate H5)
+
+Nothing above needs a team: `flutter build ios --simulator --debug` and
+`flutter build ios --release --no-codesign` work on a clean machine. A build
+for a device, TestFlight or the App Store needs, once, in the Apple developer
+account:
+
+1. An **App Group** `group.com.bognerchess.mobile.share` (Identifiers → App
+   Groups).
+2. The App ID `com.bognerchess.mobile` with the **App Groups** capability
+   enabled and that group assigned.
+3. A second **App ID `com.bognerchess.mobile.share`** with the same capability
+   and group. (No push capability; the extension has no `aps-environment`.)
+
+With automatic signing and a team in `Local.xcconfig`, Xcode does all three by
+itself on the first device build (`-allowProvisioningUpdates` on the command
+line), provided the account's role may create identifiers. With manual
+signing, as fastlane `match` does it, **two provisioning profiles** are
+needed, one per bundle id, both containing the group.
+
+### Trying it
+
+Without touching the screen, in a simulator (this is what the extension does
+to the app):
+
+    G=$(xcrun simctl get_app_container <udid> com.bognerchess.mobile groups | cut -f2)
+    cp test/fixtures/pgn/chesscom_style.pgn "$G/shared.pgn"
+    xcrun simctl launch <udid> com.bognerchess.mobile     # start, or bring to the foreground
+
+The import screen opens with the text and `shared.pgn` is gone.
+`xcrun simctl openurl <udid> "com.bognerchess.mobile://shared-pgn"` exercises
+the link, but iOS asks "Open in Bogner Chess?" first; an extension that opens
+the app causes no such question. If `get_app_container … groups` prints
+nothing, the build is unsigned (see "Signing" above).
+
+By hand, the real share sheet (simulator or device, about five minutes):
+
+1. Build and run the app once (`flutter run --dart-define-from-file=config/fake.json`),
+   then go to the home screen.
+2. **Text from Safari.** Open a page that shows a PGN as plain text (for a
+   Lichess game, `https://lichess.org/game/export/<game id>`), long-press a
+   word, "Select All", "Share…". "Bogner Chess" is in
+   the row of apps (the first time under "More"). Tap it. Expected: a short
+   spinner, the app opens on "Import PGN" with the text and "Ready to import".
+3. **A file from Files.** Save a `.pgn` to "On My iPhone" (drag one onto the
+   simulator window), long-press it, "Share", "Bogner Chess". Same result.
+   ("Open in Bogner Chess" in the same sheet is the document path of WP-23,
+   not the extension.)
+4. **The fallback.** If in step 2 or 3 the app does not open and the sheet
+   shows "Saved. Open Bogner Chess to continue.", open the app by hand:
+   the import screen must appear. Please report the iOS version; it means
+   Apple closed the responder-chain route.
+5. **Not offered.** Share a web page (Safari's share button without a
+   selection) and a photo: "Bogner Chess" must not be among the apps.
+6. **Too large.** Share a text file above 2 MB: the sheet says "The text is
+   too large…" and nothing is imported.
+7. **Signed out** (start the app with a config that has no fake session, or
+   sign out first): after sharing, the sign-in screen shows; after signing in,
+   the import screen has the text.
 
 ## Privacy manifest
 
@@ -206,7 +327,13 @@ up at the top level of `Runner.app`. It declares:
 - Required-reason API: `UserDefaults`, reason `CA92.1` (the app reads and
   writes only its own defaults; Flutter's `shared_preferences` is built on it).
 
-Plugins ship their own manifests inside their frameworks; this file covers
+`ios/ShareExtension/PrivacyInfo.xcprivacy` is the extension's own manifest and
+is empty of content: no tracking, no collected data, no required-reason API.
+The extension reads what the user shares and writes one file; it uses neither
+`UserDefaults` nor file timestamps, on purpose (`SharedPgnInbox.swift` on the
+app's side likewise asks only for a file's type, not its dates).
+
+Plugins ship their own manifests inside their frameworks; these files cover
 only our own code. To list all of them in a build:
 
     find build/ios/iphonesimulator/Runner.app -name PrivacyInfo.xcprivacy
@@ -216,8 +343,11 @@ policy. Whoever adds a new kind of collected data updates all three.
 
 ## Licence headers
 
-The native source files (`AppDelegate.swift`, `SceneDelegate.swift`,
-`RunnerTests.swift`, the bridging header) and the xcconfig files carry the same
-three-line header as the Dart files. Plists, storyboards and the asset
+The native source files (the Swift files under `Runner/` and `RunnerTests/`,
+the bridging header), the xcconfig files and the Ruby script carry the same
+three-line header as the Dart files. `ShareExtension/ShareViewController.swift`
+is the exception: it was adapted from lichess-org/mobile, so it is
+`GPL-3.0-only`, names its origin and commit, has a row in `NOTICE` and an entry
+in the app's licence list, and does not refer to the app-store permission. Plists, storyboards and the asset
 catalogue do not, because a comment there does not survive Xcode rewriting the
 file.

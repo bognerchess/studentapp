@@ -12,8 +12,10 @@
 // This file reaches the build in two ways:
 //   - the Runner target, through Flutter's own ios/Flutter/{Debug,Release}.xcconfig,
 //     which include Generated.xcconfig first and ../Config/<x>.xcconfig second;
-//   - every other target (RunnerTests today, the share extension later),
-//     because Config/<x>.xcconfig is the base configuration of the project.
+//   - the ShareExtension target, through ShareExtension-{Debug,Release}.xcconfig,
+//     which do the same and add ShareExtension.xcconfig last;
+//   - every other target (RunnerTests), because Config/<x>.xcconfig is the
+//     base configuration of the project.
 // A setting in project.pbxproj wins over both, so none of the keys below may
 // appear there for the Runner target or at project level.
 
@@ -37,13 +39,14 @@ TARGETED_DEVICE_FAMILY = 1
 
 // Signing. Automatic everywhere, and the team is never committed: it comes
 // from the untracked Local.xcconfig (see Local.example.xcconfig). Debug.xcconfig
-// switches signing off for the simulator, so a simulator build needs no team,
-// no certificate and no Apple account.
+// signs simulator builds ad hoc, so a simulator build needs no team, no
+// certificate and no Apple account.
 CODE_SIGN_STYLE = Automatic
 CODE_SIGN_IDENTITY[sdk=iphoneos*] = Apple Development
 
 // Entitlements are per target, and this file also applies to targets that have
 // none. The nested lookup resolves to the file for a target named below and
-// to nothing for any other target. WP-24 adds a line for the share extension.
+// to nothing for any other target (RunnerTests).
 CODE_SIGN_ENTITLEMENTS = $(BC_ENTITLEMENTS_$(TARGET_NAME))
 BC_ENTITLEMENTS_Runner = Runner/Runner.entitlements
+BC_ENTITLEMENTS_ShareExtension = ShareExtension/ShareExtension.entitlements

@@ -14,6 +14,7 @@ import 'package:bogner_chess/core/pgn/pgn_import.dart';
 import 'package:bogner_chess/features/import/domain/pending_import.dart';
 import 'package:bogner_chess/router.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// The largest document the app takes in, in bytes. The native reader has the
@@ -33,7 +34,10 @@ final incomingLinkServiceProvider = Provider<IncomingLinkService>((ref) {
 /// * A link of the app's scheme is normalised through the mapping table in
 ///   `link_target.dart` and opened.
 /// * The OIDC redirect is ignored; the auth plugin consumes it natively.
-/// * `…://shared-pgn` collects the PGN the share extension left behind.
+/// * `…://shared-pgn` collects the PGN the share extension left behind. So do
+///   [start] and every return to the foreground, because iOS does not promise
+///   that a share extension may open its app: when it may not, the extension
+///   tells the user to open the app, and the PGN must be found without a link.
 ///
 /// Signed out, nothing special happens here: the router sends every location
 /// to the sign-in screen with `from=<location>` and continues there after
@@ -48,6 +52,7 @@ class IncomingLinkService {
 
   final Ref _ref;
   StreamSubscription<IncomingLink>? _subscription;
+  AppLifecycleListener? _lifecycle;
 
   static const _log = Log('links');
 
@@ -63,11 +68,38 @@ class IncomingLinkService {
             _log.warning('link stream failed: ${error.runtimeType}');
           },
         );
+    // A PGN shared while the app was not running, or while it was in the
+    // background. When the extension's link arrives as well, the second
+    // `take` finds nothing: the native side removes the file with the read.
+    _lifecycle = AppLifecycleListener(
+      onResume: () => unawaited(collectSharedPgn()),
+    );
+    unawaited(collectSharedPgn());
   }
 
   void dispose() {
     unawaited(_subscription?.cancel());
     _subscription = null;
+    _lifecycle?.dispose();
+    _lifecycle = null;
+  }
+
+  /// Imports the PGN the share extension left in the App Group container, if
+  /// there is one. Returns whether there was. Never throws.
+  Future<bool> collectSharedPgn() async {
+    try {
+      final bytes = await _ref.read(sharedPgnSourceProvider).take();
+      if (bytes == null || _subscription == null) return false;
+      _importBytes(bytes);
+      return true;
+    } on Object catch (error, stack) {
+      _log.error(
+        'could not collect a shared PGN',
+        error: error.runtimeType,
+        stackTrace: stack,
+      );
+      return false;
+    }
   }
 
   /// Handles one link. Never throws.
@@ -119,12 +151,10 @@ class IncomingLinkService {
         _log.info('opening a link');
         _ref.read(routerProvider).go(location);
       case SharedPgnTarget():
-        final bytes = await _ref.read(sharedPgnSourceProvider).take();
-        if (bytes == null) {
+        if (!await collectSharedPgn()) {
+          // Usual: the foreground check was quicker than the link.
           _log.info('shared-pgn link without a waiting PGN');
-          return;
         }
-        _importBytes(bytes);
       case IgnoredTarget(:final reason):
         if (reason != IgnoredLinkReason.oauthRedirect) {
           _log.info('ignored a link: ${reason.name}');

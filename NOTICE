@@ -26,13 +26,18 @@ Files adapted from other GPL projects. They keep the original copyright notice,
 start with "Adapted from <repo>/<path>@<commit sha>", stay under GPL-3.0 as
 published upstream, and do NOT carry the app-store permission.
 
-  File in this repository | Adapted from (repo/path@sha) | Copyright | Licence
-  ------------------------+------------------------------+-----------+--------
-  (none yet)              |                              |           |
+  File in this repository                      | Adapted from (repo/path@sha)                                                                                        | Copyright                      | Licence
+  ---------------------------------------------+---------------------------------------------------------------------------------------------------------------------+--------------------------------+--------
+  ios/ShareExtension/ShareViewController.swift | github.com/lichess-org/mobile ios/ShareExtension/ShareViewController.swift@f4543db42b8d5fb4d4fd533fa56218a4a34eb667 | the lichess-org/mobile authors | GPL-3.0
 
-Expected sources: lichess-org/mobile (move list, evaluation chart, PGN share
-handling, iOS share extension). lib/core/chess wraps chessground through its
-public API and adapts none of its source.
+The share extension is a separate executable inside the app bundle
+(Runner.app/PlugIns/ShareExtension.appex). Everything else in ios/ShareExtension
+(Info.plist, entitlements, privacy manifest) and the app's side of the hand-off
+(ios/Runner/SharedPgnInbox.swift, lib/core/links) was written for this app.
+
+Expected further sources: lichess-org/mobile (move list, evaluation chart).
+lib/core/chess wraps chessground through its public API and adapts none of its
+source.
 
 
 Vendored source code

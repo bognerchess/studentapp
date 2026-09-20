@@ -95,11 +95,27 @@ const List<AdditionalLicense> _vendoredSource = [
 ];
 
 /// Source files adapted from lichess-org/mobile or flutter-chessground: the
-/// "Adapted source code" table in NOTICE. None yet. The work package that
-/// adapts the first file (move list, evaluation chart, PGN share handling)
-/// adds an entry that names the files, the upstream path and commit, the
-/// copyright holder and "GPL-3.0".
-const List<AdditionalLicense> _adaptedSource = [];
+/// "Adapted source code" table in NOTICE. A work package that adapts another
+/// file (move list, evaluation chart) adds it to this entry or adds an entry
+/// that names the files, the upstream path and commit, the copyright holder
+/// and "GPL-3.0".
+const List<AdditionalLicense> _adaptedSource = [
+  AdditionalLicense(
+    package: 'Adapted source: lichess-org/mobile',
+    text:
+        'The share extension of this app (ios/ShareExtension/'
+        'ShareViewController.swift in the source of this app) was adapted '
+        'from ios/ShareExtension/ShareViewController.swift of '
+        'github.com/lichess-org/mobile, commit '
+        'f4543db42b8d5fb4d4fd533fa56218a4a34eb667, copyright the '
+        'lichess-org/mobile authors, and changed on 2026-09-20.\n'
+        '\n'
+        'Licence: GNU General Public License, version 3 (GPL-3.0), as '
+        'published upstream.\n'
+        '\n'
+        'Bogner Chess is not affiliated with or endorsed by Lichess.',
+  ),
+];
 
 /// Bundled fonts: the "Fonts" table in NOTICE. None yet. The work package
 /// that bundles a font for golden tests or for the UI adds an entry with the
