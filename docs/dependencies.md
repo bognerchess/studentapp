@@ -80,6 +80,14 @@ package is involved. `docs/storage.md` has the details.
 | `shelf` | 1.4.2 (2024-06-21) | BSD-3-Clause | tools.dart.dev | The mock GraphQL server in `tool/mock_server`. Old but a core Dart team package. | WP-11 |
 | `sentry_dart_plugin` | 3.4.0 (2026-05-28) | MIT | sentry.io | Upload debug symbols from CI. | WP-50 |
 
+Not a package and not needed to build: the Ruby gem `xcodeproj` 1.27.0 (MIT,
+the CocoaPods team) was used once, by `ios/Scripts/add_share_extension.rb`, to
+add the share-extension target to `project.pbxproj` (WP-24). Its output is
+committed; nobody has to install it. Version 1.27.0 because newer ones depend on
+a native extension (`nkf`) that the system Ruby of current macOS cannot compile.
+`receive_sharing_intent` stays rejected (below): the share extension is one
+Swift file adapted from lichess-org/mobile (see `NOTICE`).
+
 ## Rejected
 
 | Package | State on 2026-09-19 | Why not |

@@ -1,0 +1,11 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Bogner Chess
+// Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
+//
+// Base configuration of the ShareExtension target for Release and Profile
+// (Flutter's Profile configuration has always shared the Release file). See
+// ShareExtension-Debug.xcconfig for the order.
+
+#include "../Flutter/Generated.xcconfig"
+#include "Release.xcconfig"
+#include "ShareExtension.xcconfig"

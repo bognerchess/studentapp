@@ -518,53 +518,252 @@ void main() {
     });
   });
 
-  group('the share extension hand-off (WP-24 seam)', () {
-    testWidgets('without an implementation the link does nothing', (
-      tester,
-    ) async {
+  group('the share extension hand-off', () {
+    Future<void> resume(WidgetTester tester) async {
+      // What iOS reports when the user comes back to the app.
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('without a native side the link does nothing', (tester) async {
+      // The default source talks to a method channel nobody answers here.
       final h = Harness.create();
       await h.pumpStarted(tester);
       await h.send(tester, const IncomingUrl('$_s://shared-pgn'));
+      await resume(tester);
       expect(h.path, AppRoutes.games);
       expect(h.pending, isNull);
+      expect(tester.takeException(), isNull);
     });
 
-    test('the default source is the no-op', () async {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
-      final source = container.read(sharedPgnSourceProvider);
-      expect(source, isA<NoSharedPgnSource>());
-      expect(await source.take(), isNull);
-    });
-
-    testWidgets('with a source the PGN takes the same way as a document', (
+    testWidgets('nothing waiting: start, link and resume change nothing', (
       tester,
     ) async {
-      final shared = FakeSharedPgnSource(fixtureBytes('lichess_style.pgn'));
+      final shared = FakeSharedPgnSource(null);
       final h = Harness.create(sharedPgn: shared);
       await h.pumpStarted(tester);
+      expect(shared.calls, 1);
       await h.send(tester, const IncomingUrl('$_s://shared-pgn'));
+      await resume(tester);
+      expect(shared.calls, 3);
+      expect(h.path, AppRoutes.games);
+      expect(h.pending, isNull);
+      expect(find.byType(SnackBar), findsNothing);
+    });
+
+    testWidgets('warm, through the link: the same way as a document', (
+      tester,
+    ) async {
+      final shared = FakeSharedPgnSource(null);
+      final h = Harness.create(sharedPgn: shared);
+      await h.pumpStarted(tester);
+      expect(shared.calls, 1);
+
+      shared.waiting = fixtureBytes('lichess_style.pgn');
+      await h.send(tester, const IncomingUrl('$_s://shared-pgn'));
+
+      expect(shared.calls, 2);
+      expect(h.path, AppRoutes.newGameImport);
+      expect(importFieldText(tester), fixture('lichess_style.pgn'));
+      expect(h.pending, isNull);
+
+      // The same link again: the file is gone, nothing changes.
+      await h.send(tester, const IncomingUrl('$_s://shared-pgn'));
+      expect(shared.calls, 3);
+      expect(importFieldText(tester), fixture('lichess_style.pgn'));
+
+      // Back leads into the app, as for a document.
+      h.router.pop();
+      await tester.pumpAndSettle();
+      expect(h.path, AppRoutes.newGame);
+    });
+
+    testWidgets('warm, without the link: found on the way to the foreground', (
+      tester,
+    ) async {
+      final shared = FakeSharedPgnSource(null);
+      final h = Harness.create(sharedPgn: shared);
+      await h.pumpStarted(tester);
+
+      shared.waiting = fixtureBytes('chesscom_style.pgn');
+      await resume(tester);
+
+      expect(h.path, AppRoutes.newGameImport);
+      expect(importFieldText(tester), fixture('chesscom_style.pgn'));
+    });
+
+    testWidgets('link and foreground together deliver it once', (tester) async {
+      final shared = FakeSharedPgnSource(null);
+      final h = Harness.create(sharedPgn: shared);
+      await h.pumpStarted(tester);
+
+      shared.waiting = fixtureBytes('chesscom_style.pgn');
+      h.source.controller.add(const IncomingUrl('$_s://shared-pgn'));
+      await resume(tester);
+
+      expect(shared.calls, 3);
+      expect(h.path, AppRoutes.newGameImport);
+      expect(importFieldText(tester), fixture('chesscom_style.pgn'));
+      expect(
+        records.where((r) => r.message.startsWith('document received')),
+        hasLength(1),
+      );
+    });
+
+    testWidgets('cold start: waiting before the first frame', (tester) async {
+      final shared = FakeSharedPgnSource(fixtureBytes('lichess_style.pgn'));
+      final h = Harness.create(sharedPgn: shared);
+      h.service.start();
+      await tester.idle();
+      expect(h.pending, isNotNull);
+
+      await h.pump(tester);
 
       expect(shared.calls, 1);
       expect(h.path, AppRoutes.newGameImport);
       expect(importFieldText(tester), fixture('lichess_style.pgn'));
+      expect(h.pending, isNull);
+      h.router.pop();
+      await tester.pumpAndSettle();
+      expect(h.path, AppRoutes.newGame);
+    });
 
-      // The same link again: the file is gone, nothing changes.
-      await h.send(tester, const IncomingUrl('$_s://shared-pgn'));
+    testWidgets('cold start through the link: still once', (tester) async {
+      final shared = FakeSharedPgnSource(fixtureBytes('lichess_style.pgn'));
+      final h = Harness.create(sharedPgn: shared);
+      h.source.controller.add(const IncomingUrl('$_s://shared-pgn'));
+      h.service.start();
+      await tester.idle();
+      await h.pump(tester);
+
       expect(shared.calls, 2);
+      expect(h.path, AppRoutes.newGameImport);
       expect(importFieldText(tester), fixture('lichess_style.pgn'));
     });
 
+    testWidgets('signed out: it waits and arrives after signing in', (
+      tester,
+    ) async {
+      final shared = FakeSharedPgnSource(null);
+      final h = Harness.create(auth: const SignedOut(), sharedPgn: shared);
+      await h.pumpStarted(tester);
+      expect(h.path, AppRoutes.signIn);
+
+      shared.waiting = fixtureBytes('chesscom_style.pgn');
+      await h.send(tester, const IncomingUrl('$_s://shared-pgn'));
+
+      expect(h.path, AppRoutes.signIn);
+      expect(h.uri.queryParameters[AppRoutes.fromParam], '/new/import');
+      expect(find.byType(ImportScreen), findsNothing);
+      expect(h.pending, fixture('chesscom_style.pgn'));
+
+      h.signIn();
+      await tester.pumpAndSettle();
+      expect(h.path, AppRoutes.newGameImport);
+      expect(importFieldText(tester), fixture('chesscom_style.pgn'));
+      expect(h.pending, isNull);
+    });
+
+    testWidgets('cold start, signed out, then signing in', (tester) async {
+      final shared = FakeSharedPgnSource(utf8.encode('1. d4 d5 2. c4'));
+      final h = Harness.create(auth: const SignedOut(), sharedPgn: shared);
+      h.service.start();
+      await tester.idle();
+      await h.pump(tester);
+      expect(h.path, AppRoutes.signIn);
+      expect(h.uri.queryParameters[AppRoutes.fromParam], '/new/import');
+
+      h.signIn();
+      await tester.pumpAndSettle();
+      expect(h.path, AppRoutes.newGameImport);
+      expect(importFieldText(tester), '1. d4 d5 2. c4');
+    });
+
+    testWidgets('an empty file: a message, nothing imported', (tester) async {
+      final shared = FakeSharedPgnSource(null);
+      final h = Harness.create(sharedPgn: shared);
+      await h.pumpStarted(tester);
+      shared.waiting = Uint8List(0);
+      await resume(tester);
+      expect(h.path, AppRoutes.games);
+      expect(h.pending, isNull);
+      expect(find.text('This file could not be read.'), findsOneWidget);
+    });
+
     testWidgets('the size limit applies to it as well', (tester) async {
+      // What the native reader hands over for a file that is too large: one
+      // byte more than allowed.
+      final shared = FakeSharedPgnSource(null);
+      final h = Harness.create(sharedPgn: shared);
+      await h.pumpStarted(tester);
+      shared.waiting = Uint8List(kIncomingFileMaxBytes + 1)
+        ..fillRange(0, kIncomingFileMaxBytes + 1, 0x20);
+      await h.send(tester, const IncomingUrl('$_s://shared-pgn'));
+      expect(h.path, AppRoutes.games);
+      expect(h.pending, isNull);
+      expect(find.textContaining('At most 2 MB'), findsOneWidget);
+    });
+
+    testWidgets('too large on a cold start, in German', (tester) async {
       final shared = FakeSharedPgnSource(
         Uint8List(kIncomingFileMaxBytes + 1)
           ..fillRange(0, kIncomingFileMaxBytes + 1, 0x20),
       );
       final h = Harness.create(sharedPgn: shared);
-      await h.pumpStarted(tester);
-      await h.send(tester, const IncomingUrl('$_s://shared-pgn'));
+      h.service.start();
+      await tester.idle();
+      await h.pump(tester, locale: const Locale('de'));
       expect(h.path, AppRoutes.games);
-      expect(find.textContaining('At most 2 MB'), findsOneWidget);
+      expect(find.textContaining('höchstens 2 MB'), findsOneWidget);
+    });
+
+    testWidgets('exactly the limit is accepted', (tester) async {
+      final pgn = utf8.encode('1. e4 e5 *\n');
+      final bytes = Uint8List(kIncomingFileMaxBytes)
+        ..fillRange(0, kIncomingFileMaxBytes, 0x20)
+        ..setRange(0, pgn.length, pgn);
+      final shared = FakeSharedPgnSource(null);
+      final h = Harness.create(sharedPgn: shared);
+      await h.pumpStarted(tester);
+      shared.waiting = bytes;
+      h.source.controller.add(const IncomingUrl('$_s://shared-pgn'));
+      // No settle: the screen parses a text of this size in an isolate.
+      await tester.pump();
+      expect(h.path, AppRoutes.newGameImport);
+      expect(find.byType(SnackBar), findsNothing);
+    });
+
+    testWidgets('binary content is refused', (tester) async {
+      final shared = FakeSharedPgnSource(null);
+      final h = Harness.create(sharedPgn: shared);
+      await h.pumpStarted(tester);
+      shared.waiting = Uint8List.fromList([0x89, 0x50, 0x4E, 0x47, 0, 0, 1]);
+      await resume(tester);
+      expect(h.path, AppRoutes.games);
+      expect(find.text('This file could not be read.'), findsOneWidget);
+    });
+
+    testWidgets('no content reaches the log', (tester) async {
+      final shared = FakeSharedPgnSource(
+        utf8.encode('[White "PRIVATENAME"]\n\n1. e4 *'),
+      );
+      final h = Harness.create(sharedPgn: shared);
+      await h.pumpStarted(tester);
+      expect(h.path, AppRoutes.newGameImport);
+      final log = records.map((r) => '${r.message} ${r.error}').join('\n');
+      expect(log, isNot(contains('PRIVATENAME')));
+    });
+
+    testWidgets('after dispose the foreground check is off', (tester) async {
+      final shared = FakeSharedPgnSource(null);
+      final h = Harness.create(sharedPgn: shared);
+      await h.pumpStarted(tester);
+      h.service.dispose();
+      shared.waiting = fixtureBytes('lichess_style.pgn');
+      await resume(tester);
+      expect(shared.calls, 1);
+      expect(h.path, AppRoutes.games);
     });
   });
 
@@ -622,9 +821,13 @@ void main() {
     testWidgets('a failing shared-pgn source is contained', (tester) async {
       final h = Harness.create(sharedPgn: _ThrowingSharedPgnSource());
       await h.pumpStarted(tester);
+      // Once at the start, once for the link, once for the foreground.
       await h.send(tester, const IncomingUrl('$_s://shared-pgn'));
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
       expect(h.path, AppRoutes.games);
-      expect(records.where((r) => r.level == LogLevel.error), hasLength(1));
+      expect(records.where((r) => r.level == LogLevel.error), hasLength(3));
       expect(tester.takeException(), isNull);
     });
   });

@@ -87,13 +87,14 @@ contain no secrets.
 
 | | |
 | --- | --- |
-| Bundle id | `com.bognerchess.mobile` (`com.bognerchess.mobile.RunnerTests` for the test target) |
+| Bundle id | `com.bognerchess.mobile` (`com.bognerchess.mobile.share` for the share extension, `com.bognerchess.mobile.RunnerTests` for the test target) |
 | Display name | Bogner Chess |
 | Dart package | `bogner_chess` |
 
 `flutter create` derives the bundle id from the project name and would produce
 `com.bognerchess.bognerChess`. The bundle id of the app is set in
-`ios/Config/Shared.xcconfig`, that of the test target in
+`ios/Config/Shared.xcconfig`, that of the share extension in
+`ios/Config/ShareExtension.xcconfig`, that of the test target in
 `ios/Runner.xcodeproj/project.pbxproj`. Do not re-run `flutter create .`
 without checking `git diff ios/` afterwards: it may write build settings back
 into the project file, where they override the xcconfig files.

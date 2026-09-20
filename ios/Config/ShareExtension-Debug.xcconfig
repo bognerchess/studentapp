@@ -1,0 +1,17 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Bogner Chess
+// Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
+//
+// Base configuration of the ShareExtension target for Debug. The same chain
+// as the Runner target gets through ios/Flutter/Debug.xcconfig:
+// Generated.xcconfig first (without FLUTTER_BUILD_NAME and FLUTTER_BUILD_NUMBER
+// the extension's version strings would be empty), then the shared settings,
+// then what differs.
+
+#include "../Flutter/Generated.xcconfig"
+#include "Debug.xcconfig"
+#include "ShareExtension.xcconfig"
+
+// The Runner target has these two in project.pbxproj, from the Flutter template.
+SWIFT_OPTIMIZATION_LEVEL = -Onone
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG

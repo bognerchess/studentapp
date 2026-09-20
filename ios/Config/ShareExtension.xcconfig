@@ -1,0 +1,33 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Bogner Chess
+// Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
+//
+// What differs for the ShareExtension target. Included last by
+// ShareExtension-Debug.xcconfig and ShareExtension-Release.xcconfig, after
+// everything the target shares with the app, so these values win. The target
+// has no build settings of its own in project.pbxproj.
+//
+// The entitlements file is registered in Shared.xcconfig
+// (BC_ENTITLEMENTS_ShareExtension), next to the app's.
+
+// Must start with the app's bundle id: iOS refuses to install an extension
+// whose id is not prefixed with that of the app that contains it.
+PRODUCT_BUNDLE_IDENTIFIER = com.bognerchess.mobile.share
+PRODUCT_NAME = $(TARGET_NAME)
+
+// A real file, like the app's: it carries the NSExtension dictionary with the
+// activation rule. Its version keys are MARKETING_VERSION and
+// CURRENT_PROJECT_VERSION from Shared.xcconfig. App Store validation rejects
+// an extension whose versions differ from the app's.
+INFOPLIST_FILE = ShareExtension/Info.plist
+GENERATE_INFOPLIST_FILE = NO
+
+// The compiler refuses API that extensions must not use (UIApplication.shared
+// and the like).
+APPLICATION_EXTENSION_API_ONLY = YES
+
+// Built into Runner.app/PlugIns, never installed by itself.
+SKIP_INSTALL = YES
+
+SWIFT_VERSION = 5.0
+LD_RUNPATH_SEARCH_PATHS = $(inherited) @executable_path/Frameworks @executable_path/../../Frameworks

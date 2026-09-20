@@ -21,6 +21,10 @@ import UIKit
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "IncomingLinkHandler") {
       IncomingLinkHandler.register(with: registrar)
     }
+    // What the share extension left in the App Group container.
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "SharedPgnInbox") {
+      SharedPgnInbox.register(with: registrar)
+    }
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
   }
 }

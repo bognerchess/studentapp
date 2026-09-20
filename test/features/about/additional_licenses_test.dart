@@ -32,6 +32,7 @@ void main() {
     final packages = [for (final e in entries) ...e.packages];
 
     expect(packages, [
+      'Adapted source: lichess-org/mobile',
       'chessground',
       'Chess pieces: cburnett',
       'Chess pieces: merida',
@@ -68,6 +69,25 @@ void main() {
     expect(chessground.text, contains('GPL-3.0'));
     expect(chessground.text, contains('modified copy'));
     expect(chessground.text, contains('not affiliated with'));
+  });
+
+  test('the adapted share extension says from where, which commit and '
+      'GPL-3.0', () {
+    final adapted = additionalLicenses.singleWhere(
+      (l) => l.package == 'Adapted source: lichess-org/mobile',
+    );
+    final header = File('ios/ShareExtension/ShareViewController.swift')
+        .readAsLinesSync()
+        .take(10)
+        .join('\n');
+    final sha = RegExp(r'@([0-9a-f]{40})\b').firstMatch(header)![1]!;
+
+    expect(header, contains('SPDX-License-Identifier: GPL-3.0-only'));
+    expect(adapted.text, contains(sha));
+    expect(adapted.text, contains('ios/ShareExtension/ShareViewController'));
+    expect(adapted.text, contains('GPL-3.0'));
+    expect(adapted.text, contains('not affiliated with'));
+    expect(File('NOTICE').readAsStringSync(), contains(sha));
   });
 
   group('in step with the allow-lists', () {
