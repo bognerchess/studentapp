@@ -30,7 +30,7 @@
 #   5 NOTICE is complete
 #   6 the tag matches the build
 #   7 corresponding source
-#   8 reproducible build      (WP-54; a named hook, nothing is verified yet)
+#   8 reproducible build      (runs tool/check_reproducible.sh in release mode)
 #
 # Owner decisions. Some findings are not bugs but questions only the copyright
 # holder can answer -- today: a dependency that arrives as a prebuilt binary
@@ -686,17 +686,51 @@ fi
 
 # ------------------------------------------------ 8. reproducible build -----
 
-section "8/8 reproducible build (WP-54)"
-info "Not verified here. WP-54 builds the app from a clean clone of the tag,"
-info "following docs/building.md, and compares the result with the shipped"
-info "binary. When it lands, its script is called from this section and its"
-info "result becomes a release-mode failure like the others. Until then the"
-info "claim that the published source reproduces the binary rests on the human"
-info "step in docs/release-checklist.md."
+section "8/8 reproducible build (tool/check_reproducible.sh)"
 if grep -Fq -- "--obfuscate" docs/building.md; then
   ok "docs/building.md talks about --obfuscate (release builds are made without it)"
 else
   note "docs/building.md no longer mentions --obfuscate; release builds must stay unobfuscated so that the source reproduces the client"
+fi
+
+if [ ! -x tool/check_reproducible.sh ]; then
+  fail "tool/check_reproducible.sh is missing or not executable; nothing verifies that the published source produces this app"
+else
+  # The reproducibility check builds the app three times from clean clones,
+  # which took two and a half minutes on the development machine with a warm
+  # pub and SwiftPM cache, and a good deal longer on a cold runner. That has no
+  # business in the ordinary loop, so it runs where it earns its time: in
+  # release mode here, and nightly in the "Reproducible build" workflow. A pull
+  # request gets the cheap half above and nothing else.
+  if [ "$release" -eq 1 ]; then
+    # --against, but only when the bundle is one this target could have
+    # produced. The simulator bundle a pull request builds is a different
+    # animal and comparing it would be theatre.
+    rep_args=(--ref "$expected_tag")
+    if [ -n "$app" ]; then
+      platform="$(plutil -extract DTPlatformName raw -o - "$app/Info.plist" 2>/dev/null || echo unknown)"
+      if [ "$platform" = "iphoneos" ]; then
+        rep_args+=(--against "$app")
+        info "the bundle at --app is a device build, so it is compared with a clean clone too"
+      else
+        note "the bundle at --app was built for '$platform'; only the two clean-clone builds are compared"
+        info "the bundle that ships has to be checked with --against <the device build>"
+      fi
+    fi
+    info "running: tool/check_reproducible.sh ${rep_args[*]}"
+    # The pipeline's status is the script's, not sed's, because this file runs
+    # under `set -o pipefail`. Without that the failure below could never fire.
+    if tool/check_reproducible.sh "${rep_args[@]}" 2>&1 | sed -e 's/^/        /'; then
+      ok "the published source reproduces this build, with every difference accounted for above"
+    else
+      fail "tool/check_reproducible.sh found differences it cannot account for; its own output is above and counts as this one"
+    fi
+  else
+    gate "the reproducible build did not run: it builds the app three times from clean clones, which is release work"
+    info "run it by hand with tool/check_reproducible.sh, or read the nightly"
+    info "'Reproducible build' workflow. docs/release-checklist.md step D6 is the"
+    info "human half, and what a signed build adds to it is human gate H4."
+  fi
 fi
 
 # ------------------------------------------------------------- summary ------
