@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Runner.entitlements without `aps-environment`, for a build on an account
+  whose App ID cannot carry the Push Notifications capability yet: a fresh
+  membership whose licence agreement is not accepted, or Xcode's
+  "The capability associated with PUSH_NOTIFICATIONS could not be determined".
+
+  Signing then succeeds, and the app runs with everything except push: the
+  registration call fails, PushHandler reports `tokenError`, PushService
+  logs it and registers no device (push_service.dart). Job status still
+  arrives, because the foreground poller does not depend on push.
+
+  Not the default. A build uses it only when Local.xcconfig, which is
+  git-ignored, says so:
+
+      BC_ENTITLEMENTS_Runner = Runner/Runner-NoPush.entitlements
+
+  Delete that line to go back to real push. Nothing else has to change.
+-->
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.bognerchess.mobile.share</string>
+	</array>
+</dict>
+</plist>

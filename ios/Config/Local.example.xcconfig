@@ -6,3 +6,12 @@
 // anything for a real device, and archives. Simulator builds do not need it.
 
 DEVELOPMENT_TEAM = ABCDE12345
+
+// Signing without push, for an account whose App ID cannot carry the Push
+// Notifications capability yet — a membership that was just activated, or
+// Xcode's "The capability associated with PUSH_NOTIFICATIONS could not be
+// determined". Uncomment to build and run on a device meanwhile: everything
+// works except the "your analysis is ready" notification (see the comment in
+// Runner-NoPush.entitlements). Comment it out again afterwards.
+//
+// BC_ENTITLEMENTS_Runner = Runner/Runner-NoPush.entitlements

@@ -217,7 +217,6 @@
 				BC2400000000000000000011 /* ShareExtension.entitlements */,
 				BC2400000000000000000012 /* PrivacyInfo.xcprivacy */,
 			);
-			name = ShareExtension;
 			path = ShareExtension;
 			sourceTree = "<group>";
 		};
