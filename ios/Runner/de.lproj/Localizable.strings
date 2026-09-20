@@ -1,0 +1,9 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later
+   Copyright (C) 2026 Bogner Chess
+   Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
+
+   Texte der Push-Mitteilungen. Der Server schickt Schlüssel (title-loc-key,
+   loc-key), iOS schlägt sie hier nach, in der Sprache der App. */
+
+"PUSH_ANALYSIS_READY_TITLE" = "Deine Analyse ist fertig";
+"PUSH_ANALYSIS_READY_BODY" = "Tippe, um zu sehen, was der Coach gefunden hat.";

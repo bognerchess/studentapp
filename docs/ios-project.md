@@ -141,6 +141,7 @@ migrates it). Keys added or changed after the template:
 
 | Key | Value | Why |
 | --- | --- | --- |
+| `BCApsEnvironment` | `$(APS_ENVIRONMENT)` | Our own key: `development` or `production` from the xcconfig files, so that `PushHandler.swift` can tell the backend which APNs gateway the device token belongs to when the app has no embedded provisioning profile to ask (App Store, TestFlight, simulator). See `docs/push.md`. |
 | `CFBundleName` | `Bogner Chess` | The short bundle name; the template had the Dart package name. `CFBundleDisplayName` (the name under the icon) was already set. |
 | `CFBundleLocalizations` | `de`, `en` | The app's strings live in Flutter ARB files, not in `.lproj` folders, so iOS cannot see which languages the app supports. This key tells it: the per-app language setting appears, and system UI inside the app (permission alerts, the share sheet) follows the app's language. |
 | `ITSAppUsesNonExemptEncryption` | `false` | The app uses only HTTPS from the operating system. Declaring that here skips the export-compliance question on every TestFlight upload. |
@@ -154,6 +155,25 @@ migrates it). Keys added or changed after the template:
 
 `UIBackgroundModes` is deliberately absent. Alert pushes need no background
 mode.
+
+`ios/Runner/en.lproj/Localizable.strings` and `de.lproj/Localizable.strings`
+hold the two texts of the "analysis ready" notification
+(`PUSH_ANALYSIS_READY_TITLE`, `PUSH_ANALYSIS_READY_BODY`). The server sends
+the keys, iOS looks them up, so a notification is in the app's language even
+when the app is not running. They are the only native strings of the Runner
+target; everything the app itself shows stays in the ARB files. The files,
+`PushHandler.swift` and its XCTest were added to `project.pbxproj` by
+`ios/Scripts/add_push_files.rb` (ids `BC32…`), in the way of
+`add_share_extension.rb`.
+
+## Push notifications
+
+`ios/Runner/PushHandler.swift`, registered in
+`AppDelegate.didInitializeImplicitFlutterEngine` after `IncomingLinkHandler`
+(it claims no scene URL, so its place does not matter) and installed as the
+`UNUserNotificationCenter` delegate in `didFinishLaunching`, which Apple
+requires for a tap that starts the app. `docs/push.md` describes the flow, the
+simulator commands and the manual checklist for a real device.
 
 ## Incoming links and documents
 
@@ -334,7 +354,9 @@ The extension reads what the user shares and writes one file; it uses neither
 app's side likewise asks only for a file's type, not its dates).
 
 Plugins ship their own manifests inside their frameworks; these files cover
-only our own code. To list all of them in a build:
+only our own code. That includes the crash reporter: `Frameworks/Sentry.framework`
+brings its own manifest (`docs/privacy.md` lists its content), and the app's
+manifest already declared crash data, so WP-34 changed nothing here. To list all of them in a build:
 
     find build/ios/iphonesimulator/Runner.app -name PrivacyInfo.xcprivacy
 

@@ -333,5 +333,11 @@
   "accountDeleteSupportSubject": "Mein Bogner-Chess-Konto löschen",
   "accountDeletedTitle": "Dein Konto wurde gelöscht",
   "accountDeletedMessage": "Deine Partien, Analysen und persönlichen Daten werden entfernt, und alles, was die App auf diesem Gerät gespeichert hat, ist weg. Danke, dass du mit uns gespielt hast.",
-  "accountDeletedDone": "Fertig"
+  "accountDeletedDone": "Fertig",
+  "pushExplainerTitle": "Erfahre, wann deine Analyse fertig ist",
+  "pushExplainerBody": "Eine Analyse dauert ein paar Minuten. Wir sagen dir Bescheid, sobald deine Analyse fertig ist, damit du hier nicht warten musst. Keine Werbung, keine Erinnerungen.",
+  "pushExplainerAllow": "Benachrichtige mich",
+  "pushExplainerNotNow": "Nicht jetzt",
+  "pushSettingsDeniedHint": "Mitteilungen sind für Bogner Chess ausgeschaltet. Du kannst sie in der Einstellungen-App einschalten.",
+  "pushSettingsOpenSettings": "Einstellungen öffnen"
 }

@@ -29,9 +29,9 @@ Scope, dependencies and acceptance for every WP are in `../product-hub/docs/mobi
 | WP-29d | Coach cards, thumbs outbox, summary (AN-5/6/7) | M | WP-29a, WP-13 | review | [WP-29](WP-29-review-screen.md) |
 | WP-30 | Consents, legal documents, settings (PL-2) | M | WP-12 | review | [WP-30-35-36](WP-30-35-36-settings-consent-account.md) |
 | WP-31 | About, licences, source link (PL-1) | S | WP-04 | review | [WP-31](WP-31-about-and-licences.md) |
-| WP-32 | Push channel, permission, deep link (AN-2) | M | WP-01, WP-12, WP-29a | todo | – |
-| WP-33 | Analytics outbox + event catalogue (PL-3) | M | WP-13, WP-30 | todo | – |
-| WP-34 | Sentry, consent-gated | S | WP-30 | todo | – |
+| WP-32 | Push channel, permission, deep link (AN-2) | M | WP-01, WP-12, WP-29a | review | [WP-32-34](WP-32-34-push-analytics-crash.md) |
+| WP-33 | Analytics outbox + event catalogue (PL-3) | M | WP-13, WP-30 | review | [WP-32-34](WP-32-34-push-analytics-crash.md) |
+| WP-34 | Sentry, consent-gated | S | WP-30 | review | [WP-32-34](WP-32-34-push-analytics-crash.md) |
 | WP-35 | Sign-out and account deletion | S | WP-25 | review | [WP-30-35-36](WP-30-35-36-settings-consent-account.md) |
 | WP-36 | Piece-set and theme picker (optional) | S | WP-04 | review | [WP-30-35-36](WP-30-35-36-settings-consent-account.md) |
 | WP-40 | End-to-end against the real backend | M | features done, H10 | todo | – |

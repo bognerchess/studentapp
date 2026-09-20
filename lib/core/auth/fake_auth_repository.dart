@@ -24,6 +24,7 @@ class FakeAuthRepository implements AuthRepository {
     this.signInError,
     this.signInDelay = Duration.zero,
     this._onSignedOut,
+    this._onBeforeSignOut,
   }) : assert(!kReleaseMode, 'fake auth must never run in a release build'),
        _state = signedIn ? fakeUser : const SignedOut();
 
@@ -45,6 +46,7 @@ class FakeAuthRepository implements AuthRepository {
   final List<({bool register, String? idpHint})> signInCalls = [];
 
   final SignedOutHook? _onSignedOut;
+  final SignedOutHook? _onBeforeSignOut;
   final StreamController<AuthState> _states =
       StreamController<AuthState>.broadcast(sync: true);
   AuthState _state;
@@ -81,6 +83,13 @@ class FakeAuthRepository implements AuthRepository {
   @override
   Future<void> signOut() async {
     final wasSignedIn = _state is SignedIn;
+    if (wasSignedIn) {
+      try {
+        await _onBeforeSignOut?.call(kFakeAuthSub);
+      } on Object {
+        // As in the real repository: a hook cannot stop a sign-out.
+      }
+    }
     _setState(const SignedOut());
     if (wasSignedIn) {
       await _onSignedOut?.call(kFakeAuthSub);

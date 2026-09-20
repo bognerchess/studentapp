@@ -1669,5 +1669,29 @@
   "accountDeletedDone": "Done",
   "@accountDeletedDone": {
     "description": "Button of the final confirmation after an account deletion; leads to the sign-in screen."
+  },
+  "pushExplainerTitle": "Know when your analysis is ready",
+  "@pushExplainerTitle": {
+    "description": "Headline of the sheet that explains notifications, shown after the first analysis request and before the iOS permission prompt."
+  },
+  "pushExplainerBody": "An analysis takes a few minutes. We'll let you know when your analysis is ready, so you don't have to wait here. No advertising, no reminders.",
+  "@pushExplainerBody": {
+    "description": "Body of the notification explainer sheet. Says what notifications are used for and what they are not used for."
+  },
+  "pushExplainerAllow": "Notify me",
+  "@pushExplainerAllow": {
+    "description": "Primary button of the notification explainer sheet. Leads to the iOS permission prompt."
+  },
+  "pushExplainerNotNow": "Not now",
+  "@pushExplainerNotNow": {
+    "description": "Secondary button of the notification explainer sheet. Closes it without showing the iOS permission prompt."
+  },
+  "pushSettingsDeniedHint": "Notifications are turned off for Bogner Chess. You can turn them on in the Settings app.",
+  "@pushSettingsDeniedHint": {
+    "description": "Hint in the settings when the user has denied notifications in iOS."
+  },
+  "pushSettingsOpenSettings": "Open Settings",
+  "@pushSettingsOpenSettings": {
+    "description": "Button that opens the page of this app in the iOS Settings app."
   }
 }

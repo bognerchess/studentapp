@@ -61,6 +61,7 @@ package is involved. `docs/storage.md` has the details.
 | `graphql_codegen` | `^3.0.2` (dev) | 3.0.2 (2026-07-05) | MIT | heft.app | Generates `lib/core/api/generated/**.graphql.dart` from `graphql/schema.graphql` and `graphql/operations/*.graphql` (options in `build.yaml`: no client helpers, no `copyWith`, `__typename` only where selected, scalars `DateTime`/`LocalDate`/`Any`). Enums get a `$unknown` fallback and unions a base class for unknown members, which is what keeps an old app alive against a newer server. Generator only; its transitive packages (`gql_code_builder` 0.15.2, `gql_code_builder_serializers` 0.1.0+1, `gql_tristate_value` 1.1.0, all MIT; `code_builder` 4.12.0, `built_collection` 5.1.1, `built_value` 8.13.0, `json_annotation` 4.12.0, BSD-3-Clause; `recase` 4.1.0, BSD-2-Clause) do not reach the app. **Side effect:** it requires `analyzer` < 14, so `analyzer` went from 14.4.0 to 13.3.0 and `source_gen` from 4.3.0 to 4.2.4 in the lock file; `drift_dev` generates byte-identical code with them (the codegen-clean gate proves it). Added by WP-10. |
 | `shelf` | `^1.4.2` (dev) | 1.4.2 (2024-06-21) | BSD-3-Clause | tools.dart.dev | The mock GraphQL server in `tool/mock_server` and its in-process use in tests. Never imported from `lib/`. Was a transitive dependency of the test runner already. Added by WP-11. |
 | `crypto` | `^3.0.7` (dev) | 3.0.7 (2025-11-04) | BSD-3-Clause | dart.dev | Only for `test/core/api/schema_pin_test.dart`: the SHA-256 that pins `graphql/schema.graphql` to the backend's contract. Already in the lock file; listed because a test may not import a transitive package. Added by WP-10. |
+| `sentry_flutter` | `^9.30.0` | 9.30.0 (2026-09-10) | MIT | sentry.io | Crash reporting behind `CrashReporter` (`lib/core/crash`, its only importer): started only with a `SENTRY_DSN` **and** the user's consent, closed when consent is withdrawn, `sendDefaultPii` off, no tracing, replay, screenshots, view hierarchy, sessions or user; texts scrubbed in `beforeSend` / `beforeBreadcrumb` (see `docs/privacy.md`). Brings the Dart package `sentry` 9.30.0 (MIT, same publisher). iOS: a Swift package (`ios/sentry_flutter/Package.swift`), **no CocoaPods**; it pulls the native SDK, see below. Re-verified on pub.dev on 2026-09-20. **Side effect in the lock file:** `sentry_flutter` pins `jni` to 0.14.2 (Android only, unused here), which took `jni` from 1.0.3 to 0.14.2, removed `jni_flutter` and `jni_util`, and moved `path_provider_android` 2.3.1 → 2.2.23 and `package_config` 3.0.0 → 2.2.0 (all BSD-3-Clause; none of them runs on iOS, and the codegen-clean gate shows the generators produce the same files). A plain `flutter pub add sentry_flutter` resolves to the old 8.14.2 instead, because of that pin; the constraint `^9.30.0` is deliberate. Added by WP-34. |
 
 **Native, through Swift Package Manager** (WP-25): `flutter_appauth` depends on
 **AppAuth-iOS 2.1.0** (`https://github.com/openid/AppAuth-iOS`, Apache-2.0,
@@ -74,6 +75,35 @@ the project still has no CocoaPods, and
 Each brings its own privacy manifest (`flutter_appauth`, `AppAuth`,
 `AppAuthCore`, `flutter_secure_storage_darwin` bundles in `Runner.app`).
 
+**Native, through Swift Package Manager** (WP-34): `sentry_flutter` depends on
+**sentry-cocoa 8.58.4** (`https://github.com/getsentry/sentry-cocoa`, MIT,
+Sentry; compatible with GPLv3), pinned `exact` in the plugin's `Package.swift`
+and by revision in the two `Package.resolved` files. Unlike AppAuth it is not
+compiled from source: sentry-cocoa's own `Package.swift` declares
+**binary targets**, so Xcode downloads `Sentry.xcframework.zip` (and four
+sibling variants, about 450 MB together, of which one is linked) from the
+project's GitHub release and verifies the SHA-256 checksums written in that
+manifest. The framework is free software, its corresponding source is the tag
+`8.58.4`, and the MIT text is shown in the app (`additional_licenses.dart`,
+`NOTICE`); what we do not have is a build of it from source by us. If that is
+ever required, the way is a fork of the plugin's `Package.swift` that points
+at a source target. It ships its own privacy manifest
+(`Runner.app/Frameworks/Sentry.framework/PrivacyInfo.xcprivacy`: crash,
+performance and other diagnostic data, not linked, no tracking; required-reason
+APIs UserDefaults `CA92.1`, system boot time `35F9.1`, file timestamp
+`C617.1`). `test/core/crash/native_library_pin_test.dart` keeps this
+paragraph, `NOTICE` and the in-app text in step with `Package.resolved`.
+
+One machine-specific trap, met on 2026-09-20: when the login keychain holds a
+`github.com` entry that asks before it is used, `xcodebuild
+-resolvePackageDependencies` hangs for ever at "Fetching from
+…/sentry-cocoa" (SwiftPM asks the keychain for credentials before every
+binary-artifact download, and the question has nowhere to appear in a terminal
+build). `sample <pid>` shows `KeychainAuthorizationProvider`. Allow the access
+once in Keychain Access, or put the five archives into
+`~/Library/Caches/org.swift.swiftpm/artifacts/` under SwiftPM's cache names;
+the checksums are verified either way. CI runners have no such entry.
+
 `cupertino_icons`, which `flutter create` adds, was removed: nothing uses it.
 
 ## Planned: runtime
@@ -82,7 +112,6 @@ Each brings its own privacy manifest (`flutter_appauth`, `AppAuth`,
 | --- | --- | --- | --- | --- | --- |
 | `gql_http_link` | 1.2.0 (2025-09-20) | MIT | gql-dart.dev | Fallback transport should `graphql` have to go. Not planned otherwise. | – |
 | `app_links` | 7.2.1 (2026-07-09) | Apache-2.0 | cow-level.ovh | Custom URL scheme and file URLs ("Open in Bogner Chess"). Apache-2.0 is compatible with GPLv3. Needs Flutter >= 3.44. | WP-23 |
-| `sentry_flutter` | 9.30.0 (2026-09-10) | MIT | sentry.io | Crash reporting, consent-gated, PII off. The bundled sentry-cocoa is MIT too. | WP-34 |
 | `connectivity_plus` | 7.3.1 (2026-07-23) | BSD-3-Clause | fluttercommunity.dev | Trigger for the submit queue when the network returns. | WP-27 |
 | `freezed_annotation` | 3.1.0 (2025-07-02) | MIT | dash-overflow.net | Annotations for immutable domain models. WP-03 did not need it (the shell has no domain models); the first WP with one adds it. | first user |
 | `json_annotation` | 4.12.0 (2026-05-15) | BSD-3-Clause | google.dev | Annotations for the analysis document model. | WP-14 |

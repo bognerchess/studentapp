@@ -23,6 +23,9 @@
 		BC2400000000000000000022 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC2400000000000000000009 /* ShareViewController.swift */; };
 		BC2400000000000000000023 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = BC2400000000000000000012 /* PrivacyInfo.xcprivacy */; };
 		BC2400000000000000000027 /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BC2400000000000000000014 /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		BC3200000000000000000002 /* PushHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC3200000000000000000001 /* PushHandler.swift */; };
+		BC3200000000000000000004 /* PushHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC3200000000000000000003 /* PushHandlerTests.swift */; };
+		BC3200000000000000000008 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = BC3200000000000000000005 /* Localizable.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -101,6 +104,10 @@
 		BC2400000000000000000011 /* ShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ShareExtension.entitlements; sourceTree = "<group>"; };
 		BC2400000000000000000012 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		BC2400000000000000000014 /* ShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		BC3200000000000000000001 /* PushHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushHandler.swift; sourceTree = "<group>"; };
+		BC3200000000000000000003 /* PushHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushHandlerTests.swift; sourceTree = "<group>"; };
+		BC3200000000000000000006 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		BC3200000000000000000007 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/Localizable.strings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -127,6 +134,7 @@
 			children = (
 				331C807B294A618700263BE5 /* RunnerTests.swift */,
 				BC2400000000000000000006 /* SharedPgnInboxTests.swift */,
+				BC3200000000000000000003 /* PushHandlerTests.swift */,
 			);
 			path = RunnerTests;
 			sourceTree = "<group>";
@@ -181,6 +189,8 @@
 				BC2300000000000000000001 /* IncomingLinkHandler.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 				BC2400000000000000000004 /* SharedPgnInbox.swift */,
+				BC3200000000000000000001 /* PushHandler.swift */,
+				BC3200000000000000000005 /* Localizable.strings */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -337,6 +347,7 @@
 				97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */,
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
 				BC0100000000000000000007 /* PrivacyInfo.xcprivacy in Resources */,
+				BC3200000000000000000008 /* Localizable.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -391,6 +402,7 @@
 			files = (
 				331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */,
 				BC2400000000000000000007 /* SharedPgnInboxTests.swift in Sources */,
+				BC3200000000000000000004 /* PushHandlerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -403,6 +415,7 @@
 				7884E8682EC3CC0700C636F2 /* SceneDelegate.swift in Sources */,
 				BC2300000000000000000002 /* IncomingLinkHandler.swift in Sources */,
 				BC2400000000000000000005 /* SharedPgnInbox.swift in Sources */,
+				BC3200000000000000000002 /* PushHandler.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -445,6 +458,15 @@
 				97C147001CF9000F007C117D /* Base */,
 			);
 			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		BC3200000000000000000005 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				BC3200000000000000000006 /* en */,
+				BC3200000000000000000007 /* de */,
+			);
+			name = Localizable.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */

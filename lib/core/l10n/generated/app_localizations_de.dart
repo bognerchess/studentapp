@@ -1301,4 +1301,24 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get accountDeletedDone => 'Fertig';
+
+  @override
+  String get pushExplainerTitle => 'Erfahre, wann deine Analyse fertig ist';
+
+  @override
+  String get pushExplainerBody =>
+      'Eine Analyse dauert ein paar Minuten. Wir sagen dir Bescheid, sobald deine Analyse fertig ist, damit du hier nicht warten musst. Keine Werbung, keine Erinnerungen.';
+
+  @override
+  String get pushExplainerAllow => 'Benachrichtige mich';
+
+  @override
+  String get pushExplainerNotNow => 'Nicht jetzt';
+
+  @override
+  String get pushSettingsDeniedHint =>
+      'Mitteilungen sind für Bogner Chess ausgeschaltet. Du kannst sie in der Einstellungen-App einschalten.';
+
+  @override
+  String get pushSettingsOpenSettings => 'Einstellungen öffnen';
 }

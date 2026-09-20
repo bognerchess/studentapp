@@ -11,6 +11,9 @@ import UIKit
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    // Before the launch is over, or a notification tap that started the app
+    // is never delivered. The channels follow once the engine exists.
+    PushHandler.shared.install()
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
@@ -20,6 +23,11 @@ import UIKit
     // ours (documents and app links, never the OIDC redirect).
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "IncomingLinkHandler") {
       IncomingLinkHandler.register(with: registrar)
+    }
+    // Push: the APNs token, notifications in the foreground and taps. Claims
+    // no scene URL, so its place in this order does not matter.
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "PushHandler") {
+      PushHandler.register(with: registrar)
     }
     // What the share extension left in the App Group container.
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "SharedPgnInbox") {

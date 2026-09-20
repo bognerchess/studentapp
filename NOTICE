@@ -116,6 +116,25 @@ licence, and none of them will be Lichess's, whose sound set is AGPLv3+ or of
 unspecified origin.
 
 
+Native libraries
+----------------
+
+Libraries that reach the app through Swift Package Manager, not through
+pub.dev, and whose licence asks for its text in copies. The iOS build fetches
+them; nothing of them is in this repository.
+
+  Library      | Source                            | Version | Copyright        | Licence | Brought in by  | Added in
+  -------------+-----------------------------------+---------+------------------+---------+----------------+---------
+  sentry-cocoa | github.com/getsentry/sentry-cocoa | 8.58.4  | (c) 2015 Sentry  | MIT     | sentry_flutter | WP-34
+
+sentry-cocoa is linked as the prebuilt framework that its Package.swift names
+(Sentry.xcframework from the 8.58.4 release on GitHub, pinned there by SHA-256
+checksum). It is free software: the corresponding source is the tag 8.58.4 of
+the repository above, and MIT is compatible with GPL-3.0. It runs only with the
+user's consent (docs/privacy.md). AppAuth-iOS (Apache-2.0), the other native
+library, is described in docs/dependencies.md.
+
+
 Third-party packages
 --------------------
 

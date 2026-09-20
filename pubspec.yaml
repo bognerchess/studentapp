@@ -52,6 +52,7 @@ dependencies:
   http: ^1.6.0
   # WP-30: legal documents and the AI consent text arrive as Markdown.
   flutter_markdown_plus: ^1.0.12
+  sentry_flutter: ^9.30.0
 
 dev_dependencies:
   flutter_test:
