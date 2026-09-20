@@ -21,7 +21,7 @@ Scope, dependencies and acceptance for every WP are in `../product-hub/docs/mobi
 | WP-24 | Share Extension + App Group (IN-3) | M | WP-23 (device signing: H5) | review | [WP-24](WP-24-share-extension.md) |
 | WP-25 | Auth: PKCE, single-flight refresh, fake auth (AC-1) | L | WP-03 (real verify: H2, H10) | review | [WP-25](WP-25-auth.md) |
 | WP-26 | Library list, search, delete (AC-2) | M | WP-12, WP-13 | todo | – |
-| WP-27 | Submit queue, offline to online (AC-3) | M | WP-12, WP-13, WP-20 | todo | – |
+| WP-27 | Submit queue, offline to online (AC-3) | M | WP-12, WP-13, WP-20 | review | [WP-27](WP-27-submit-queue-and-flow.md) |
 | WP-28 | Analysis request, job poller, usage, limit UX (AN-1, LIM-2) | M | WP-12, WP-13 | todo | – |
 | WP-29a | Review: board, move list, glyphs (AN-3) | M | WP-04, WP-14 | review | [WP-29](WP-29-review-screen.md) |
 | WP-29b | Eval graph | S | WP-29a | review | [WP-29](WP-29-review-screen.md) |
@@ -35,11 +35,11 @@ Scope, dependencies and acceptance for every WP are in `../product-hub/docs/mobi
 | WP-35 | Sign-out and account deletion | S | WP-25 | review | [WP-30-35-36](WP-30-35-36-settings-consent-account.md) |
 | WP-36 | Piece-set and theme picker (optional) | S | WP-04 | review | [WP-30-35-36](WP-30-35-36-settings-consent-account.md) |
 | WP-40 | End-to-end against the real backend | M | features done, H10 | todo | – |
-| WP-41 | `entry_40_moves_test` with perf budget | S | WP-20 | todo | – |
+| WP-41 | `entry_40_moves_test` with perf budget | S | WP-20 | in-progress | – |
 | WP-42 | `full_loop_test` + nightly CI | M | features done | todo | – |
 | WP-43 | Real-device push, sandbox + production | S | WP-32, H6 | todo | – |
 | WP-50 | fastlane + TestFlight deploy workflow | M | H4 | todo | – |
-| WP-51 | GPL compliance script + release checklist | S | WP-04 | todo | – |
+| WP-51 | GPL compliance script + release checklist | S | WP-04 | in-progress | – |
 | WP-52 | Accessibility, Dynamic Type, dark mode, German pass | M | features done | todo | – |
 | WP-53 | Screenshot generator, privacy doc, review notes | S | features done, H8 | todo | – |
 | WP-54 | Reproducible build from a clean clone | S | WP-50 | todo | – |
