@@ -4,9 +4,8 @@ name: Integration
 # mock server. They take minutes, so they do not run on every push: nightly,
 # by hand, and on a pull request that carries the label `integration`.
 #
-# This is a placeholder until the integration tests exist (WP-41, WP-42). It
-# already does the right thing when `integration_test/` appears: nothing has
-# to change here for the first test to run.
+# WP-41 put the first test there (`entry_40_moves_test`). The probe step is
+# kept: it is what lets a checkout without the directory still pass.
 
 on:
   schedule:
@@ -70,8 +69,40 @@ jobs:
         env:
           SIMULATOR_UDID: ${{ steps.simulator.outputs.udid }}
         run: |
+          mkdir -p build/integration
+          # tee, so that the run still fails on a failing test (pipefail) and
+          # the log is left behind for the report step below.
+          set -o pipefail
           if [ -f config/fake.json ]; then
-            flutter test integration_test -d "$SIMULATOR_UDID" --dart-define-from-file=config/fake.json
+            flutter test integration_test -d "$SIMULATOR_UDID" --dart-define-from-file=config/fake.json 2>&1 | tee build/integration/output.txt
           else
-            flutter test integration_test -d "$SIMULATOR_UDID"
+            flutter test integration_test -d "$SIMULATOR_UDID" 2>&1 | tee build/integration/output.txt
           fi
+      # A test publishes a machine-readable summary with publishReport()
+      # (integration_test/helpers/app_harness.dart): one line per report,
+      # "INTEGRATION-REPORT <key> <json>". Split them into files so that the
+      # numbers of a run can be compared with those of the run before.
+      # Always, so that a failing run keeps its measurements.
+      - name: Collect the reports
+        if: always() && steps.probe.outputs.present == 'true'
+        run: |
+          if [ ! -f build/integration/output.txt ]; then
+            echo "No test output; nothing to collect."
+            exit 0
+          fi
+          grep -o 'INTEGRATION-REPORT .*' build/integration/output.txt | while read -r _ key json; do
+            printf '%s\n' "$json" > "build/integration/$key.json"
+            echo "$key: build/integration/$key.json"
+            {
+              echo "### $key"
+              echo '```json'
+              printf '%s\n' "$json"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.probe.outputs.present == 'true'
+        with:
+          name: integration-reports
+          path: build/integration/
+          if-no-files-found: ignore
