@@ -39,7 +39,7 @@ Scope, dependencies and acceptance for every WP are in `../product-hub/docs/mobi
 | WP-42 | `full_loop_test` + nightly CI | M | features done | todo | – |
 | WP-43 | Real-device push, sandbox + production | S | WP-32, H6 | todo | – |
 | WP-50 | fastlane + TestFlight deploy workflow | M | H4 | todo | – |
-| WP-51 | GPL compliance script + release checklist | S | WP-04 | in-progress | – |
+| WP-51 | GPL compliance script + release checklist | S | WP-04 | review | [WP-51](WP-51-gpl-compliance.md) |
 | WP-52 | Accessibility, Dynamic Type, dark mode, German pass | M | features done | todo | – |
 | WP-53 | Screenshot generator, privacy doc, review notes | S | features done, H8 | todo | – |
 | WP-54 | Reproducible build from a clean clone | S | WP-50 | todo | – |
