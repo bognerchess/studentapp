@@ -35,7 +35,7 @@ Scope, dependencies and acceptance for every WP are in `../product-hub/docs/mobi
 | WP-35 | Sign-out and account deletion | S | WP-25 | review | [WP-30-35-36](WP-30-35-36-settings-consent-account.md) |
 | WP-36 | Piece-set and theme picker (optional) | S | WP-04 | review | [WP-30-35-36](WP-30-35-36-settings-consent-account.md) |
 | WP-40 | End-to-end against the real backend | M | features done, H10 | todo | – |
-| WP-41 | `entry_40_moves_test` with perf budget | S | WP-20 | in-progress | – |
+| WP-41 | `entry_40_moves_test` with perf budget | S | WP-20 | review | [WP-41](WP-41-entry-40-moves-test.md) |
 | WP-42 | `full_loop_test` + nightly CI | M | features done | todo | – |
 | WP-43 | Real-device push, sandbox + production | S | WP-32, H6 | todo | – |
 | WP-50 | fastlane + TestFlight deploy workflow | M | H4 | todo | – |
