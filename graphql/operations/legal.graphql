@@ -1,0 +1,67 @@
+query LegalDocument($key: LegalDocumentKey!, $language: String!) {
+  legalDocument(key: $key, language: $language) {
+    id
+    key
+    version
+    language
+    title
+    bodyMarkdown
+    providerName
+    publishedAt
+    isDraft
+  }
+}
+
+query MyAiConsent {
+  myAiConsent {
+    ...AiConsentFields
+  }
+}
+
+query MyConsent($key: LegalDocumentKey!) {
+  myConsent(key: $key) {
+    ...ConsentFields
+  }
+}
+
+mutation RecordAiConsent($input: RecordAiConsentInput!) {
+  recordAiConsent(input: $input) {
+    aiConsentStatus {
+      ...AiConsentFields
+    }
+    errors {
+      __typename
+      ... on BusinessError {
+        message
+      }
+      ... on InputValidationError {
+        message
+        propertyName
+      }
+      ... on TechnicalError {
+        message
+      }
+    }
+  }
+}
+
+mutation RecordConsent($input: RecordConsentInput!) {
+  recordConsent(input: $input) {
+    consentStatus {
+      ...ConsentFields
+    }
+    errors {
+      __typename
+      ... on BusinessError {
+        message
+      }
+      ... on InputValidationError {
+        message
+        propertyName
+      }
+      ... on TechnicalError {
+        message
+      }
+    }
+  }
+}

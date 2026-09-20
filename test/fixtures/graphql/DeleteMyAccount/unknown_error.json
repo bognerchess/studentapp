@@ -1,0 +1,12 @@
+{
+  "data": {
+    "deleteMyAccount": {
+      "accountDeletion": null,
+      "errors": [
+        {
+          "__typename": "SomethingNewError"
+        }
+      ]
+    }
+  }
+}

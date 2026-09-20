@@ -1,0 +1,15 @@
+{
+  "data": {
+    "legalDocument": {
+      "id": "legal-privacy_policy-de-1",
+      "key": "PRIVACY_POLICY",
+      "version": 1,
+      "language": "de",
+      "title": "Datenschutzerklärung",
+      "bodyMarkdown": "# Datenschutzerklärung\n\nPlatzhaltertext des Mock-Servers.",
+      "providerName": null,
+      "publishedAt": "2026-09-01T00:00:00.000Z",
+      "isDraft": true
+    }
+  }
+}

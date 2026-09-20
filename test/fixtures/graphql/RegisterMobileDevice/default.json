@@ -1,0 +1,16 @@
+{
+  "data": {
+    "registerMobileDevice": {
+      "mobileDevice": {
+        "id": "device-1",
+        "deviceId": "installation-1",
+        "environment": "SANDBOX",
+        "appVersion": "0.1.0+1",
+        "locale": "de-CH",
+        "lastSeenAt": "2026-09-19T10:00:00.000Z",
+        "revokedAt": null
+      },
+      "errors": null
+    }
+  }
+}

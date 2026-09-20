@@ -1,0 +1,35 @@
+{
+  "data": {
+    "myChessGameById": {
+      "id": "game-1",
+      "clientGameId": "3f0e1c52-7b1d-4a53-9c55-0d8a1b2c3d41",
+      "playerColor": "WHITE",
+      "result": "WHITE_WINS",
+      "resultText": "1-0",
+      "playedDate": "2026-09-12",
+      "eventName": "Club Championship",
+      "timeControl": "5400+30",
+      "opponentName": "Jonas Keller",
+      "whitePlayerName": "Fake User",
+      "blackPlayerName": "Jonas Keller",
+      "whiteElo": 1650,
+      "blackElo": 1712,
+      "created": "2026-09-12T18:30:00.000Z",
+      "hasAnalysis": true,
+      "latestAnalysisJob": {
+        "id": "job-1",
+        "chessGameId": "game-1",
+        "status": "DONE",
+        "stage": null,
+        "queuePosition": null,
+        "requestedAt": "2026-09-12T18:31:00.000Z",
+        "finishedAt": "2026-09-12T18:34:10.000Z",
+        "failureCode": null
+      },
+      "rawPgn": "[Event \"Club Championship\"]\n[Site \"?\"]\n[Date \"2026.09.12\"]\n[Round \"?\"]\n[White \"Fake User\"]\n[Black \"Jonas Keller\"]\n[Result \"1-0\"]\n[WhiteElo \"1650\"]\n[BlackElo \"1712\"]\n[TimeControl \"5400+30\"]\n\n1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. Ng5 d5 5. exd5 Nxd5 6. Nxf7 Kxf7 7. Qf3+ Ke6 8. Nc3 1-0\n",
+      "startingFen": null,
+      "site": null,
+      "round": null
+    }
+  }
+}

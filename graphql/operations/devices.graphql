@@ -1,0 +1,71 @@
+mutation RegisterMobileDevice($input: RegisterMobileDeviceInput!) {
+  registerMobileDevice(input: $input) {
+    mobileDevice {
+      ...DeviceFields
+    }
+    errors {
+      __typename
+      ... on RateLimitedError {
+        message
+        retryAfterSeconds
+      }
+      ... on BusinessError {
+        message
+      }
+      ... on InputValidationError {
+        message
+        propertyName
+      }
+      ... on TechnicalError {
+        message
+      }
+    }
+  }
+}
+
+mutation UnregisterMobileDevice($input: UnregisterMobileDeviceInput!) {
+  unregisterMobileDevice(input: $input) {
+    mobileDevice {
+      ...DeviceFields
+    }
+    errors {
+      __typename
+      ... on BusinessError {
+        message
+      }
+      ... on InputValidationError {
+        message
+        propertyName
+      }
+      ... on TechnicalError {
+        message
+      }
+    }
+  }
+}
+
+mutation TrackMobileEvents($input: TrackMobileEventsInput!) {
+  trackMobileEvents(input: $input) {
+    eventBatch {
+      accepted
+      rejected
+    }
+    errors {
+      __typename
+      ... on RateLimitedError {
+        message
+        retryAfterSeconds
+      }
+      ... on BusinessError {
+        message
+      }
+      ... on InputValidationError {
+        message
+        propertyName
+      }
+      ... on TechnicalError {
+        message
+      }
+    }
+  }
+}

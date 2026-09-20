@@ -131,6 +131,38 @@ good and bad trees in `tool/test_fixtures/`. Those trees are excluded from the
 analyzer (they import packages that do not exist here) but not from the
 formatter.
 
+## The API in tests: fixtures, `FixtureLink`, the mock server
+
+Nothing in the gate talks to a real backend. There are three stand-ins, and they share one set of
+data, `test/fixtures/graphql/<Operation>/<scenario>.json` (GraphQL response bodies; see the README
+there):
+
+- **`FixtureLink`** (`test/helpers/fixture_link.dart`) is a `gql` link that answers from those
+  files. Widget tests and repository tests put it under the API layer with one override:
+
+      final api = FixtureLink({'RequestGameAnalysis': 'limit_reached'});
+      await pumpApp(tester, overrides: api.overrides);      // apiLinkProvider -> api
+      api.use('RequestGameAnalysis', 'default');            // change the answer later
+      api.respond('AnalysisJob', (variables) => {...});     // or compute it
+      api.fail('MyMobileGames', const SocketException('offline'));
+      expect(api.requestsOf('ImportMobileGame').single.variables, ...);
+
+  An operation without a chosen scenario gets its `default.json`, the happy path. No token is asked
+  for and no HTTP happens, which matters: **a test file that contains `testWidgets` cannot make real
+  HTTP requests** (the test binding answers them all with status 400).
+- **The mock server** (`tool/mock_server`, a `shelf` app) is the same data behind real HTTP, with
+  memory: imported games, jobs that go QUEUED, RUNNING, DONE, a daily limit of three, the consent
+  flow, feedback. `dart run tool/mock_server/main.dart --port 5299` runs it for the simulator and for
+  `integration_test` (`config/fake.json` points there); `--help` lists the options and the scenarios
+  of `POST /__scenario`. Tests without `testWidgets` start it in-process on a free port:
+  `final server = await MockServer.start();` (see `test/core/api/repositories_mock_server_test.dart`).
+  It is development tooling and imports nothing but `dart:io` and `shelf`; `test/tool/mock_server_test.dart`
+  is its own test.
+- **`fixtures_test.dart`** runs every fixture through the generated `fromJson` and through the
+  repository of its operation, and fails when an operation has no `default` or an error union has a
+  member without a fixture. `schema_pin_test.dart` pins `graphql/schema.graphql` to the backend's
+  contract by SHA-256 (`graphql/SCHEMA_SOURCE.md` says how to refresh it).
+
 ## `tool/check_bundled_assets.sh`
 
     flutter build ios --simulator --debug

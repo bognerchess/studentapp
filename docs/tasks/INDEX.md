@@ -9,9 +9,9 @@ Scope, dependencies and acceptance for every WP are in `../product-hub/docs/mobi
 | WP-02 | CI and check script | S | WP-00 | review | [WP-02](WP-02-ci-and-check-script.md) |
 | WP-03 | App shell | M | WP-00 | review | [WP-03](WP-03-app-shell.md) |
 | WP-04 | Vendored chessground, asset allow-list, `BoardView` | M | WP-00 | review | [WP-04](WP-04-chessground-and-boardview.md) |
-| WP-10 | Schema, operations, codegen, fixtures | M | WP-02, backend C-03 | todo | – |
-| WP-11 | shelf mock server + scenarios | M | WP-10 | todo | – |
-| WP-12 | API client layer | M | WP-10 | todo | – |
+| WP-10 | Schema, operations, codegen, fixtures | M | WP-02, backend C-03 | review | [WP-10-12](WP-10-12-api-foundation.md) |
+| WP-11 | shelf mock server + scenarios | M | WP-10 | review | [WP-10-12](WP-10-12-api-foundation.md) |
+| WP-12 | API client layer | M | WP-10 | review | [WP-10-12](WP-10-12-api-foundation.md) |
 | WP-13 | drift database | M | WP-02 | review | [WP-13](WP-13-drift-database.md) |
 | WP-14 | Analysis document model + mapper | M | chess-ai C-01 | review | [WP-14](WP-14-analysis-document-model.md) |
 | WP-20 | Board entry (IN-1) | L | WP-04, WP-13 | review | [WP-20](WP-20-board-entry.md) |

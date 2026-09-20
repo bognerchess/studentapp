@@ -1,0 +1,17 @@
+{
+  "data": {
+    "requestGameAnalysis": {
+      "analysisJob": null,
+      "errors": [
+        {
+          "__typename": "AnalysisLimitReachedError",
+          "message": "web_api_errors.analysis_limit_reached",
+          "window": "DAY",
+          "limit": 3,
+          "used": 3,
+          "resetAt": "2026-09-19T22:00:00.000Z"
+        }
+      ]
+    }
+  }
+}

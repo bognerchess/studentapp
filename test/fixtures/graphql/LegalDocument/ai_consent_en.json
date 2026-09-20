@@ -1,0 +1,15 @@
+{
+  "data": {
+    "legalDocument": {
+      "id": "legal-ai_consent-en-1",
+      "key": "AI_CONSENT",
+      "version": 1,
+      "language": "en",
+      "title": "AI analysis of your games",
+      "bodyMarkdown": "When you ask for an analysis, the moves of your game and the player names are sent to our analysis service. A language model writes the coach comments. **No account data is sent to the model provider.**\n\nYou can withdraw this consent at any time in the settings.",
+      "providerName": "Example AI Provider",
+      "publishedAt": "2026-09-01T00:00:00.000Z",
+      "isDraft": true
+    }
+  }
+}

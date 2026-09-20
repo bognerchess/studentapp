@@ -1,0 +1,25 @@
+{
+  "data": {
+    "importMobileGame": {
+      "chessGame": {
+        "id": "game-10",
+        "clientGameId": "11111111-2222-4333-8444-555555555555",
+        "playerColor": "WHITE",
+        "result": "WHITE_WINS",
+        "resultText": "1-0",
+        "playedDate": "2026-09-19",
+        "eventName": "Club Championship",
+        "timeControl": "5400+30",
+        "opponentName": "Jonas Keller",
+        "whitePlayerName": "Fake User",
+        "blackPlayerName": "Jonas Keller",
+        "whiteElo": 1650,
+        "blackElo": 1712,
+        "created": "2026-09-19T10:00:00.000Z",
+        "hasAnalysis": false,
+        "latestAnalysisJob": null
+      },
+      "errors": null
+    }
+  }
+}

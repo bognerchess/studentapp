@@ -1,0 +1,12 @@
+{
+  "data": {
+    "submitCoachCommentFeedback": {
+      "coachCommentFeedback": {
+        "id": "feedback-1",
+        "commentId": "322b7d97-32b5-4bc3-9f81-475368d0ef1c",
+        "rating": "DOWN"
+      },
+      "errors": null
+    }
+  }
+}

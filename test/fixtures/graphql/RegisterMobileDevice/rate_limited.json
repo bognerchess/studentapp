@@ -1,0 +1,14 @@
+{
+  "data": {
+    "registerMobileDevice": {
+      "mobileDevice": null,
+      "errors": [
+        {
+          "__typename": "RateLimitedError",
+          "message": "web_api_errors.rate_limited",
+          "retryAfterSeconds": 42
+        }
+      ]
+    }
+  }
+}

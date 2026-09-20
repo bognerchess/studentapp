@@ -1,0 +1,12 @@
+{
+  "data": {
+    "submitCoachCommentFeedback": {
+      "coachCommentFeedback": null,
+      "errors": [
+        {
+          "__typename": "SomethingNewError"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "data": {
+    "registerMobileDevice": {
+      "mobileDevice": null,
+      "errors": [
+        {
+          "__typename": "SomethingNewError"
+        }
+      ]
+    }
+  }
+}

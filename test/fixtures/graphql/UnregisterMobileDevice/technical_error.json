@@ -1,0 +1,13 @@
+{
+  "data": {
+    "unregisterMobileDevice": {
+      "mobileDevice": null,
+      "errors": [
+        {
+          "__typename": "TechnicalError",
+          "message": "web_api_errors.technical_error"
+        }
+      ]
+    }
+  }
+}

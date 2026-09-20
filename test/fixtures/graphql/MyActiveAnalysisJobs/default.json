@@ -1,0 +1,26 @@
+{
+  "data": {
+    "myActiveAnalysisJobs": [
+      {
+        "id": "job-2",
+        "chessGameId": "game-2",
+        "status": "RUNNING",
+        "stage": "engine",
+        "queuePosition": null,
+        "requestedAt": "2026-09-19T10:00:00.000Z",
+        "finishedAt": null,
+        "failureCode": null
+      },
+      {
+        "id": "job-3",
+        "chessGameId": "game-3",
+        "status": "QUEUED",
+        "stage": null,
+        "queuePosition": 0,
+        "requestedAt": "2026-09-19T10:01:00.000Z",
+        "finishedAt": null,
+        "failureCode": null
+      }
+    ]
+  }
+}

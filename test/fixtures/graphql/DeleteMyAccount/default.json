@@ -1,0 +1,13 @@
+{
+  "data": {
+    "deleteMyAccount": {
+      "accountDeletion": {
+        "id": "deletion-1",
+        "status": "PENDING",
+        "requestedAt": "2026-09-19T10:00:00.000Z",
+        "completedAt": null
+      },
+      "errors": null
+    }
+  }
+}

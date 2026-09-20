@@ -1,0 +1,85 @@
+query MyMobileGames(
+  $search: String
+  $playedFrom: LocalDate
+  $playedTo: LocalDate
+  $first: Int
+  $after: String
+) {
+  myMobileGames(
+    search: $search
+    playedFrom: $playedFrom
+    playedTo: $playedTo
+    first: $first
+    after: $after
+  ) {
+    totalCount
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    nodes {
+      ...GameFields
+    }
+  }
+}
+
+query GameById($id: ID!) {
+  myChessGameById(id: $id) {
+    ...GameFields
+    rawPgn
+    startingFen
+    site
+    round
+  }
+}
+
+mutation ImportMobileGame($input: ImportMobileGameInput!) {
+  importMobileGame(input: $input) {
+    chessGame {
+      ...GameFields
+    }
+    errors {
+      __typename
+      ... on PgnInvalidError {
+        message
+        moveNumber
+        san
+      }
+      ... on RateLimitedError {
+        message
+        retryAfterSeconds
+      }
+      ... on InputValidationError {
+        message
+        propertyName
+      }
+      ... on BusinessError {
+        message
+      }
+      ... on TechnicalError {
+        message
+      }
+    }
+  }
+}
+
+mutation DeleteChessGame($input: DeleteChessGameInput!) {
+  deleteChessGame(input: $input) {
+    chessGame {
+      id
+    }
+    errors {
+      __typename
+      ... on TechnicalError {
+        message
+      }
+      ... on BusinessError {
+        message
+      }
+      ... on InputValidationError {
+        message
+        propertyName
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "data": {
+    "trackMobileEvents": {
+      "eventBatch": {
+        "accepted": 2,
+        "rejected": 1
+      },
+      "errors": null
+    }
+  }
+}
