@@ -221,8 +221,11 @@ part nothing else covers:
   from a remote, the three legal texts exist and are bundled with the app, the
   section-7 permission is no longer a draft, and `docs/building.md` names the
   Flutter version that `pubspec.yaml` pins.
-- **Section 8, reproducible build**: a named hook for WP-54, which verifies
-  nothing yet and says so.
+- **Section 8, reproducible build**: runs `tool/check_reproducible.sh` in
+  release mode and lets its exit code fail the release. In development mode it
+  says so instead of spending the time on three builds, and checks
+  the one cheap thing: that `docs/building.md` still says release builds are
+  made without `--obfuscate`.
 
 **Two modes, one set of checks.** Conditions that cannot be true before a
 release is cut — a tag, a clean and published tree, a built app, a section-7
@@ -244,6 +247,61 @@ licence row is caught in the pull request that adds it), and on the `ios` job
 with `--app`, where the bundle-dependent sections have something to read.
 `--release` is not run in CI; it belongs to the release, see
 `docs/release-checklist.md`.
+
+## `tool/check_reproducible.sh`
+
+    tool/check_reproducible.sh                      # HEAD, unsigned release build
+    tool/check_reproducible.sh --ref v0.1.0+1       # what a release runs
+    tool/check_reproducible.sh --target simulator   # the cheaper build
+    tool/check_reproducible.sh --against <Runner.app>
+    tool/check_reproducible.sh --keep --verbose
+    tool/check_reproducible.sh --help
+
+Answers the question the licence makes us answer: does the source we publish
+produce the app we ship? It makes **clean clones** — clones, not copies of the
+working tree, so an untracked or gitignored file cannot sneak into the build —
+builds each one with the two commands in `docs/building.md`, and compares the
+resulting `Runner.app` bundles file by file.
+
+**Three builds**, because two answer half the question:
+
+| | where | what it isolates |
+| --- | --- | --- |
+| A | directory 1 | |
+| A' | directory 1, second clone | anything that differs here differs for no reason at all |
+| B | directory 2 | what the build location is baked into |
+
+Every difference is **classified**, with evidence, and anything the script
+cannot account for is a failure. There are seven classes, and no eighth:
+
+| Class | What makes it evidence rather than a guess |
+| --- | --- |
+| The sixteen bytes of `LC_UUID` | The offset is found by searching the load commands for the UUID `dwarfdump` reports, and only those bytes are counted. |
+| The debug map, in the symbol and string tables | `dsymutil -dump-debug-map` on both, with the clone directory and Xcode's DerivedData hash normalised away, has to come out identical. |
+| A symbol at a different offset **inside its intermediate object file** | Same as above, but `objAddr` also normalised: every object file, every symbol name and every `binAddr` — the address in the binary that ships — must still match, and the script says how many symbols moved. |
+| An instruction reaching the same symbol through a different pointer slot | The two disassemblies (`objdump -d`, which unlike `otool -tV` covers `__objc_stubs` too) must have the same length and differ only in immediates; `dyld_info -fixups` must be identical; and every immediate must move by a distance that separates two slots binding the *same* symbol. |
+| A file the absolute build location is written into | It has to be byte-identical in the A vs A' comparison, so the directory is the only variable left, and the differing path strings are printed. |
+| A binary property list in a different byte order | `plutil -convert xml1` on both has to be identical. |
+| A gzip header's timestamp | Decompressing both has to give identical bytes. |
+| An ad-hoc code signature | Accepted only when every other file it hashes was accepted, and rejected outright when it is the *only* thing that differs. |
+
+If more than four million bytes of a file differ, the list of offsets is cut
+short, and a cut-short list can never support an "expected": it is a failure.
+`docs/building.md` lists what all this came to for this app, and what it means
+for somebody checking us.
+
+`--against <Runner.app>` adds a third comparison, between build A and a bundle
+that already exists — the one about to ship. That is the release question, and
+it is how the signed build will be checked once human gate **H4** is open; the
+script refuses to compare a simulator bundle with a device build.
+
+It is **not** part of `tool/check.sh` and not in `pr.yml`: three release builds
+per push would be absurd — two and a half minutes on the development machine
+with a warm pub and SwiftPM cache, and a good deal longer on a hosted runner
+that has neither. It runs nightly and on every `v*` tag in
+`.github/workflows/reproducible.yml`, and again from
+`tool/check_compliance.sh --release`, which is where its exit code stops a
+build from being conveyed.
 
 ## Golden tests
 
@@ -355,6 +413,13 @@ dispatch, and on pull requests labelled `integration`. It boots the first
 iPhone the runner image offers, runs the tests, and collects the reports
 described above. A checkout without an `integration_test/` directory still
 passes: the probe step skips the rest.
+
+`.github/workflows/reproducible.yml` builds the app three times from clean
+clones and compares the results (`tool/check_reproducible.sh`). It runs
+nightly, on every `v*` tag and on manual dispatch — never on a pull request,
+where three release builds would cost more than they could possibly find. The
+full report goes into the run summary and is kept as an artifact, because it is
+the thing somebody will want to read a year later.
 
 Workflow files are linted with `actionlint` (`brew install actionlint`), which
 also runs `shellcheck` over the inline scripts. The shell scripts in `tool/`

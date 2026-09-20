@@ -6,7 +6,7 @@ a person has to.
 
 The machine half is one command:
 
-    tool/check_compliance.sh --release --app build/ios/iphonerelease/Runner.app
+    tool/check_compliance.sh --release --app build/ios/iphoneos/Runner.app
 
 It fails loudly and says why. It cannot answer the questions in part D, and it
 does not pretend to: those are the ones that need a human, and skipping them is
@@ -73,7 +73,7 @@ not a cosmetic one.
    | 5 | NOTICE complete | A file with an "Adapted from …" header, a tree under `third_party/`, an allow-listed piece set or a native library that NOTICE does not name. |
    | 6 | Tag matches the build | The tag is not `v<version from pubspec.yaml>`, or HEAD is tagged differently. Outside release mode this only reports. |
    | 7 | Corresponding source | The tree is dirty, HEAD is on no remote, `LICENSE` / `NOTICE` / `LICENSE-APP-STORE-PERMISSION.md` are missing or not bundled with the app, the permission is still a DRAFT (H7), or `docs/building.md` does not name the pinned Flutter version. |
-   | 8 | Reproducible build | Nothing yet. WP-54 hangs its verification here; until then step D6 is a person's job. |
+   | 8 | Reproducible build | `tool/check_reproducible.sh` builds the app three times from clean clones of the tag and finds a difference it cannot account for. It is slow and it is supposed to be: it is the only check that reads the source the way a stranger would. Pass `--app <the device build>` and it also compares the bundle you are about to ship with a clean-clone build. |
 
 10. **Answer the open decisions.** The script prints a `DECISION <id>` block for
     anything it refuses to decide on its own and, in release mode, will not pass
@@ -128,11 +128,32 @@ not a cosmetic one.
     what it says; that the analysis is asynchronous and can take minutes; that
     account deletion is in Settings and really deletes. Screenshots come from
     WP-53's generator.
-16. **D6 — the build reproduces the source.** Until WP-54 automates it: clone
-    the tag into an empty directory on a second machine, follow
-    `docs/building.md` exactly, build, and confirm you get an app that behaves
-    like the one you are shipping. Note the date and the two machines in the
-    release notes.
+16. **D6 — the build reproduces the source, on a machine that is not ours.**
+    `tool/check_reproducible.sh` (section 8 above) does the comparison, but it
+    does it here, on our toolchain, from our clone. Two things it cannot do:
+
+    - **A second machine.** Clone the tag on somebody else's Mac, follow
+      `docs/building.md`, run `tool/check_reproducible.sh --ref <tag>` there,
+      and put its output next to ours in the release notes. Different Xcode or
+      macOS versions are the interesting case, and the script prints all three
+      versions at the top of every run so that a difference has somewhere to be
+      traced to.
+    - **The signed build (human gate H4).** The script builds unsigned, because
+      signing needs the Apple team id and the App Store Connect key. Before
+      conveying a signed build, compare it with a clean-clone build of the same
+      tag: `codesign --remove-signature` a copy of each, then
+      `tool/check_reproducible.sh --ref <tag> --against <the stripped bundle>`.
+      What has to come out is the list in `docs/building.md` and nothing else.
+      Whoever holds H4 does this; it is written down in
+      `docs/tasks/WP-54-reproducible-build.md` with what exactly is still
+      unverified.
+
+    Note the date, the machines, the Xcode versions **and the absolute
+    directory the shipped build was made in** in the release notes.
+    `docs/building.md` tells a reader that building at that same path is how
+    they get a bit-for-bit identical result, so the path has to actually be
+    written down somewhere they can read it. The script prints it (`work dir:`
+    and the two build directories) at the top of every run.
 17. **D7 — read the About screen on a device.** Version and build number match
     the tag, the source link opens the right tree, the GPL text is complete, the
     permission is marked correctly, and the third-party notices list every piece

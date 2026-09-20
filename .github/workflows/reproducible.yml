@@ -1,0 +1,102 @@
+name: Reproducible build
+
+# Builds the app three times from three clean clones of the same commit --
+# twice in one directory, once in another -- and compares the results file by
+# file (tool/check_reproducible.sh). It is the machine half of the claim the
+# licence makes: that the published source is what the shipped binary was made
+# from.
+#
+# Deliberately NOT on pull requests. Three release builds are far too slow for
+# every push, and nothing in an ordinary change can break reproducibility in a
+# way a nightly run would not catch a few hours later. It runs
+#
+#   - nightly, so that a Flutter, Xcode or dependency change that makes the
+#     build non-deterministic is found by us and not by a sceptic;
+#   - on every v* tag, which is the run that matters: the source of a release
+#     has to reproduce it;
+#   - by hand, on any ref, for when somebody is investigating.
+#
+# The release path runs it again through `tool/check_compliance.sh --release`
+# (section 8), which is where its exit code stops a build from being conveyed.
+# docs/release-checklist.md step D6 is the human half.
+
+on:
+  schedule:
+    # 04:41 UTC, an hour and a bit after the integration run, so the two do
+    # not queue behind each other for a macOS runner.
+    - cron: "41 4 * * *"
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Commit, tag or branch to build three times"
+        required: false
+        default: ""
+      target:
+        description: "release (unsigned device build) or simulator"
+        required: false
+        default: release
+        type: choice
+        options: [release, simulator]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  reproducible:
+    name: three clean clones, two comparisons
+    runs-on: macos-latest
+    # Three release builds on a hosted macOS runner, which is slower than a
+    # laptop. Generous on purpose: a run that is killed halfway tells nobody
+    # anything, and this job runs at most once a night.
+    timeout-minutes: 150
+    steps:
+      # Full history and tags: the script clones from `origin` — the published
+      # repository, which is the thing being checked — and needs the ref to
+      # exist there.
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version-file: pubspec.yaml
+          cache: true
+      - name: Say which Xcode and Flutter this is
+        run: |
+          xcodebuild -version
+          flutter --version
+          sw_vers
+      - name: Build it three times and compare
+        env:
+          REF: ${{ inputs.ref || github.sha }}
+          TARGET: ${{ inputs.target || 'release' }}
+        run: |
+          set -o pipefail
+          mkdir -p build/reproducible
+          tool/check_reproducible.sh \
+            --ref "$REF" \
+            --target "$TARGET" \
+            --work "$RUNNER_TEMP/reproducible" \
+            2>&1 | tee build/reproducible/report.txt
+      - name: Put the report in the run summary
+        if: always()
+        run: |
+          if [ -f build/reproducible/report.txt ]; then
+            {
+              echo '```'
+              cat build/reproducible/report.txt
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reproducible-report
+          path: build/reproducible/
+          if-no-files-found: ignore
