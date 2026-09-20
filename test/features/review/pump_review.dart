@@ -158,6 +158,7 @@ Future<ReviewHarness> pumpReview(
         appInfoProvider.overrideWith(
           (ref) async => const AppInfo(version: '1.2.3', buildNumber: '45'),
         ),
+        ...backendOverrides(),
         reviewRepositoryProvider.overrideWithValue(harness.repository),
         feedbackSinkProvider.overrideWithValue(harness.sink),
       ],

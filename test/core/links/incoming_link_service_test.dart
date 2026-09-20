@@ -85,6 +85,7 @@ class Harness {
         authStateProvider.overrideWith(
           () => TestAuthNotifier(auth ?? const SignedIn(kFakeAuthSub)),
         ),
+        ...backendOverrides(),
         incomingLinkSourceProvider.overrideWithValue(source),
         if (sharedPgn != null)
           sharedPgnSourceProvider.overrideWithValue(sharedPgn),

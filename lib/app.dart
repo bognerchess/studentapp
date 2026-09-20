@@ -6,6 +6,7 @@ import 'package:bogner_chess/core/l10n/l10n.dart';
 import 'package:bogner_chess/core/links/incoming_link_notices.dart';
 import 'package:bogner_chess/core/ui/theme.dart';
 import 'package:bogner_chess/core/ui/widgets/env_banner.dart';
+import 'package:bogner_chess/features/analysis_status/ui/analysis_notices.dart';
 import 'package:bogner_chess/router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -36,9 +37,11 @@ class BognerChessApp extends ConsumerWidget {
         ...GlobalMaterialLocalizations.delegates,
       ],
       // IncomingLinkNotices: "this file could not be read" for a document
-      // opened from outside, on whatever screen is showing.
-      builder: (context, child) =>
-          EnvBanner(child: IncomingLinkNotices(child: child!)),
+      // opened from outside, on whatever screen is showing. AnalysisNotices:
+      // "Your analysis is ready", and the owner of the job tracker.
+      builder: (context, child) => EnvBanner(
+        child: IncomingLinkNotices(child: AnalysisNotices(child: child!)),
+      ),
     );
   }
 }

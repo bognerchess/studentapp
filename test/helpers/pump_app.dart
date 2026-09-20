@@ -4,14 +4,21 @@
 
 import 'package:bogner_chess/app.dart';
 import 'package:bogner_chess/config/env.dart';
+import 'package:bogner_chess/core/api/api_providers.dart';
 import 'package:bogner_chess/core/app_info.dart';
 import 'package:bogner_chess/core/auth/auth_state.dart';
+import 'package:bogner_chess/core/storage/app_database.dart';
+import 'package:bogner_chess/core/storage/storage_providers.dart';
 import 'package:bogner_chess/router.dart';
+import 'package:drift/drift.dart' show DatabaseConnection, driftRuntimeOptions;
+import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
+
+import 'fixture_link.dart';
 
 /// An [Env] for tests. The default is the fake configuration.
 Env testEnv({String envName = 'fake', AuthMode authMode = AuthMode.fake}) {
@@ -44,11 +51,51 @@ class TestAuthNotifier extends AuthStateNotifier {
 const Size kIphoneSe = Size(375, 667);
 const Size kIphone17Pro = Size(402, 874);
 
+/// An empty in-memory database for a widget test.
+///
+/// drift normally keeps a query stream alive for one more event-loop turn
+/// after its last listener left, with a timer. Under the fake clock of
+/// `testWidgets` that timer is still pending when the tree is gone, which
+/// fails the test, and `close()` would wait for it for ever.
+/// `closeStreamsSynchronously` switches that cache off.
+AppDatabase openWidgetTestDatabase({Clock? clock}) {
+  driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+  return AppDatabase(
+    DatabaseConnection(
+      NativeDatabase.memory(),
+      closeStreamsSynchronously: true,
+    ),
+    clock: clock,
+  );
+}
+
+/// What every test that pumps the whole app needs, because the app reads
+/// the API and the database from its first frame (the library is the start
+/// screen): a [FixtureLink] with the default fixtures as the API, and an
+/// empty in-memory database that is closed when the test ends. A provider
+/// that [unless] already overrides is left out.
+List<Override> backendOverrides({List<Override> unless = const []}) {
+  bool overridden(Object provider) =>
+      unless.any((o) => identical(o.origin, provider));
+  AppDatabase? database;
+  if (!overridden(appDatabaseProvider)) {
+    database = openWidgetTestDatabase();
+    addTearDown(database.close);
+  }
+  return [
+    if (database != null) appDatabaseProvider.overrideWithValue(database),
+    if (!overridden(apiLinkProvider))
+      apiLinkProvider.overrideWithValue(FixtureLink()),
+  ];
+}
+
 /// Pumps the whole app (router, themes, l10n) the way `main.dart` runs it.
 ///
 /// [auth] defaults to what [env] implies: signed in with fake auth, signed
 /// out with real auth. [overrides] come last, for example
 /// `authRepositoryProvider.overrideWithValue(FakeAuthRepository(...))`.
+/// API and database come from [backendOverrides] unless [overrides] bring
+/// their own.
 Future<void> pumpApp(
   WidgetTester tester, {
   Env? env,
@@ -70,6 +117,7 @@ Future<void> pumpApp(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        ...backendOverrides(unless: overrides),
         envProvider.overrideWithValue(env ?? testEnv()),
         appInfoProvider.overrideWith(
           (ref) async => const AppInfo(version: '1.2.3', buildNumber: '45'),

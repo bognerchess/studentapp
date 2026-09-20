@@ -14,6 +14,7 @@ import 'package:bogner_chess/router.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'helpers/fixture_link.dart';
 import 'helpers/pump_app.dart';
 
 void main() {
@@ -23,7 +24,7 @@ void main() {
 
       expect(locationOf(tester), AppRoutes.games);
       expect(find.byType(LibraryScreen), findsOneWidget);
-      expect(find.text('No games yet'), findsOneWidget);
+      expect(find.text('Fake User – Jonas Keller'), findsOneWidget);
       expect(find.byType(NavigationBar), findsOneWidget);
       expect(
         tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
@@ -53,7 +54,14 @@ void main() {
     });
 
     testWidgets('the empty library leads to the new-game tab', (tester) async {
-      await pumpApp(tester);
+      await pumpApp(
+        tester,
+        overrides: FixtureLink({
+          'MyMobileGames': 'empty',
+          'MyActiveAnalysisJobs': 'empty',
+        }).overrides,
+      );
+      expect(find.text('No games yet'), findsOneWidget);
 
       await tester.tap(find.widgetWithText(FilledButton, 'New game'));
       await tester.pumpAndSettle();

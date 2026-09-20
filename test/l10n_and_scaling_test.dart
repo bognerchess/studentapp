@@ -3,9 +3,11 @@
 // Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
 
 import 'package:bogner_chess/router.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'helpers/fixture_link.dart';
 import 'helpers/pump_app.dart';
 
 /// Every location of the shell, to be walked through in each configuration.
@@ -25,10 +27,15 @@ final List<String> allLocations = [
   '/does/not/exist',
 ];
 
+/// An account without games: the library shows its empty state.
+List<Override> get _emptyAccount =>
+    FixtureLink({'MyMobileGames': 'empty', 'MyActiveAnalysisJobs': 'empty'})
+        .overrides;
+
 void main() {
   group('languages', () {
     testWidgets('English system language renders English', (tester) async {
-      await pumpApp(tester);
+      await pumpApp(tester, overrides: _emptyAccount);
 
       expect(find.text('No games yet'), findsOneWidget);
       expect(find.text('Settings'), findsOneWidget);
@@ -37,7 +44,11 @@ void main() {
     testWidgets('German system language renders German on every tab', (
       tester,
     ) async {
-      await pumpApp(tester, locale: const Locale('de', 'CH'));
+      await pumpApp(
+        tester,
+        locale: const Locale('de', 'CH'),
+        overrides: _emptyAccount,
+      );
 
       expect(find.text('Noch keine Partien'), findsOneWidget);
       expect(find.text('No games yet'), findsNothing);
@@ -65,7 +76,11 @@ void main() {
     testWidgets('any other system language falls back to English', (
       tester,
     ) async {
-      await pumpApp(tester, locale: const Locale('fr', 'FR'));
+      await pumpApp(
+        tester,
+        locale: const Locale('fr', 'FR'),
+        overrides: _emptyAccount,
+      );
 
       expect(find.text('No games yet'), findsOneWidget);
       expect(
