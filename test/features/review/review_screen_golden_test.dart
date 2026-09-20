@@ -7,6 +7,8 @@ library;
 
 import 'dart:io';
 
+import 'package:bogner_chess/config/env.dart';
+import 'package:bogner_chess/core/auth/auth_state.dart';
 import 'package:bogner_chess/core/chess/board_view.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -55,10 +57,13 @@ void main() {
       });
 
       // The environment ribbon has a font of its own; `prod` has no ribbon.
+      // `prod` also refuses the fake auth repository, so the signed-in state
+      // is given directly (see `pumpReview`).
       await pumpReview(
         tester,
         fixture: kShortGame,
-        env: testEnv(envName: 'prod'),
+        env: testEnv(envName: 'prod', authMode: AuthMode.real),
+        auth: const SignedIn('sub-alice', name: 'Alice A.'),
       );
       tester.reviewController.goTo(16);
       await tester.pumpAndSettle();
