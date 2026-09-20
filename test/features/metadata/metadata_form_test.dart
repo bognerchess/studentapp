@@ -586,7 +586,7 @@ void main() {
 
       for (final text in [
         'Ich hatte',
-        'Weiß',
+        'Weiss',
         'Schwarz',
         'Ergebnis',
         'Unbekannt',

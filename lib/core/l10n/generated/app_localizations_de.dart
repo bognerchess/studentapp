@@ -138,7 +138,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get metadataColorLabel => 'Ich hatte';
 
   @override
-  String get metadataColorWhite => 'Weiß';
+  String get metadataColorWhite => 'Weiss';
 
   @override
   String get metadataColorBlack => 'Schwarz';
@@ -150,7 +150,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get metadataResultUnknown => 'Unbekannt';
 
   @override
-  String get metadataResultWhiteWinsA11y => 'Weiß gewann, 1-0';
+  String get metadataResultWhiteWinsA11y => 'Weiss gewann, 1-0';
 
   @override
   String get metadataResultBlackWinsA11y => 'Schwarz gewann, 0-1';
@@ -186,7 +186,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get metadataOpponentRatingA11y => 'Wertungszahl des Gegners';
 
   @override
-  String get metadataWhiteRatingA11y => 'Wertungszahl von Weiß';
+  String get metadataWhiteRatingA11y => 'Wertungszahl von Weiss';
 
   @override
   String get metadataBlackRatingA11y => 'Wertungszahl von Schwarz';

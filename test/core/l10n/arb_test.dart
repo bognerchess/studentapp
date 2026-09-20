@@ -37,6 +37,21 @@ void main() {
     }
   });
 
+  // The app launches German as `de_CH` (WP-03) and the platform is Swiss.
+  // Swiss Standard German writes "ss" where Germany writes "ß", so a single
+  // "Weiß" among a dozen "Weiss" is a bug, not a variant. WP-20 and WP-21
+  // disagreed about this once; this test is the decision.
+  test('German is Swiss German: no ß', () {
+    final de = readArb('de');
+    for (final key in messageKeys(de)) {
+      expect(
+        de[key]! as String,
+        isNot(contains('ß')),
+        reason: '$key: Swiss German writes ss (Weiss, gross, heisst)',
+      );
+    }
+  });
+
   test('every English string is described for translators', () {
     final en = readArb('en');
     for (final key in messageKeys(en)) {

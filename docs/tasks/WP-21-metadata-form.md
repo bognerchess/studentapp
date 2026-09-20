@@ -150,7 +150,7 @@ if (result != null) { ... }                        // null: the user went back
 
 ### Strings
 
-39 keys with the prefix `metadata`, appended to both ARB files. German uses standard-German "Weiß" (there is one `de` file; a `de_CH` file with "Weiss" is a separate decision). The short rating label is "Rating" in English and "Elo" in German, because that is what German-speaking players call any rating number; the hint under the own rating spells out that an online rating or a guess is fine.
+39 keys with the prefix `metadata`, appended to both ARB files. German uses standard-German "Weiß" (there is one `de` file; a `de_CH` file with "Weiss" is a separate decision). **Overruled at integration:** the app launches German as `de_CH` and the rest of the file already wrote "Weiss", so the three `metadata*` strings were changed to Swiss spelling and `test/core/l10n/arb_test.dart` now refuses `ß` outright. The short rating label is "Rating" in English and "Elo" in German, because that is what German-speaking players call any rating number; the hint under the own rating spells out that an online rating or a guess is fine.
 
 ### Dev entry point
 
