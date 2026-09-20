@@ -39,6 +39,7 @@ and `go_router`, `wakelock_plus` (Flutter >= 3.44).
 | `flutter_appauth` | `^12.1.0` | 12.1.0 (2026-08-29) | BSD-3-Clause | dexterx.dev | OIDC authorization code flow with PKCE in `ASWebAuthenticationSession`, and the refresh token grant. Wrapped by `lib/core/auth/app_auth_oidc_client.dart`, its only importer. Needs Flutter >= 3.38.1. iOS: a Swift package (`ios/flutter_appauth/Package.swift`), which pulls the native library, see below. Added by WP-25. |
 | `flutter_secure_storage` | `^11.2.0` | 11.2.0 (2026-09-16) | BSD-3-Clause | steenbakker.dev | The token set in the Keychain with `first_unlock_this_device` (`lib/core/auth/token_store.dart`, its only importer). iOS part: `flutter_secure_storage_darwin` 0.4.3 (BSD-3-Clause, same publisher), a Swift package without further native dependencies. Added by WP-25. |
 | `shared_preferences_platform_interface` | `^2.4.2` (dev) | 2.4.2 (2026-03-25) | BSD-3-Clause | flutter.dev | Only for tests: `InMemorySharedPreferencesAsync` behind the install marker. Already a transitive dependency of `shared_preferences`; listed so that the test may import it. Added by WP-25. |
+| `fl_chart` | `^1.2.0` | 1.2.0 (2026-03-13) | MIT | flchart.dev | The evaluation graph of the review screen (`lib/features/review/ui/eval_graph.dart`, the only importer). Re-verified on pub.dev on 2026-09-20: 1.2.0 is still the newest, licence MIT, needs Flutter >= 3.27.4. Pulls `equatable` (MIT, fluttercommunity.dev); `vector_math` was already there. It imports the framework's legacy Material library, so every colour is passed in explicitly, and its built-in touch handling and titles are switched off (the graph maps a tap to a ply itself). Added by WP-29. |
 
 Transitive, but worth knowing: **`sqlite3`** (MIT, simonbinder.eu; locked at
 3.5.2; 3.6.0 needs `hooks ^2.2.0` and with it `meta ^1.19.0`, and Flutter
@@ -73,7 +74,7 @@ Each brings its own privacy manifest (`flutter_appauth`, `AppAuth`,
 | `graphql` | 5.2.4 (2026-03-14) | MIT | zino.company | GraphQL client and links. In-memory cache only. Pulls the unmaintained `hive` transitively (unused at runtime); fallback is `gql_http_link` with codegen. | WP-12 |
 | `gql` | 1.0.1 (2025-09-20) | MIT | gql-dart.dev | AST and `Link` types, used by the test `FixtureLink`. | WP-10 |
 | `gql_http_link` | 1.2.0 (2025-09-20) | MIT | gql-dart.dev | Fallback transport should `graphql` have to go. Not planned otherwise. | – |
-| `fl_chart` | 1.2.0 (2026-03-13) | MIT | flchart.dev | Evaluation graph. | WP-29b |
+| `app_links` | 7.2.1 (2026-07-09) | Apache-2.0 | cow-level.ovh | Custom URL scheme and file URLs ("Open in Bogner Chess"). Apache-2.0 is compatible with GPLv3. Needs Flutter >= 3.44. | WP-23 |
 | `sentry_flutter` | 9.30.0 (2026-09-10) | MIT | sentry.io | Crash reporting, consent-gated, PII off. The bundled sentry-cocoa is MIT too. | WP-34 |
 | `connectivity_plus` | 7.3.1 (2026-07-23) | BSD-3-Clause | fluttercommunity.dev | Trigger for the submit queue when the network returns. | WP-27 |
 | `flutter_markdown_plus` | 1.0.12 (2026-07-10) | BSD-3-Clause | foresightmobile.com | Render legal documents and coach text. | WP-30 |

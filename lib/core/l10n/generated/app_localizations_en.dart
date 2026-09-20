@@ -625,4 +625,239 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get signInVerifyAction => 'I have confirmed it – sign in';
+
+  @override
+  String reviewSideName(String side) {
+    String _temp0 = intl.Intl.selectLogic(side, {
+      'white': 'White',
+      'other': 'Black',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String reviewAccuracySemantics(String side, String value) {
+    String _temp0 = intl.Intl.selectLogic(side, {
+      'white': 'White',
+      'other': 'Black',
+    });
+    return 'Accuracy of $_temp0: $value percent';
+  }
+
+  @override
+  String get reviewMenu => 'Board options';
+
+  @override
+  String get reviewShowBestArrow => 'Show best move';
+
+  @override
+  String get reviewShowPlayedArrow => 'Show played move';
+
+  @override
+  String get reviewFlipBoard => 'Flip board';
+
+  @override
+  String get reviewGoToStart => 'Go to start';
+
+  @override
+  String get reviewPreviousMove => 'Previous move';
+
+  @override
+  String get reviewNextMove => 'Next move';
+
+  @override
+  String get reviewGoToEnd => 'Go to end';
+
+  @override
+  String get reviewPreviousMoment => 'Previous key moment';
+
+  @override
+  String get reviewNextMoment => 'Next key moment';
+
+  @override
+  String get reviewTabCoach => 'Coach';
+
+  @override
+  String get reviewTabMoves => 'Moves';
+
+  @override
+  String get reviewTabSummary => 'Summary';
+
+  @override
+  String reviewClassification(String classification) {
+    String _temp0 = intl.Intl.selectLogic(classification, {
+      'book': 'Book move',
+      'best': 'Best move',
+      'good': 'Good move',
+      'inaccuracy': 'Inaccuracy',
+      'mistake': 'Mistake',
+      'blunder': 'Blunder',
+      'strong': 'Strong move',
+      'other': 'Move',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String reviewTheme(String theme) {
+    String _temp0 = intl.Intl.selectLogic(theme, {
+      'opening': 'Opening',
+      'development': 'Development',
+      'centralBreak': 'Central break',
+      'kingSafety': 'King safety',
+      'tactics': 'Tactics',
+      'hangingPiece': 'Hanging piece',
+      'calculation': 'Calculation',
+      'pieceActivity': 'Piece activity',
+      'pawnStructure': 'Pawn structure',
+      'endgame': 'Endgame',
+      'materialConversion': 'Converting an advantage',
+      'other': 'Chess',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get reviewEvalEqual => 'Equal position';
+
+  @override
+  String reviewEvalSlight(String side) {
+    String _temp0 = intl.Intl.selectLogic(side, {
+      'white': 'White is slightly better',
+      'other': 'Black is slightly better',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String reviewEvalClear(String side) {
+    String _temp0 = intl.Intl.selectLogic(side, {
+      'white': 'White is clearly better',
+      'other': 'Black is clearly better',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String reviewEvalWinning(String side) {
+    String _temp0 = intl.Intl.selectLogic(side, {
+      'white': 'White is winning',
+      'other': 'Black is winning',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String reviewEvalMate(int count, String side) {
+    String _temp0 = intl.Intl.selectLogic(side, {
+      'white': 'White',
+      'other': 'Black',
+    });
+    return 'Mate in $count for $_temp0';
+  }
+
+  @override
+  String reviewEvalCheckmate(String side) {
+    String _temp0 = intl.Intl.selectLogic(side, {
+      'white': 'Checkmate. White wins',
+      'black': 'Checkmate. Black wins',
+      'other': 'Checkmate',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String reviewMomentCounter(int index, int total) {
+    return 'Key moment $index of $total';
+  }
+
+  @override
+  String get reviewCoachAiNote => 'AI-generated. May contain mistakes.';
+
+  @override
+  String get reviewThumbUp => 'Helpful';
+
+  @override
+  String get reviewThumbDown => 'Not helpful';
+
+  @override
+  String get reviewFeedbackFailed => 'Your rating could not be saved.';
+
+  @override
+  String reviewShowLine(String label) {
+    return 'Show line: $label';
+  }
+
+  @override
+  String reviewFactBetterWas(String san) {
+    return 'Better was $san.';
+  }
+
+  @override
+  String get reviewStartPositionTitle => 'The moments that mattered';
+
+  @override
+  String get reviewStartPositionHint =>
+      'The coach picked the moments that decided this game. Swipe through them, or step through every move.';
+
+  @override
+  String get reviewFirstMoment => 'First key moment';
+
+  @override
+  String get reviewOpenSummary => 'See your lessons';
+
+  @override
+  String reviewLineKind(String kind) {
+    String _temp0 = intl.Intl.selectLogic(kind, {
+      'bestLine': 'Best continuation',
+      'refutation': 'Why the move fails',
+      'alternative': 'Another good option',
+      'other': 'Line',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get reviewLineBack => 'Back to game';
+
+  @override
+  String get reviewLinePrevious => 'Previous move of the line';
+
+  @override
+  String get reviewLineNext => 'Next move of the line';
+
+  @override
+  String get reviewMoveHasComment => 'with coach comment';
+
+  @override
+  String get reviewLessonsTitle => 'What to take away';
+
+  @override
+  String reviewLessonEvidence(String label) {
+    return 'Move $label';
+  }
+
+  @override
+  String get reviewLessonsEmpty => 'There are no lessons for this game.';
+
+  @override
+  String get reviewQualityTitle => 'Move quality';
+
+  @override
+  String get reviewAccuracy => 'Accuracy';
+
+  @override
+  String get reviewGraphLabel => 'Evaluation graph';
+
+  @override
+  String get reviewUpdateBanner => 'Update the app to see this analysis.';
+
+  @override
+  String get reviewInvalidMessage => 'This analysis could not be read.';
+
+  @override
+  String get reviewStartPosition => 'Start position';
+
+  @override
+  String get reviewLoading => 'Loading analysis';
 }

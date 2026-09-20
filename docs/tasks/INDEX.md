@@ -23,10 +23,10 @@ Scope, dependencies and acceptance for every WP are in `../product-hub/docs/mobi
 | WP-26 | Library list, search, delete (AC-2) | M | WP-12, WP-13 | todo | – |
 | WP-27 | Submit queue, offline to online (AC-3) | M | WP-12, WP-13, WP-20 | todo | – |
 | WP-28 | Analysis request, job poller, usage, limit UX (AN-1, LIM-2) | M | WP-12, WP-13 | todo | – |
-| WP-29a | Review: board, move list, glyphs (AN-3) | M | WP-04, WP-14 | todo | – |
-| WP-29b | Eval graph | S | WP-29a | todo | – |
-| WP-29c | Best-line arrows, engine alternative (AN-4) | S | WP-29a | todo | – |
-| WP-29d | Coach cards, thumbs outbox, summary (AN-5/6/7) | M | WP-29a, WP-13 | todo | – |
+| WP-29a | Review: board, move list, glyphs (AN-3) | M | WP-04, WP-14 | review | [WP-29](WP-29-review-screen.md) |
+| WP-29b | Eval graph | S | WP-29a | review | [WP-29](WP-29-review-screen.md) |
+| WP-29c | Best-line arrows, engine alternative (AN-4) | S | WP-29a | review | [WP-29](WP-29-review-screen.md) |
+| WP-29d | Coach cards, thumbs outbox, summary (AN-5/6/7) | M | WP-29a, WP-13 | review | [WP-29](WP-29-review-screen.md) |
 | WP-30 | Consents, legal documents, settings (PL-2) | M | WP-12 | todo | – |
 | WP-31 | About, licences, source link (PL-1) | S | WP-04 | review | [WP-31](WP-31-about-and-licences.md) |
 | WP-32 | Push channel, permission, deep link (AN-2) | M | WP-01, WP-12, WP-29a | todo | – |

@@ -42,6 +42,7 @@ dependencies:
   # WP-25: OIDC sign-in and the Keychain token store (lib/core/auth).
   flutter_appauth: ^12.1.0
   flutter_secure_storage: ^11.2.0
+  fl_chart: ^1.2.0
 
 dev_dependencies:
   flutter_test:

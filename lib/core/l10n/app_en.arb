@@ -819,5 +819,297 @@
   "signInVerifyAction": "I have confirmed it – sign in",
   "@signInVerifyAction": {
     "description": "Sign-in screen: button in the e-mail confirmation help; starts a normal sign-in."
+  },
+  "reviewSideName": "{side, select, white{White} other{Black}}",
+  "@reviewSideName": {
+    "description": "Name of a colour on the review screen: fallback player name, column head of the move-quality table.",
+    "placeholders": {
+      "side": {
+        "type": "String",
+        "example": "white"
+      }
+    }
+  },
+  "reviewAccuracySemantics": "Accuracy of {side, select, white{White} other{Black}}: {value} percent",
+  "@reviewAccuracySemantics": {
+    "description": "Screen-reader label of an accuracy chip in the review header.",
+    "placeholders": {
+      "side": {
+        "type": "String",
+        "example": "white"
+      },
+      "value": {
+        "type": "String",
+        "example": "91.6"
+      }
+    }
+  },
+  "reviewMenu": "Board options",
+  "@reviewMenu": {
+    "description": "Tooltip of the menu button in the review app bar."
+  },
+  "reviewShowBestArrow": "Show best move",
+  "@reviewShowBestArrow": {
+    "description": "Checkable menu item: green arrow for the best move of the engine."
+  },
+  "reviewShowPlayedArrow": "Show played move",
+  "@reviewShowPlayedArrow": {
+    "description": "Checkable menu item: amber arrow on the move that was played."
+  },
+  "reviewFlipBoard": "Flip board",
+  "@reviewFlipBoard": {
+    "description": "Menu item that turns the review board around."
+  },
+  "reviewGoToStart": "Go to start",
+  "@reviewGoToStart": {
+    "description": "Tooltip and screen-reader label of the button that jumps to the start position."
+  },
+  "reviewPreviousMove": "Previous move",
+  "@reviewPreviousMove": {
+    "description": "Tooltip and screen-reader label of the step-back button."
+  },
+  "reviewNextMove": "Next move",
+  "@reviewNextMove": {
+    "description": "Tooltip and screen-reader label of the step-forward button."
+  },
+  "reviewGoToEnd": "Go to end",
+  "@reviewGoToEnd": {
+    "description": "Tooltip and screen-reader label of the button that jumps to the last move."
+  },
+  "reviewPreviousMoment": "Previous key moment",
+  "@reviewPreviousMoment": {
+    "description": "Tooltip and screen-reader label of the button that jumps to the previous moment the coach commented on."
+  },
+  "reviewNextMoment": "Next key moment",
+  "@reviewNextMoment": {
+    "description": "Button (and tooltip) that jumps to the next moment the coach commented on."
+  },
+  "reviewTabCoach": "Coach",
+  "@reviewTabCoach": {
+    "description": "Tab below the review board: the comments of the AI coach. Keep it very short."
+  },
+  "reviewTabMoves": "Moves",
+  "@reviewTabMoves": {
+    "description": "Tab below the review board: the move list. Keep it very short."
+  },
+  "reviewTabSummary": "Summary",
+  "@reviewTabSummary": {
+    "description": "Tab below the review board: the lessons of the game and the move-quality table. Keep it very short."
+  },
+  "reviewClassification": "{classification, select, book{Book move} best{Best move} good{Good move} inaccuracy{Inaccuracy} mistake{Mistake} blunder{Blunder} strong{Strong move} other{Move}}",
+  "@reviewClassification": {
+    "description": "The quality of a move in words. \"strong\" is a move the coach praised.",
+    "placeholders": {
+      "classification": {
+        "type": "String",
+        "example": "blunder"
+      }
+    }
+  },
+  "reviewTheme": "{theme, select, opening{Opening} development{Development} centralBreak{Central break} kingSafety{King safety} tactics{Tactics} hangingPiece{Hanging piece} calculation{Calculation} pieceActivity{Piece activity} pawnStructure{Pawn structure} endgame{Endgame} materialConversion{Converting an advantage} other{Chess}}",
+  "@reviewTheme": {
+    "description": "The theme of a coach comment or lesson, shown as a small chip.",
+    "placeholders": {
+      "theme": {
+        "type": "String",
+        "example": "kingSafety"
+      }
+    }
+  },
+  "reviewEvalEqual": "Equal position",
+  "@reviewEvalEqual": {
+    "description": "Evaluation in words: nobody is better."
+  },
+  "reviewEvalSlight": "{side, select, white{White is slightly better} other{Black is slightly better}}",
+  "@reviewEvalSlight": {
+    "description": "Evaluation in words: a small advantage.",
+    "placeholders": {
+      "side": {
+        "type": "String",
+        "example": "white"
+      }
+    }
+  },
+  "reviewEvalClear": "{side, select, white{White is clearly better} other{Black is clearly better}}",
+  "@reviewEvalClear": {
+    "description": "Evaluation in words: a clear advantage.",
+    "placeholders": {
+      "side": {
+        "type": "String",
+        "example": "white"
+      }
+    }
+  },
+  "reviewEvalWinning": "{side, select, white{White is winning} other{Black is winning}}",
+  "@reviewEvalWinning": {
+    "description": "Evaluation in words: a decisive advantage.",
+    "placeholders": {
+      "side": {
+        "type": "String",
+        "example": "white"
+      }
+    }
+  },
+  "reviewEvalMate": "Mate in {count} for {side, select, white{White} other{Black}}",
+  "@reviewEvalMate": {
+    "description": "Evaluation in words: a forced mate.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      },
+      "side": {
+        "type": "String",
+        "example": "white"
+      }
+    }
+  },
+  "reviewEvalCheckmate": "{side, select, white{Checkmate. White wins} black{Checkmate. Black wins} other{Checkmate}}",
+  "@reviewEvalCheckmate": {
+    "description": "Evaluation in words: checkmate is on the board.",
+    "placeholders": {
+      "side": {
+        "type": "String",
+        "example": "white"
+      }
+    }
+  },
+  "reviewMomentCounter": "Key moment {index} of {total}",
+  "@reviewMomentCounter": {
+    "description": "Small line above a coach comment: which of the moments the coach picked this is.",
+    "placeholders": {
+      "index": {
+        "type": "int",
+        "example": "2"
+      },
+      "total": {
+        "type": "int",
+        "example": "8"
+      }
+    }
+  },
+  "reviewCoachAiNote": "AI-generated. May contain mistakes.",
+  "@reviewCoachAiNote": {
+    "description": "Small footnote under every coach comment."
+  },
+  "reviewThumbUp": "Helpful",
+  "@reviewThumbUp": {
+    "description": "Screen-reader label and tooltip of the thumbs-up button of a coach comment."
+  },
+  "reviewThumbDown": "Not helpful",
+  "@reviewThumbDown": {
+    "description": "Screen-reader label and tooltip of the thumbs-down button of a coach comment."
+  },
+  "reviewFeedbackFailed": "Your rating could not be saved.",
+  "@reviewFeedbackFailed": {
+    "description": "Snackbar after a thumbs up or down could not be stored."
+  },
+  "reviewShowLine": "Show line: {label}",
+  "@reviewShowLine": {
+    "description": "Screen-reader label of a button under a coach comment that plays a line on the board. The label comes from the server, for example Better.",
+    "placeholders": {
+      "label": {
+        "type": "String",
+        "example": "Better"
+      }
+    }
+  },
+  "reviewFactBetterWas": "Better was {san}.",
+  "@reviewFactBetterWas": {
+    "description": "Engine fact on a move without a coach comment: the move the engine prefers.",
+    "placeholders": {
+      "san": {
+        "type": "String",
+        "example": "Nf3"
+      }
+    }
+  },
+  "reviewStartPositionTitle": "The moments that mattered",
+  "@reviewStartPositionTitle": {
+    "description": "Headline of the coach tab on the start position."
+  },
+  "reviewStartPositionHint": "The coach picked the moments that decided this game. Swipe through them, or step through every move.",
+  "@reviewStartPositionHint": {
+    "description": "Explanation on the coach tab on the start position."
+  },
+  "reviewFirstMoment": "First key moment",
+  "@reviewFirstMoment": {
+    "description": "Button on the start position that jumps to the first moment the coach commented on."
+  },
+  "reviewOpenSummary": "See your lessons",
+  "@reviewOpenSummary": {
+    "description": "Button on the coach tab after the last key moment: opens the summary tab."
+  },
+  "reviewLineKind": "{kind, select, bestLine{Best continuation} refutation{Why the move fails} alternative{Another good option} other{Line}}",
+  "@reviewLineKind": {
+    "description": "What kind of line the line viewer is showing.",
+    "placeholders": {
+      "kind": {
+        "type": "String",
+        "example": "bestLine"
+      }
+    }
+  },
+  "reviewLineBack": "Back to game",
+  "@reviewLineBack": {
+    "description": "Button that leaves the line viewer."
+  },
+  "reviewLinePrevious": "Previous move of the line",
+  "@reviewLinePrevious": {
+    "description": "Tooltip and screen-reader label of the step-back button of the line viewer."
+  },
+  "reviewLineNext": "Next move of the line",
+  "@reviewLineNext": {
+    "description": "Tooltip and screen-reader label of the step-forward button of the line viewer."
+  },
+  "reviewMoveHasComment": "with coach comment",
+  "@reviewMoveHasComment": {
+    "description": "Screen-reader suffix of a move in the move list that has a coach comment."
+  },
+  "reviewLessonsTitle": "What to take away",
+  "@reviewLessonsTitle": {
+    "description": "Headline of the lessons on the summary tab."
+  },
+  "reviewLessonEvidence": "Move {label}",
+  "@reviewLessonEvidence": {
+    "description": "Chip under a lesson that jumps to the move the lesson is about.",
+    "placeholders": {
+      "label": {
+        "type": "String",
+        "example": "12... Nxe4"
+      }
+    }
+  },
+  "reviewLessonsEmpty": "There are no lessons for this game.",
+  "@reviewLessonsEmpty": {
+    "description": "Shown on the summary tab when the analysis has no lessons."
+  },
+  "reviewQualityTitle": "Move quality",
+  "@reviewQualityTitle": {
+    "description": "Headline of the table that counts moves by quality for both sides."
+  },
+  "reviewAccuracy": "Accuracy",
+  "@reviewAccuracy": {
+    "description": "Row label of the accuracy of both sides in the move-quality table."
+  },
+  "reviewGraphLabel": "Evaluation graph",
+  "@reviewGraphLabel": {
+    "description": "Screen-reader label of the evaluation graph."
+  },
+  "reviewUpdateBanner": "Update the app to see this analysis.",
+  "@reviewUpdateBanner": {
+    "description": "Banner when the analysis was made in a newer format than this app version understands. Board and moves still work."
+  },
+  "reviewInvalidMessage": "This analysis could not be read.",
+  "@reviewInvalidMessage": {
+    "description": "Error message when the analysis document is damaged."
+  },
+  "reviewStartPosition": "Start position",
+  "@reviewStartPosition": {
+    "description": "Status line under the review board before the first move."
+  },
+  "reviewLoading": "Loading analysis",
+  "@reviewLoading": {
+    "description": "Screen-reader label of the loading state of the review screen."
   }
 }

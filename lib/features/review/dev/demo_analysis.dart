@@ -1,0 +1,152 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Bogner Chess
+// Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
+
+/// The demo analysis document of the fake build and of `review_demo.dart`.
+///
+/// [_payload] is a copy of the contract fixture `short-game.json` (the one in
+/// `test/fixtures/analysis/v1/`, compacted, otherwise unchanged): a 21-ply
+/// miniature with three critical moments and a forced mate. It is a Dart
+/// constant and not an asset, so that nothing has to be registered in
+/// `pubspec.yaml`; `reviewRepositoryProvider` only reaches it outside release
+/// mode, which lets the compiler drop it from a release build.
+///
+/// The contract has English coach texts only. [_german] carries a translation
+/// of the texts, so that the German screenshots and tests show what a German
+/// player will read, at realistic lengths.
+library;
+
+import 'dart:convert';
+
+/// The demo document as decoded JSON, with German coach texts for `de`.
+Map<String, dynamic> demoAnalysisJson({String languageCode = 'en'}) {
+  final json = jsonDecode(_payload) as Map<String, dynamic>;
+  if (languageCode != 'de') return json;
+
+  json['language'] = 'de';
+  final comments = (json['comments'] as List).cast<Map<String, dynamic>>();
+  for (final comment in comments) {
+    final text = _german[comment['id']];
+    if (text != null) {
+      comment['title'] = text.$1;
+      comment['text'] = text.$2;
+    }
+    final lines = (comment['lines'] as List).cast<Map<String, dynamic>>();
+    for (final line in lines) {
+      line['label'] = _germanLabels[line['label']] ?? line['label'];
+    }
+  }
+  final summary = json['summary'] as Map<String, dynamic>;
+  final lessons = (summary['lessons'] as List).cast<Map<String, dynamic>>();
+  for (final lesson in lessons) {
+    final text = _german[lesson['id']];
+    if (text != null) {
+      lesson['title'] = text.$1;
+      lesson['text'] = text.$2;
+    }
+  }
+  return json;
+}
+
+/// The demo document as the payload string a server would send.
+String demoAnalysisPayload({String languageCode = 'en'}) =>
+    jsonEncode(demoAnalysisJson(languageCode: languageCode));
+
+const Map<String, String> _germanLabels = {
+  'Better': 'Besser',
+  'Punishment': 'Bestrafung',
+  'Also possible': 'Auch möglich',
+};
+
+/// Title and text by comment id and by lesson id.
+const Map<String, (String, String)> _german = {
+  '5bd21b6a-ec89-47a6-8a0a-c984f71ab247': (
+    'Zentrum zu früh geöffnet',
+    'Mit e5 öffnest du die Stellung, während dein König noch '
+        'in der Mitte steht. Nach dxe5 hast du einen Bauern '
+        'weniger und verlierst Zeit, um ihn zurückzuholen. Nxe4 '
+        'war einfacher: Du tauschst den aktiven weissen Springer, '
+        'und nach Qxe4 entwickelst du dich in Ruhe mit Qd5 und '
+        'Bf5.',
+  ),
+  '80e6b5d0-a9d9-4650-8c6b-df0d7796668d': (
+    'Ein Schach, das dem Gegner hilft',
+    'Qa5+ holt den Bauern zurück, aber Bd2 entwickelt mit '
+        'Tempo, und nach Qxe5 steht deine Dame ungeschützt vor dem '
+        'eigenen König. Der Damentausch mit Qxd3 und danach Nxe4 '
+        'hätte die gefährlichsten weissen Figuren beseitigt und '
+        'deinen König sicher gehalten.',
+  ),
+  'eae3732d-38c1-45d6-9a1f-7aa536eafa28': (
+    'In ein erzwungenes Matt gelaufen',
+    'Nxe4 schnappt sich einen Springer, erlaubt aber ein '
+        'erzwungenes Matt: Qd8+ Kxd8 Bg5+ ist ein Doppelschach, '
+        'und nach Kc7 folgt Bd8#. Mit dem König in der Mitte und '
+        'offener Linie davor ging Entwicklung vor. Be7 bereitet '
+        'die Rochade vor und hält die Partie am Laufen.',
+  ),
+  'c87383f4-b142-4de1-bc47-571849dc9b34': (
+    'Erst rochieren, dann das Zentrum öffnen',
+    'Beide grossen Verluste entstanden, weil du Linien '
+        'geöffnet hast, während dein König noch in der Mitte '
+        'stand. Rochiere zuerst; Bauernhebel im Zentrum können '
+        'ein, zwei Züge warten.',
+  ),
+  '701f9706-f89a-4643-943b-cd04365e52e7': (
+    'Frag dich, was ein Schach bringt',
+    'Ein Damenschach sah aktiv aus, liess Weiss aber mit Tempo '
+        'eine Figur entwickeln. Stell dir vor jedem Schach die '
+        'Antwort vor und frag dich, wem es wirklich hilft.',
+  ),
+  '293ba8b9-317b-4b86-8157-89161202d125': (
+    'Zuerst die forcierten Antworten prüfen',
+    'Bevor du eine Figur schlägst, prüfe jedes Schach und '
+        'jedes Schlagen, das dein Gegner als Antwort hat. Ein '
+        'einziges Damenopfer hat diese Partie beendet.',
+  ),
+};
+
+const String _payload = r'''
+{
+"schema":"bognerchess.game-analysis",
+"schema_version":1,
+"schema_minor":0,
+"analysis_id":"e88b7591-31db-4e32-98dc-b35f94c662cd",
+"generated_at":"2026-09-19T09:12:41Z",
+"language":"en",
+"perspective":{"color":"black","rating_band":"1000-1200"},
+"engine":{"name":"Stockfish 19","pass1":{"nodes":400000},"pass2":{"nodes":3000000,"multipv":3},"human_model":"maia2-rapid"},
+"coach":{"provider":"azure","model":"gpt-4.1","prompt_set":"mobile-coach","prompt_version":"1.0.0+3fa9c1d2","pipeline_version":"1.0.0"},
+"game":{"start_fen":null,"ply_count":21,"result":"1-0"},
+"accuracy":{"white":97.2,"black":85.0},
+"nodes":[
+{"ply":1,"move_number":1,"color":"white","san":"e4","uci":"e2e4","fen_before":"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1","fen_after":"rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1","eval_before":{"cp":35},"eval_after":{"cp":37},"win_pct_before":54.7,"win_pct_after":55.0,"win_pct_loss":0.0,"classification":"book","is_critical":false,"best":null,"variations":[],"comment_ids":[]},
+{"ply":2,"move_number":1,"color":"black","san":"c6","uci":"c7c6","fen_before":"rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1","fen_after":"rnbqkbnr/pp1ppppp/2p5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2","eval_before":{"cp":37},"eval_after":{"cp":28},"win_pct_before":45.0,"win_pct_after":46.2,"win_pct_loss":0.0,"classification":"book","is_critical":false,"best":{"san":"e5","uci":"e7e5","eval":{"cp":37}},"variations":[],"comment_ids":[]},
+{"ply":3,"move_number":2,"color":"white","san":"d4","uci":"d2d4","fen_before":"rnbqkbnr/pp1ppppp/2p5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2","fen_after":"rnbqkbnr/pp1ppppp/2p5/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq - 0 2","eval_before":{"cp":28},"eval_after":{"cp":30},"win_pct_before":53.8,"win_pct_after":54.0,"win_pct_loss":0.0,"classification":"book","is_critical":false,"best":null,"variations":[],"comment_ids":[]},
+{"ply":4,"move_number":2,"color":"black","san":"d5","uci":"d7d5","fen_before":"rnbqkbnr/pp1ppppp/2p5/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq - 0 2","fen_after":"rnbqkbnr/pp2pppp/2p5/3p4/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3","eval_before":{"cp":30},"eval_after":{"cp":31},"win_pct_before":46.0,"win_pct_after":45.8,"win_pct_loss":0.2,"classification":"book","is_critical":false,"best":null,"variations":[],"comment_ids":[]},
+{"ply":5,"move_number":3,"color":"white","san":"Nc3","uci":"b1c3","fen_before":"rnbqkbnr/pp2pppp/2p5/3p4/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3","fen_after":"rnbqkbnr/pp2pppp/2p5/3p4/3PP3/2N5/PPP2PPP/R1BQKBNR b KQkq - 1 3","eval_before":{"cp":31},"eval_after":{"cp":28},"win_pct_before":54.2,"win_pct_after":53.8,"win_pct_loss":0.4,"classification":"book","is_critical":false,"best":{"san":"e5","uci":"e4e5","eval":{"cp":31}},"variations":[],"comment_ids":[]},
+{"ply":6,"move_number":3,"color":"black","san":"dxe4","uci":"d5e4","fen_before":"rnbqkbnr/pp2pppp/2p5/3p4/3PP3/2N5/PPP2PPP/R1BQKBNR b KQkq - 1 3","fen_after":"rnbqkbnr/pp2pppp/2p5/8/3Pp3/2N5/PPP2PPP/R1BQKBNR w KQkq - 0 4","eval_before":{"cp":28},"eval_after":{"cp":33},"win_pct_before":46.2,"win_pct_after":45.6,"win_pct_loss":0.6,"classification":"book","is_critical":false,"best":null,"variations":[],"comment_ids":[]},
+{"ply":7,"move_number":4,"color":"white","san":"Nxe4","uci":"c3e4","fen_before":"rnbqkbnr/pp2pppp/2p5/8/3Pp3/2N5/PPP2PPP/R1BQKBNR w KQkq - 0 4","fen_after":"rnbqkbnr/pp2pppp/2p5/8/3PN3/8/PPP2PPP/R1BQKBNR b KQkq - 0 4","eval_before":{"cp":33},"eval_after":{"cp":30},"win_pct_before":54.4,"win_pct_after":54.0,"win_pct_loss":0.4,"classification":"book","is_critical":false,"best":null,"variations":[],"comment_ids":[]},
+{"ply":8,"move_number":4,"color":"black","san":"Nf6","uci":"g8f6","fen_before":"rnbqkbnr/pp2pppp/2p5/8/3PN3/8/PPP2PPP/R1BQKBNR b KQkq - 0 4","fen_after":"rnbqkb1r/pp2pppp/2p2n2/8/3PN3/8/PPP2PPP/R1BQKBNR w KQkq - 1 5","eval_before":{"cp":30},"eval_after":{"cp":36},"win_pct_before":46.0,"win_pct_after":45.2,"win_pct_loss":0.8,"classification":"book","is_critical":false,"best":{"san":"Bf5","uci":"c8f5","eval":{"cp":30}},"variations":[],"comment_ids":[]},
+{"ply":9,"move_number":5,"color":"white","san":"Qd3","uci":"d1d3","fen_before":"rnbqkb1r/pp2pppp/2p2n2/8/3PN3/8/PPP2PPP/R1BQKBNR w KQkq - 1 5","fen_after":"rnbqkb1r/pp2pppp/2p2n2/8/3PN3/3Q4/PPP2PPP/R1B1KBNR b KQkq - 2 5","eval_before":{"cp":36},"eval_after":{"cp":16},"win_pct_before":54.8,"win_pct_after":52.2,"win_pct_loss":2.6,"classification":"good","is_critical":false,"best":{"san":"Nxf6+","uci":"e4f6","eval":{"cp":36}},"human":{"played_prob":0.24,"best_prob":0.3},"variations":[],"comment_ids":[]},
+{"ply":10,"move_number":5,"color":"black","san":"e5","uci":"e7e5","fen_before":"rnbqkb1r/pp2pppp/2p2n2/8/3PN3/3Q4/PPP2PPP/R1B1KBNR b KQkq - 2 5","fen_after":"rnbqkb1r/pp3ppp/2p2n2/4p3/3PN3/3Q4/PPP2PPP/R1B1KBNR w KQkq - 0 6","eval_before":{"cp":16},"eval_after":{"cp":90},"win_pct_before":47.8,"win_pct_after":38.1,"win_pct_loss":9.7,"classification":"mistake","is_critical":true,"best":{"san":"Nxe4","uci":"f6e4","eval":{"cp":17}},"human":{"played_prob":0.42,"best_prob":0.26},"variations":[{"id":"v10-best","kind":"best_line","eval":{"cp":17},"start_fen":"rnbqkb1r/pp2pppp/2p2n2/8/3PN3/3Q4/PPP2PPP/R1B1KBNR b KQkq - 2 5","moves":[{"san":"Nxe4","uci":"f6e4","fen_after":"rnbqkb1r/pp2pppp/2p5/8/3Pn3/3Q4/PPP2PPP/R1B1KBNR w KQkq - 0 6"},{"san":"Qxe4","uci":"d3e4","fen_after":"rnbqkb1r/pp2pppp/2p5/8/3PQ3/8/PPP2PPP/R1B1KBNR b KQkq - 0 6"},{"san":"Qd5","uci":"d8d5","fen_after":"rnb1kb1r/pp2pppp/2p5/3q4/3PQ3/8/PPP2PPP/R1B1KBNR w KQkq - 1 7"},{"san":"Qe3","uci":"e4e3","fen_after":"rnb1kb1r/pp2pppp/2p5/3q4/3P4/4Q3/PPP2PPP/R1B1KBNR b KQkq - 2 7"},{"san":"Bf5","uci":"c8f5","fen_after":"rn2kb1r/pp2pppp/2p5/3q1b2/3P4/4Q3/PPP2PPP/R1B1KBNR w KQkq - 3 8"},{"san":"c4","uci":"c2c4","fen_after":"rn2kb1r/pp2pppp/2p5/3q1b2/2PP4/4Q3/PP3PPP/R1B1KBNR b KQkq - 0 8"}]},{"id":"v10-refutation","kind":"refutation","eval":{"cp":94},"start_fen":"rnbqkb1r/pp3ppp/2p2n2/4p3/3PN3/3Q4/PPP2PPP/R1B1KBNR w KQkq - 0 6","moves":[{"san":"dxe5","uci":"d4e5","fen_after":"rnbqkb1r/pp3ppp/2p2n2/4P3/4N3/3Q4/PPP2PPP/R1B1KBNR b KQkq - 0 6"},{"san":"Qxd3","uci":"d8d3","fen_after":"rnb1kb1r/pp3ppp/2p2n2/4P3/4N3/3q4/PPP2PPP/R1B1KBNR w KQkq - 0 7"},{"san":"Bxd3","uci":"f1d3","fen_after":"rnb1kb1r/pp3ppp/2p2n2/4P3/4N3/3B4/PPP2PPP/R1B1K1NR b KQkq - 0 7"},{"san":"Nxe4","uci":"f6e4","fen_after":"rnb1kb1r/pp3ppp/2p5/4P3/4n3/3B4/PPP2PPP/R1B1K1NR w KQkq - 0 8"},{"san":"Bxe4","uci":"d3e4","fen_after":"rnb1kb1r/pp3ppp/2p5/4P3/4B3/8/PPP2PPP/R1B1K1NR b KQkq - 0 8"},{"san":"Nd7","uci":"b8d7","fen_after":"r1b1kb1r/pp1n1ppp/2p5/4P3/4B3/8/PPP2PPP/R1B1K1NR w KQkq - 1 9"}]},{"id":"v10-alt1","kind":"alternative","eval":{"cp":22},"start_fen":"rnbqkb1r/pp2pppp/2p2n2/8/3PN3/3Q4/PPP2PPP/R1B1KBNR b KQkq - 2 5","moves":[{"san":"g6","uci":"g7g6","fen_after":"rnbqkb1r/pp2pp1p/2p2np1/8/3PN3/3Q4/PPP2PPP/R1B1KBNR w KQkq - 0 6"},{"san":"Nf3","uci":"g1f3","fen_after":"rnbqkb1r/pp2pp1p/2p2np1/8/3PN3/3Q1N2/PPP2PPP/R1B1KB1R b KQkq - 1 6"},{"san":"a5","uci":"a7a5","fen_after":"rnbqkb1r/1p2pp1p/2p2np1/p7/3PN3/3Q1N2/PPP2PPP/R1B1KB1R w KQkq - 0 7"},{"san":"Nxf6+","uci":"e4f6","fen_after":"rnbqkb1r/1p2pp1p/2p2Np1/p7/3P4/3Q1N2/PPP2PPP/R1B1KB1R b KQkq - 0 7"},{"san":"exf6","uci":"e7f6","fen_after":"rnbqkb1r/1p3p1p/2p2pp1/p7/3P4/3Q1N2/PPP2PPP/R1B1KB1R w KQkq - 0 8"},{"san":"Be2","uci":"f1e2","fen_after":"rnbqkb1r/1p3p1p/2p2pp1/p7/3P4/3Q1N2/PPP1BPPP/R1B1K2R b KQkq - 1 8"}]}],"comment_ids":["5bd21b6a-ec89-47a6-8a0a-c984f71ab247"]},
+{"ply":11,"move_number":6,"color":"white","san":"dxe5","uci":"d4e5","fen_before":"rnbqkb1r/pp3ppp/2p2n2/4p3/3PN3/3Q4/PPP2PPP/R1B1KBNR w KQkq - 0 6","fen_after":"rnbqkb1r/pp3ppp/2p2n2/4P3/4N3/3Q4/PPP2PPP/R1B1KBNR b KQkq - 0 6","eval_before":{"cp":90},"eval_after":{"cp":105},"win_pct_before":61.9,"win_pct_after":63.8,"win_pct_loss":0.0,"classification":"best","is_critical":false,"best":null,"human":{"played_prob":0.48,"best_prob":0.48},"variations":[],"comment_ids":[]},
+{"ply":12,"move_number":6,"color":"black","san":"Qa5+","uci":"d8a5","fen_before":"rnbqkb1r/pp3ppp/2p2n2/4P3/4N3/3Q4/PPP2PPP/R1B1KBNR b KQkq - 0 6","fen_after":"rnb1kb1r/pp3ppp/2p2n2/q3P3/4N3/3Q4/PPP2PPP/R1B1KBNR w KQkq - 1 7","eval_before":{"cp":105},"eval_after":{"cp":194},"win_pct_before":36.2,"win_pct_after":26.0,"win_pct_loss":10.2,"classification":"mistake","is_critical":true,"best":{"san":"Qxd3","uci":"d8d3","eval":{"cp":89}},"human":{"played_prob":0.29,"best_prob":0.13},"variations":[{"id":"v12-best","kind":"best_line","eval":{"cp":89},"start_fen":"rnbqkb1r/pp3ppp/2p2n2/4P3/4N3/3Q4/PPP2PPP/R1B1KBNR b KQkq - 0 6","moves":[{"san":"Qxd3","uci":"d8d3","fen_after":"rnb1kb1r/pp3ppp/2p2n2/4P3/4N3/3q4/PPP2PPP/R1B1KBNR w KQkq - 0 7"},{"san":"Bxd3","uci":"f1d3","fen_after":"rnb1kb1r/pp3ppp/2p2n2/4P3/4N3/3B4/PPP2PPP/R1B1K1NR b KQkq - 0 7"},{"san":"Nxe4","uci":"f6e4","fen_after":"rnb1kb1r/pp3ppp/2p5/4P3/4n3/3B4/PPP2PPP/R1B1K1NR w KQkq - 0 8"},{"san":"Bxe4","uci":"d3e4","fen_after":"rnb1kb1r/pp3ppp/2p5/4P3/4B3/8/PPP2PPP/R1B1K1NR b KQkq - 0 8"},{"san":"Nd7","uci":"b8d7","fen_after":"r1b1kb1r/pp1n1ppp/2p5/4P3/4B3/8/PPP2PPP/R1B1K1NR w KQkq - 1 9"},{"san":"Bf4","uci":"c1f4","fen_after":"r1b1kb1r/pp1n1ppp/2p5/4P3/4BB2/8/PPP2PPP/R3K1NR b KQkq - 2 9"}]},{"id":"v12-refutation","kind":"refutation","eval":{"cp":186},"start_fen":"rnb1kb1r/pp3ppp/2p2n2/q3P3/4N3/3Q4/PPP2PPP/R1B1KBNR w KQkq - 1 7","moves":[{"san":"Bd2","uci":"c1d2","fen_after":"rnb1kb1r/pp3ppp/2p2n2/q3P3/4N3/3Q4/PPPB1PPP/R3KBNR b KQkq - 2 7"},{"san":"Qxe5","uci":"a5e5","fen_after":"rnb1kb1r/pp3ppp/2p2n2/4q3/4N3/3Q4/PPPB1PPP/R3KBNR w KQkq - 0 8"},{"san":"O-O-O","uci":"e1c1","fen_after":"rnb1kb1r/pp3ppp/2p2n2/4q3/4N3/3Q4/PPPB1PPP/2KR1BNR b kq - 1 8"},{"san":"Be7","uci":"f8e7","fen_after":"rnb1k2r/pp2bppp/2p2n2/4q3/4N3/3Q4/PPPB1PPP/2KR1BNR w kq - 2 9"},{"san":"Nxf6+","uci":"e4f6","fen_after":"rnb1k2r/pp2bppp/2p2N2/4q3/8/3Q4/PPPB1PPP/2KR1BNR b kq - 0 9"},{"san":"Qxf6","uci":"e5f6","fen_after":"rnb1k2r/pp2bppp/2p2q2/8/8/3Q4/PPPB1PPP/2KR1BNR w kq - 0 10"}]},{"id":"v12-alt1","kind":"alternative","eval":{"cp":123},"start_fen":"rnbqkb1r/pp3ppp/2p2n2/4P3/4N3/3Q4/PPP2PPP/R1B1KBNR b KQkq - 0 6","moves":[{"san":"Nxe4","uci":"f6e4","fen_after":"rnbqkb1r/pp3ppp/2p5/4P3/4n3/3Q4/PPP2PPP/R1B1KBNR w KQkq - 0 7"},{"san":"Qxe4","uci":"d3e4","fen_after":"rnbqkb1r/pp3ppp/2p5/4P3/4Q3/8/PPP2PPP/R1B1KBNR b KQkq - 0 7"},{"san":"Be6","uci":"c8e6","fen_after":"rn1qkb1r/pp3ppp/2p1b3/4P3/4Q3/8/PPP2PPP/R1B1KBNR w KQkq - 1 8"},{"san":"Bc4","uci":"f1c4","fen_after":"rn1qkb1r/pp3ppp/2p1b3/4P3/2B1Q3/8/PPP2PPP/R1B1K1NR b KQkq - 2 8"},{"san":"Bxc4","uci":"e6c4","fen_after":"rn1qkb1r/pp3ppp/2p5/4P3/2b1Q3/8/PPP2PPP/R1B1K1NR w KQkq - 0 9"},{"san":"Qxc4","uci":"e4c4","fen_after":"rn1qkb1r/pp3ppp/2p5/4P3/2Q5/8/PPP2PPP/R1B1K1NR b KQkq - 0 9"}]}],"comment_ids":["80e6b5d0-a9d9-4650-8c6b-df0d7796668d"]},
+{"ply":13,"move_number":7,"color":"white","san":"Bd2","uci":"c1d2","fen_before":"rnb1kb1r/pp3ppp/2p2n2/q3P3/4N3/3Q4/PPP2PPP/R1B1KBNR w KQkq - 1 7","fen_after":"rnb1kb1r/pp3ppp/2p2n2/q3P3/4N3/3Q4/PPPB1PPP/R3KBNR b KQkq - 2 7","eval_before":{"cp":194},"eval_after":{"cp":158},"win_pct_before":74.0,"win_pct_after":70.1,"win_pct_loss":3.9,"classification":"inaccuracy","is_critical":false,"best":null,"human":{"played_prob":0.48,"best_prob":0.48},"variations":[],"comment_ids":[]},
+{"ply":14,"move_number":7,"color":"black","san":"Qxe5","uci":"a5e5","fen_before":"rnb1kb1r/pp3ppp/2p2n2/q3P3/4N3/3Q4/PPPB1PPP/R3KBNR b KQkq - 2 7","fen_after":"rnb1kb1r/pp3ppp/2p2n2/4q3/4N3/3Q4/PPPB1PPP/R3KBNR w KQkq - 0 8","eval_before":{"cp":158},"eval_after":{"cp":145},"win_pct_before":29.9,"win_pct_after":31.4,"win_pct_loss":0.0,"classification":"best","is_critical":false,"best":null,"human":{"played_prob":0.53,"best_prob":0.53},"variations":[],"comment_ids":[]},
+{"ply":15,"move_number":8,"color":"white","san":"O-O-O","uci":"e1c1","fen_before":"rnb1kb1r/pp3ppp/2p2n2/4q3/4N3/3Q4/PPPB1PPP/R3KBNR w KQkq - 0 8","fen_after":"rnb1kb1r/pp3ppp/2p2n2/4q3/4N3/3Q4/PPPB1PPP/2KR1BNR b kq - 1 8","eval_before":{"cp":145},"eval_after":{"cp":190},"win_pct_before":68.6,"win_pct_after":73.6,"win_pct_loss":0.0,"classification":"best","is_critical":false,"best":null,"human":{"played_prob":0.61,"best_prob":0.61},"variations":[],"comment_ids":[]},
+{"ply":16,"move_number":8,"color":"black","san":"Nxe4","uci":"f6e4","fen_before":"rnb1kb1r/pp3ppp/2p2n2/4q3/4N3/3Q4/PPPB1PPP/2KR1BNR b kq - 1 8","fen_after":"rnb1kb1r/pp3ppp/2p5/4q3/4n3/3Q4/PPPB1PPP/2KR1BNR w kq - 0 9","eval_before":{"cp":190},"eval_after":{"mate":3},"win_pct_before":26.4,"win_pct_after":0.0,"win_pct_loss":26.4,"classification":"blunder","is_critical":true,"best":{"san":"Be7","uci":"f8e7","eval":{"cp":185}},"human":{"played_prob":0.1,"best_prob":0.19},"variations":[{"id":"v16-best","kind":"best_line","eval":{"cp":185},"start_fen":"rnb1kb1r/pp3ppp/2p2n2/4q3/4N3/3Q4/PPPB1PPP/2KR1BNR b kq - 1 8","moves":[{"san":"Be7","uci":"f8e7","fen_after":"rnb1k2r/pp2bppp/2p2n2/4q3/4N3/3Q4/PPPB1PPP/2KR1BNR w kq - 2 9"},{"san":"Nxf6+","uci":"e4f6","fen_after":"rnb1k2r/pp2bppp/2p2N2/4q3/8/3Q4/PPPB1PPP/2KR1BNR b kq - 0 9"},{"san":"Qxf6","uci":"e5f6","fen_after":"rnb1k2r/pp2bppp/2p2q2/8/8/3Q4/PPPB1PPP/2KR1BNR w kq - 0 10"},{"san":"Nf3","uci":"g1f3","fen_after":"rnb1k2r/pp2bppp/2p2q2/8/8/3Q1N2/PPPB1PPP/2KR1B1R b kq - 1 10"},{"san":"O-O","uci":"e8g8","fen_after":"rnb2rk1/pp2bppp/2p2q2/8/8/3Q1N2/PPPB1PPP/2KR1B1R w - - 2 11"},{"san":"Bg5","uci":"d2g5","fen_after":"rnb2rk1/pp2bppp/2p2q2/6B1/8/3Q1N2/PPP2PPP/2KR1B1R b - - 3 11"}]},{"id":"v16-refutation","kind":"refutation","eval":{"mate":3},"start_fen":"rnb1kb1r/pp3ppp/2p5/4q3/4n3/3Q4/PPPB1PPP/2KR1BNR w kq - 0 9","moves":[{"san":"Qd8+","uci":"d3d8","fen_after":"rnbQkb1r/pp3ppp/2p5/4q3/4n3/8/PPPB1PPP/2KR1BNR b kq - 1 9"},{"san":"Kxd8","uci":"e8d8","fen_after":"rnbk1b1r/pp3ppp/2p5/4q3/4n3/8/PPPB1PPP/2KR1BNR w - - 0 10"},{"san":"Bg5+","uci":"d2g5","fen_after":"rnbk1b1r/pp3ppp/2p5/4q1B1/4n3/8/PPP2PPP/2KR1BNR b - - 1 10"},{"san":"Kc7","uci":"d8c7","fen_after":"rnb2b1r/ppk2ppp/2p5/4q1B1/4n3/8/PPP2PPP/2KR1BNR w - - 2 11"},{"san":"Bd8#","uci":"g5d8","fen_after":"rnbB1b1r/ppk2ppp/2p5/4q3/4n3/8/PPP2PPP/2KR1BNR b - - 3 11"}]},{"id":"v16-alt1","kind":"alternative","eval":{"cp":207},"start_fen":"rnb1kb1r/pp3ppp/2p2n2/4q3/4N3/3Q4/PPPB1PPP/2KR1BNR b kq - 1 8","moves":[{"san":"Be6","uci":"c8e6","fen_after":"rn2kb1r/pp3ppp/2p1bn2/4q3/4N3/3Q4/PPPB1PPP/2KR1BNR w kq - 2 9"},{"san":"Nxf6+","uci":"e4f6","fen_after":"rn2kb1r/pp3ppp/2p1bN2/4q3/8/3Q4/PPPB1PPP/2KR1BNR b kq - 0 9"},{"san":"gxf6","uci":"g7f6","fen_after":"rn2kb1r/pp3p1p/2p1bp2/4q3/8/3Q4/PPPB1PPP/2KR1BNR w kq - 0 10"},{"san":"Nf3","uci":"g1f3","fen_after":"rn2kb1r/pp3p1p/2p1bp2/4q3/8/3Q1N2/PPPB1PPP/2KR1B1R b kq - 1 10"},{"san":"Qd5","uci":"e5d5","fen_after":"rn2kb1r/pp3p1p/2p1bp2/3q4/8/3Q1N2/PPPB1PPP/2KR1B1R w kq - 2 11"},{"san":"Qxd5","uci":"d3d5","fen_after":"rn2kb1r/pp3p1p/2p1bp2/3Q4/8/5N2/PPPB1PPP/2KR1B1R b kq - 0 11"}]}],"comment_ids":["eae3732d-38c1-45d6-9a1f-7aa536eafa28"]},
+{"ply":17,"move_number":9,"color":"white","san":"Qd8+","uci":"d3d8","fen_before":"rnb1kb1r/pp3ppp/2p5/4q3/4n3/3Q4/PPPB1PPP/2KR1BNR w kq - 0 9","fen_after":"rnbQkb1r/pp3ppp/2p5/4q3/4n3/8/PPPB1PPP/2KR1BNR b kq - 1 9","eval_before":{"mate":3},"eval_after":{"mate":2},"win_pct_before":100.0,"win_pct_after":100.0,"win_pct_loss":0.0,"classification":"best","is_critical":false,"best":null,"human":{"played_prob":0.29,"best_prob":0.29},"variations":[],"comment_ids":[]},
+{"ply":18,"move_number":9,"color":"black","san":"Kxd8","uci":"e8d8","fen_before":"rnbQkb1r/pp3ppp/2p5/4q3/4n3/8/PPPB1PPP/2KR1BNR b kq - 1 9","fen_after":"rnbk1b1r/pp3ppp/2p5/4q3/4n3/8/PPPB1PPP/2KR1BNR w - - 0 10","eval_before":{"mate":2},"eval_after":{"mate":2},"win_pct_before":0.0,"win_pct_after":0.0,"win_pct_loss":0.0,"classification":"best","is_critical":false,"best":null,"human":{"played_prob":0.61,"best_prob":0.61},"variations":[],"comment_ids":[]},
+{"ply":19,"move_number":10,"color":"white","san":"Bg5+","uci":"d2g5","fen_before":"rnbk1b1r/pp3ppp/2p5/4q3/4n3/8/PPPB1PPP/2KR1BNR w - - 0 10","fen_after":"rnbk1b1r/pp3ppp/2p5/4q1B1/4n3/8/PPP2PPP/2KR1BNR b - - 1 10","eval_before":{"mate":2},"eval_after":{"mate":1},"win_pct_before":100.0,"win_pct_after":100.0,"win_pct_loss":0.0,"classification":"best","is_critical":false,"best":null,"human":{"played_prob":0.56,"best_prob":0.56},"variations":[],"comment_ids":[]},
+{"ply":20,"move_number":10,"color":"black","san":"Kc7","uci":"d8c7","fen_before":"rnbk1b1r/pp3ppp/2p5/4q1B1/4n3/8/PPP2PPP/2KR1BNR b - - 1 10","fen_after":"rnb2b1r/ppk2ppp/2p5/4q1B1/4n3/8/PPP2PPP/2KR1BNR w - - 2 11","eval_before":{"mate":1},"eval_after":{"mate":1},"win_pct_before":0.0,"win_pct_after":0.0,"win_pct_loss":0.0,"classification":"best","is_critical":false,"best":null,"human":{"played_prob":0.27,"best_prob":0.27},"variations":[],"comment_ids":[]},
+{"ply":21,"move_number":11,"color":"white","san":"Bd8#","uci":"g5d8","fen_before":"rnb2b1r/ppk2ppp/2p5/4q1B1/4n3/8/PPP2PPP/2KR1BNR w - - 2 11","fen_after":"rnbB1b1r/ppk2ppp/2p5/4q3/4n3/8/PPP2PPP/2KR1BNR b - - 3 11","eval_before":{"mate":1},"eval_after":{"mate":0},"win_pct_before":100.0,"win_pct_after":100.0,"win_pct_loss":0.0,"classification":"best","is_critical":false,"best":null,"human":{"played_prob":0.69,"best_prob":0.69},"variations":[],"comment_ids":[]}
+],
+"comments":[
+{"id":"5bd21b6a-ec89-47a6-8a0a-c984f71ab247","type":"critical_moment","ply":10,"title":"Opening the centre too early","text":"Playing e5 opens the position while your king is still in the middle. After dxe5 you are a pawn down and have to spend time winning it back. Nxe4 was simpler: you trade White's active knight, and after Qxe4 you can develop calmly with Qd5 and Bf5.","theme":"king_safety","squares":[{"square":"e8","role":"weak"},{"square":"e5","role":"target"}],"arrows":[{"from":"e7","to":"e5","role":"played"},{"from":"f6","to":"e4","role":"best"},{"from":"d4","to":"e5","role":"threat"}],"lines":[{"variation_id":"v10-best","label":"Better"},{"variation_id":"v10-refutation","label":"Punishment"}],"moves_mentioned":["e5","dxe5","Nxe4","Qxe4","Qd5","Bf5"],"model":{"provider":"azure","id":"gpt-4.1"},"prompt_version":"1.0.0+3fa9c1d2","verification":{"status":"passed","checks_version":1}},
+{"id":"80e6b5d0-a9d9-4650-8c6b-df0d7796668d","type":"critical_moment","ply":12,"title":"A check that helps the opponent","text":"Qa5+ wins the pawn back, but Bd2 develops with tempo and after Qxe5 your queen is exposed in front of your own king. Trading queens with Qxd3 and then Nxe4 would have removed White's most dangerous pieces and kept your king safe.","theme":"calculation","squares":[{"square":"e5","role":"weak"}],"arrows":[{"from":"d8","to":"a5","role":"played"},{"from":"d8","to":"d3","role":"best"},{"from":"c1","to":"d2","role":"threat"}],"lines":[{"variation_id":"v12-best","label":"Better"},{"variation_id":"v12-refutation","label":"Punishment"}],"moves_mentioned":["Qa5+","Bd2","Qxe5","Qxd3","Nxe4"],"model":{"provider":"azure","id":"gpt-4.1"},"prompt_version":"1.0.0+3fa9c1d2","verification":{"status":"passed","checks_version":1}},
+{"id":"eae3732d-38c1-45d6-9a1f-7aa536eafa28","type":"critical_moment","ply":16,"title":"Walking into a forced mate","text":"Nxe4 grabs a knight but allows a forced mate: Qd8+ Kxd8 Bg5+ is a double check, and after Kc7 comes Bd8#. With your king in the centre and the file in front of it open, development came first. Be7 prepares castling and keeps the game going.","theme":"tactics","squares":[{"square":"d8","role":"target"},{"square":"e8","role":"weak"}],"arrows":[{"from":"f6","to":"e4","role":"played"},{"from":"f8","to":"e7","role":"best"},{"from":"d3","to":"d8","role":"threat"}],"lines":[{"variation_id":"v16-refutation","label":"Punishment"},{"variation_id":"v16-best","label":"Better"}],"moves_mentioned":["Nxe4","Qd8+","Kxd8","Bg5+","Kc7","Bd8#","Be7"],"model":{"provider":"azure","id":"gpt-4.1"},"prompt_version":"1.0.0+3fa9c1d2","verification":{"status":"passed","checks_version":1}}
+],
+"summary":{"lessons":[{"id":"c87383f4-b142-4de1-bc47-571849dc9b34","title":"Castle before you open the centre","text":"Both big losses came from opening lines while your king was still in the middle. Get castled first; central pawn breaks can wait one or two moves.","evidence_plies":[10,16],"theme":"king_safety"},{"id":"701f9706-f89a-4643-943b-cd04365e52e7","title":"Ask what a check achieves","text":"A queen check looked active but let White develop a piece with tempo. Before giving a check, picture the reply and ask who it really helps.","evidence_plies":[12],"theme":"calculation"},{"id":"293ba8b9-317b-4b86-8157-89161202d125","title":"Look for forcing replies first","text":"Before capturing a piece, check every check and capture your opponent has in reply. One queen sacrifice was enough to end this game.","evidence_plies":[16],"theme":"tactics"}],"model":{"provider":"azure","id":"gpt-4.1"},"prompt_version":"1.0.0+3fa9c1d2","verification":{"status":"passed","checks_version":1}}
+}
+''';
