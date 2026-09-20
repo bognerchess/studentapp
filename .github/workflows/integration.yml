@@ -1,0 +1,108 @@
+name: Integration
+
+# The integration tests drive the real app in a simulator against the local
+# mock server. They take minutes, so they do not run on every push: nightly,
+# by hand, and on a pull request that carries the label `integration`.
+#
+# WP-41 put the first test there (`entry_40_moves_test`). The probe step is
+# kept: it is what lets a checkout without the directory still pass.
+
+on:
+  schedule:
+    # 03:17 UTC. Not on the hour, when GitHub's scheduler is busiest.
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+  pull_request:
+    types: [labeled, synchronize, reopened]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  integration:
+    name: integration_test on a simulator
+    if: >-
+      github.event_name != 'pull_request' ||
+      contains(github.event.pull_request.labels.*.name, 'integration')
+    # The Xcode question from pr.yml applies here too, and more so: this job
+    # also needs a simulator runtime that matches the image's Xcode.
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - name: Is there anything to run?
+        id: probe
+        run: |
+          if [ -d integration_test ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "No integration_test/ directory yet; nothing to do." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: subosito/flutter-action@v2
+        if: steps.probe.outputs.present == 'true'
+        with:
+          channel: stable
+          flutter-version-file: pubspec.yaml
+          cache: true
+      - name: Boot an iPhone simulator
+        if: steps.probe.outputs.present == 'true'
+        id: simulator
+        run: |
+          xcodebuild -version
+          # The first available iPhone, whatever the image calls it.
+          udid="$(xcrun simctl list devices available | grep -E '^ +iPhone' | head -n 1 | grep -Eo '[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}')"
+          if [ -z "$udid" ]; then
+            echo "No iPhone simulator is available on this image." >&2
+            xcrun simctl list devices available >&2
+            exit 1
+          fi
+          xcrun simctl boot "$udid"
+          xcrun simctl bootstatus "$udid"
+          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+      - name: Integration tests
+        if: steps.probe.outputs.present == 'true'
+        env:
+          SIMULATOR_UDID: ${{ steps.simulator.outputs.udid }}
+        run: |
+          mkdir -p build/integration
+          # tee, so that the run still fails on a failing test (pipefail) and
+          # the log is left behind for the report step below.
+          set -o pipefail
+          if [ -f config/fake.json ]; then
+            flutter test integration_test -d "$SIMULATOR_UDID" --dart-define-from-file=config/fake.json 2>&1 | tee build/integration/output.txt
+          else
+            flutter test integration_test -d "$SIMULATOR_UDID" 2>&1 | tee build/integration/output.txt
+          fi
+      # A test publishes a machine-readable summary with publishReport()
+      # (integration_test/helpers/app_harness.dart): one line per report,
+      # "INTEGRATION-REPORT <key> <json>". Split them into files so that the
+      # numbers of a run can be compared with those of the run before.
+      # Always, so that a failing run keeps its measurements.
+      - name: Collect the reports
+        if: always() && steps.probe.outputs.present == 'true'
+        run: |
+          if [ ! -f build/integration/output.txt ]; then
+            echo "No test output; nothing to collect."
+            exit 0
+          fi
+          grep -o 'INTEGRATION-REPORT .*' build/integration/output.txt | while read -r _ key json; do
+            printf '%s\n' "$json" > "build/integration/$key.json"
+            echo "$key: build/integration/$key.json"
+            {
+              echo "### $key"
+              echo '```json'
+              printf '%s\n' "$json"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.probe.outputs.present == 'true'
+        with:
+          name: integration-reports
+          path: build/integration/
+          if-no-files-found: ignore

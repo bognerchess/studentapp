@@ -1,0 +1,12 @@
+{
+  "data": {
+    "unregisterMobileDevice": {
+      "mobileDevice": null,
+      "errors": [
+        {
+          "__typename": "SomethingNewError"
+        }
+      ]
+    }
+  }
+}

@@ -26,12 +26,35 @@ Files adapted from other GPL projects. They keep the original copyright notice,
 start with "Adapted from <repo>/<path>@<commit sha>", stay under GPL-3.0 as
 published upstream, and do NOT carry the app-store permission.
 
-  File in this repository | Adapted from (repo/path@sha) | Copyright | Licence
-  ------------------------+------------------------------+-----------+--------
-  (none yet)              |                              |           |
+  File in this repository                      | Adapted from (repo/path@sha)                                                                                        | Copyright                      | Licence
+  ---------------------------------------------+---------------------------------------------------------------------------------------------------------------------+--------------------------------+--------
+  ios/ShareExtension/ShareViewController.swift | github.com/lichess-org/mobile ios/ShareExtension/ShareViewController.swift@f4543db42b8d5fb4d4fd533fa56218a4a34eb667 | the lichess-org/mobile authors | GPL-3.0
 
-Expected sources: lichess-org/mobile (move list, evaluation chart, PGN share
-handling, iOS share extension) and lichess-org/flutter-chessground.
+The share extension is a separate executable inside the app bundle
+(Runner.app/PlugIns/ShareExtension.appex). Everything else in ios/ShareExtension
+(Info.plist, entitlements, privacy manifest) and the app's side of the hand-off
+(ios/Runner/SharedPgnInbox.swift, lib/core/links) was written for this app.
+
+Expected further sources: lichess-org/mobile (move list, evaluation chart).
+lib/core/chess wraps chessground through its public API and adapts none of its
+source.
+
+
+Vendored source code
+--------------------
+
+third_party/chessground/ is a trimmed copy of the chessground Flutter package,
+used as a path dependency. It is not a fork with its own history: the files
+are upstream's, unchanged except for the removals listed in
+third_party/chessground/BOGNER_CHANGES.md, and they stay under GPL-3.0 as
+published upstream. They do NOT carry the app-store permission.
+
+  Directory                | Upstream                                   | Version / commit                                  | Copyright                       | Licence
+  -------------------------+--------------------------------------------+---------------------------------------------------+---------------------------------+--------
+  third_party/chessground/ | github.com/lichess-org/flutter-chessground | 10.2.0 / 4b4f1d4734a453cfbe43a37cac95be09d8d1b0bc | the flutter-chessground authors | GPL-3.0
+
+dartchess (chess rules, FEN, SAN, PGN; GPL-3.0, github.com/lichess-org/dartchess)
+is an ordinary pub.dev dependency, version 0.13.1; see docs/dependencies.md.
 
 
 Piece artwork
@@ -41,16 +64,30 @@ Only the sets listed here may be bundled. The upstream chessground package
 declares about forty piece sets as Flutter assets, and Flutter cannot leave out
 a dependency's assets, so depending on it directly would ship all of them.
 Most are CC BY-NC-SA, "free for personal use" or of unknown origin, none of
-which is compatible with a GPL app on a store. That is why this app depends on
-a trimmed fork, and why the built bundle is checked against this table.
+which is compatible with a GPL app on a store. That is why this app uses a
+vendored trimmed copy (above), and why the built bundle is checked against this
+table. tool/asset_allowlist.txt is the machine-readable form of the first
+column.
 
-  Set        | Author | Licence | Source | Added in
-  -----------+--------+---------+--------+---------
-  (none yet) |        |         |        | WP-04
+  Set      | Author                      | Licence | Source                                                          | Added in
+  ---------+-----------------------------+---------+-----------------------------------------------------------------+---------
+  cburnett | Colin M. L. Burnett         | GPLv2+  | github.com/lichess-org/lila/tree/master/public/piece/cburnett   | WP-04
+           |                             |         | (originally en.wikipedia.org/wiki/User:Cburnett)                |
+  merida   | Armando Hernandez Marroquin | GPLv2+  | github.com/lichess-org/lila/tree/master/public/piece/merida     | WP-04
+  rhosgfx  | RhosGFX                     | CC0 1.0 | github.com/lichess-org/lila/tree/master/public/piece/rhosgfx    | WP-04
+           |                             |         | (originally rhosgfx.itch.io)                                    |
 
-Candidates whose licences were checked against lila's COPYING.md at planning
-time: cburnett (GPLv2+), merida (GPLv2+), chessnut (Apache-2.0), rhosgfx (CC0),
-fantasy / spatial / celtic (MIT). The final choice is recorded above by WP-04.
+The licences are those stated in lila's COPYING.md
+(github.com/lichess-org/lila/blob/master/COPYING.md), read on 2026-09-19. The
+files in this repository are the WebP renderings (1x to 4x) that
+flutter-chessground makes from lila's SVGs, taken from the commit named above.
+"GPLv2+" means version 2 or any later version, so these two sets are used here
+under GPL-3.0. CC0 asks for nothing; the credit is given anyway.
+
+Checked and compatible, but not bundled: chessnut (Apache-2.0), fantasy /
+spatial / celtic (MIT), mpchess (GPLv3+). Adding one means a row here, a line
+in tool/asset_allowlist.txt, a value in BoardPieceSet, and a re-run of
+third_party/sync_chessground.py.
 
 
 Board themes
@@ -79,9 +116,31 @@ licence, and none of them will be Lichess's, whose sound set is AGPLv3+ or of
 unspecified origin.
 
 
+Native libraries
+----------------
+
+Libraries that reach the app through Swift Package Manager, not through
+pub.dev, and whose licence asks for its text in copies. The iOS build fetches
+them; nothing of them is in this repository.
+
+  Library      | Source                            | Version | Copyright        | Licence | Brought in by  | Added in
+  -------------+-----------------------------------+---------+------------------+---------+----------------+---------
+  sentry-cocoa | github.com/getsentry/sentry-cocoa | 8.58.4  | (c) 2015 Sentry  | MIT     | sentry_flutter | WP-34
+
+sentry-cocoa is linked as the prebuilt framework that its Package.swift names
+(Sentry.xcframework from the 8.58.4 release on GitHub, pinned there by SHA-256
+checksum). It is free software: the corresponding source is the tag 8.58.4 of
+the repository above, and MIT is compatible with GPL-3.0. It runs only with the
+user's consent (docs/privacy.md). AppAuth-iOS (Apache-2.0), the other native
+library, is described in docs/dependencies.md.
+
+
 Third-party packages
 --------------------
 
 Dart and Flutter packages are listed with version, licence and purpose in
-docs/dependencies.md. Their licence texts are shown in the app (About ->
-Licences), which Flutter collects from the packages themselves.
+docs/dependencies.md. Their licence texts are shown in the app (Settings ->
+About and licences -> Open-source licences), which Flutter collects from the
+packages themselves. The artwork and the vendored source listed above are added
+to that list by lib/features/about/domain/additional_licenses.dart; a new row in
+this file needs a new entry there.

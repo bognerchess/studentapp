@@ -1,0 +1,12 @@
+{
+  "data": {
+    "trackMobileEvents": {
+      "eventBatch": null,
+      "errors": [
+        {
+          "__typename": "SomethingNewError"
+        }
+      ]
+    }
+  }
+}

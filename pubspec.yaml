@@ -16,11 +16,75 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # The board. A trimmed copy vendored in this repository (three piece sets, no
+  # board images); see third_party/chessground/BOGNER_CHANGES.md. Never from
+  # pub.dev: the published package bundles about 40 piece sets.
+  chessground:
+    path: third_party/chessground
+  dartchess: ^0.13.1
+  # "Open file…" on the PGN import screen; builds with Swift Package Manager.
+  file_picker: ^13.1.0
+  flutter_localizations:
+    sdk: flutter
+  flutter_riverpod: ^3.4.3
+  go_router: ^18.0.1
+  intl: ^0.20.3
+  material_ui: ^1.3.0
+  package_info_plus: ^10.2.1
+  shared_preferences: ^2.5.5
+  # WP-13: local database (lib/core/storage).
+  drift: ^2.35.0
+  drift_flutter: ^0.3.1
+  path_provider: ^2.1.6
+  uuid: ^4.6.0
+  url_launcher: ^6.3.2
+  wakelock_plus: ^1.8.0
+  # WP-25: OIDC sign-in and the Keychain token store (lib/core/auth).
+  flutter_appauth: ^12.1.0
+  flutter_secure_storage: ^11.2.0
+  fl_chart: ^1.2.0
+  # WP-10/12: the GraphQL client (lib/core/api, its only importer). gql,
+  # gql_exec and gql_link are what the generated code and the links import.
+  graphql: ^5.2.4
+  gql: ^1.0.1
+  gql_exec: ^1.0.0+1
+  gql_link: ^1.1.0
+  http: ^1.6.0
+  # WP-30: legal documents and the AI consent text arrive as Markdown.
+  flutter_markdown_plus: ^1.0.12
+  sentry_flutter: ^9.30.0
+  # WP-27: "the network is back" as a trigger for the submit queue
+  # (lib/core/connectivity, its only importer). Swift Package Manager.
+  connectivity_plus: ^7.3.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  # WP-41: the on-device tests in integration_test/.
+  integration_test:
+    sdk: flutter
   flutter_lints: ^6.0.0
+  # WP-13: drift generator, schema tools and migration test helpers.
+  build_runner: ^2.16.1
+  drift_dev: ^2.35.0
+  fake_async: ^1.3.3
+  # WP-25: in-memory preferences for tests.
+  shared_preferences_platform_interface: ^2.4.2
+  # WP-10: typed GraphQL operations (graphql/ -> lib/core/api/generated).
+  graphql_codegen: ^3.0.2
+  # WP-11: the mock server in tool/mock_server. Never imported from lib/.
+  shelf: ^1.4.2
+  # WP-10: the sha256 pin of graphql/schema.graphql (test only).
+  crypto: ^3.0.7
 
 flutter:
   uses-material-design: true
+  # Runs gen-l10n (see l10n.yaml) as part of pub get and the build.
+  generate: true
+  # The legal texts the about screen shows (lib/features/about). These are the
+  # files in the repository root themselves, not copies, so the text in the
+  # app cannot drift from the text the repository is licensed under.
+  assets:
+    - LICENSE
+    - LICENSE-APP-STORE-PERMISSION.md
+    - NOTICE

@@ -1,0 +1,85 @@
+{
+  "data": {
+    "myMobileGames": {
+      "totalCount": 3,
+      "pageInfo": {
+        "hasNextPage": false,
+        "endCursor": "c3"
+      },
+      "nodes": [
+        {
+          "id": "game-1",
+          "clientGameId": "3f0e1c52-7b1d-4a53-9c55-0d8a1b2c3d41",
+          "playerColor": "WHITE",
+          "result": "WHITE_WINS",
+          "resultText": "1-0",
+          "playedDate": "2026-09-12",
+          "eventName": "Club Championship",
+          "timeControl": "5400+30",
+          "opponentName": "Jonas Keller",
+          "whitePlayerName": "Fake User",
+          "blackPlayerName": "Jonas Keller",
+          "whiteElo": 1650,
+          "blackElo": 1712,
+          "created": "2026-09-12T18:30:00.000Z",
+          "hasAnalysis": true,
+          "latestAnalysisJob": {
+            "id": "job-1",
+            "chessGameId": "game-1",
+            "status": "DONE",
+            "stage": null,
+            "queuePosition": null,
+            "requestedAt": "2026-09-12T18:31:00.000Z",
+            "finishedAt": "2026-09-12T18:34:10.000Z",
+            "failureCode": null
+          }
+        },
+        {
+          "id": "game-2",
+          "clientGameId": "8a6de0a4-2c0f-4f0e-8a44-6f3a5e7d9b12",
+          "playerColor": "BLACK",
+          "result": "DRAW",
+          "resultText": "1/2-1/2",
+          "playedDate": "2026-09-05",
+          "eventName": "Rapid Open Zürich",
+          "timeControl": "900+10",
+          "opponentName": "Mira Østergård",
+          "whitePlayerName": "Mira Østergård",
+          "blackPlayerName": "Fake User",
+          "whiteElo": 1820,
+          "blackElo": 1650,
+          "created": "2026-09-05T20:05:00.000Z",
+          "hasAnalysis": false,
+          "latestAnalysisJob": {
+            "id": "job-2",
+            "chessGameId": "game-2",
+            "status": "RUNNING",
+            "stage": "engine",
+            "queuePosition": null,
+            "requestedAt": "2026-09-19T10:00:00.000Z",
+            "finishedAt": null,
+            "failureCode": null
+          }
+        },
+        {
+          "id": "game-3",
+          "clientGameId": null,
+          "playerColor": "WHITE",
+          "result": "BLACK_WINS",
+          "resultText": "0-1",
+          "playedDate": null,
+          "eventName": null,
+          "timeControl": null,
+          "opponentName": "Anonymous",
+          "whitePlayerName": null,
+          "blackPlayerName": "Anonymous",
+          "whiteElo": null,
+          "blackElo": null,
+          "created": "2026-08-30T09:00:00.000Z",
+          "hasAnalysis": false,
+          "latestAnalysisJob": null
+        }
+      ]
+    }
+  }
+}

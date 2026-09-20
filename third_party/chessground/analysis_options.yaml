@@ -1,0 +1,13 @@
+# Bogner Chess: replaces upstream's analysis_options.yaml, which includes
+# package:lint (a dev dependency that is not resolved for a path dependency).
+# The strict modes and the formatter width are upstream's. The app's own
+# analysis excludes third_party/; run `dart analyze third_party/chessground`
+# after a sync and expect no errors.
+analyzer:
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+
+formatter:
+  page_width: 100

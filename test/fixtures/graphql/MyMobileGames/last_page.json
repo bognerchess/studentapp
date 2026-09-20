@@ -1,0 +1,31 @@
+{
+  "data": {
+    "myMobileGames": {
+      "totalCount": 3,
+      "pageInfo": {
+        "hasNextPage": false,
+        "endCursor": "c3"
+      },
+      "nodes": [
+        {
+          "id": "game-3",
+          "clientGameId": null,
+          "playerColor": "WHITE",
+          "result": "BLACK_WINS",
+          "resultText": "0-1",
+          "playedDate": null,
+          "eventName": null,
+          "timeControl": null,
+          "opponentName": "Anonymous",
+          "whitePlayerName": null,
+          "blackPlayerName": "Anonymous",
+          "whiteElo": null,
+          "blackElo": null,
+          "created": "2026-08-30T09:00:00.000Z",
+          "hasAnalysis": false,
+          "latestAnalysisJob": null
+        }
+      ]
+    }
+  }
+}

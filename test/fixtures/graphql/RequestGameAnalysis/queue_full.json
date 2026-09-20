@@ -1,0 +1,14 @@
+{
+  "data": {
+    "requestGameAnalysis": {
+      "analysisJob": null,
+      "errors": [
+        {
+          "__typename": "AnalysisQueueFullError",
+          "message": "web_api_errors.analysis_queue_full",
+          "maxQueuedJobs": 2
+        }
+      ]
+    }
+  }
+}

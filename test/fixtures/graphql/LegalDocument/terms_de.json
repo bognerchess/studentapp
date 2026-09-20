@@ -1,0 +1,15 @@
+{
+  "data": {
+    "legalDocument": {
+      "id": "legal-terms-de-1",
+      "key": "TERMS",
+      "version": 1,
+      "language": "de",
+      "title": "Nutzungsbedingungen",
+      "bodyMarkdown": "# Nutzungsbedingungen\n\nPlatzhaltertext des Mock-Servers.",
+      "providerName": null,
+      "publishedAt": "2026-09-01T00:00:00.000Z",
+      "isDraft": true
+    }
+  }
+}

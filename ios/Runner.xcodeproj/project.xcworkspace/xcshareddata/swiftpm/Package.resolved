@@ -1,0 +1,23 @@
+{
+  "pins" : [
+    {
+      "identity" : "appauth-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/openid/AppAuth-iOS",
+      "state" : {
+        "revision" : "a7caeda164dc5108bf4649472b28a5af65dc6f33",
+        "version" : "2.1.0"
+      }
+    },
+    {
+      "identity" : "sentry-cocoa",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/getsentry/sentry-cocoa",
+      "state" : {
+        "revision" : "f196cbb98e0388381d57908f2f5a9bdc385cde68",
+        "version" : "8.58.4"
+      }
+    }
+  ],
+  "version" : 2
+}

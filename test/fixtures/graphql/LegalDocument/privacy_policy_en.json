@@ -1,0 +1,15 @@
+{
+  "data": {
+    "legalDocument": {
+      "id": "legal-privacy_policy-en-1",
+      "key": "PRIVACY_POLICY",
+      "version": 1,
+      "language": "en",
+      "title": "Privacy policy",
+      "bodyMarkdown": "# Privacy policy\n\nPlaceholder text of the mock server.",
+      "providerName": null,
+      "publishedAt": "2026-09-01T00:00:00.000Z",
+      "isDraft": true
+    }
+  }
+}

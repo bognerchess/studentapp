@@ -1,0 +1,12 @@
+{
+  "data": {
+    "recordAiConsent": {
+      "aiConsentStatus": {
+        "currentVersion": 1,
+        "acceptedVersion": 1,
+        "required": false
+      },
+      "errors": null
+    }
+  }
+}

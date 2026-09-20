@@ -1,0 +1,11 @@
+{
+  "Simulator Target Bundle": "com.bognerchess.mobile",
+  "aps": {
+    "alert": {
+      "title": "Something new",
+      "body": "A kind of notification this version does not know."
+    }
+  },
+  "type": "weekly_summary",
+  "gameId": "game-1"
+}

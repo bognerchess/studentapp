@@ -1,0 +1,15 @@
+{
+  "data": {
+    "legalDocument": {
+      "id": "legal-analytics_consent-en-1",
+      "key": "ANALYTICS_CONSENT",
+      "version": 1,
+      "language": "en",
+      "title": "Help us improve the app",
+      "bodyMarkdown": "We would like to count how the app is used: which screens are opened and whether an analysis was requested. No game content, no names.",
+      "providerName": null,
+      "publishedAt": "2026-09-01T00:00:00.000Z",
+      "isDraft": true
+    }
+  }
+}

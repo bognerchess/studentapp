@@ -1,0 +1,747 @@
+{
+  "schema": "bognerchess.game-analysis",
+  "schema_version": 2,
+  "schema_minor": 0,
+  "analysis_id": "e88b7591-31db-4e32-98dc-b35f94c662cd",
+  "generated_at": "2026-09-19T09:12:41Z",
+  "language": "en",
+  "perspective": {
+    "color": "black",
+    "rating_band": "1000-1200"
+  },
+  "engine": {
+    "name": "Stockfish 19",
+    "pass1": {
+      "nodes": 400000
+    },
+    "pass2": {
+      "nodes": 3000000,
+      "multipv": 3
+    },
+    "human_model": "maia2-rapid"
+  },
+  "coach": {
+    "provider": "azure",
+    "model": "gpt-4.1",
+    "prompt_set": "mobile-coach",
+    "prompt_version": "1.0.0+3fa9c1d2",
+    "pipeline_version": "1.0.0"
+  },
+  "game": {
+    "start_fen": null,
+    "ply_count": 21,
+    "result": "1-0"
+  },
+  "accuracy": {
+    "white": 97.2,
+    "black": 85.0
+  },
+  "nodes": [
+    {
+      "ply": 1,
+      "move_number": 1,
+      "color": "white",
+      "san": "e4",
+      "uci": "e2e4",
+      "fen_before": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+      "fen_after": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
+      "classification": {
+        "label": "book",
+        "score": 0.5
+      },
+      "is_critical": false,
+      "eval": {
+        "before": {
+          "wp": 0.547
+        },
+        "after": {
+          "wp": 0.55
+        }
+      },
+      "candidates": [],
+      "lines": [],
+      "annotation_ids": []
+    },
+    {
+      "ply": 2,
+      "move_number": 1,
+      "color": "black",
+      "san": "c6",
+      "uci": "c7c6",
+      "fen_before": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
+      "fen_after": "rnbqkbnr/pp1ppppp/2p5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+      "classification": {
+        "label": "book",
+        "score": 0.5
+      },
+      "is_critical": false,
+      "eval": {
+        "before": {
+          "wp": 0.45
+        },
+        "after": {
+          "wp": 0.462
+        }
+      },
+      "candidates": [
+        "e7e5"
+      ],
+      "lines": [],
+      "annotation_ids": []
+    },
+    {
+      "ply": 3,
+      "move_number": 2,
+      "color": "white",
+      "san": "d4",
+      "uci": "d2d4",
+      "fen_before": "rnbqkbnr/pp1ppppp/2p5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+      "fen_after": "rnbqkbnr/pp1ppppp/2p5/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq - 0 2",
+      "classification": {
+        "label": "book",
+        "score": 0.5
+      },
+      "is_critical": false,
+      "eval": {
+        "before": {
+          "wp": 0.538
+        },
+        "after": {
+          "wp": 0.54
+        }
+      },
+      "candidates": [],
+      "lines": [],
+      "annotation_ids": []
+    },
+    {
+      "ply": 4,
+      "move_number": 2,
+      "color": "black",
+      "san": "d5",
+      "uci": "d7d5",
+      "fen_before": "rnbqkbnr/pp1ppppp/2p5/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq - 0 2",
+      "fen_after": "rnbqkbnr/pp2pppp/2p5/3p4/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3",
+      "classification": {
+        "label": "book",
+        "score": 0.5
+      },
+      "is_critical": false,
+      "eval": {
+        "before": {
+          "wp": 0.46
+        },
+        "after": {
+          "wp": 0.458
+        }
+      },
+      "candidates": [],
+      "lines": [],
+      "annotation_ids": []
+    },
+    {
+      "ply": 5,
+      "move_number": 3,
+      "color": "white",
+      "san": "Nc3",
+      "uci": "b1c3",
+      "fen_before": "rnbqkbnr/pp2pppp/2p5/3p4/3PP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 3",
+      "fen_after": "rnbqkbnr/pp2pppp/2p5/3p4/3PP3/2N5/PPP2PPP/R1BQKBNR b KQkq - 1 3",
+      "classification": {
+        "label": "book",
+        "score": 0.5
+      },
+      "is_critical": false,
+      "eval": {
+        "before": {
+          "wp": 0.542
+        },
+        "after": {
+          "wp": 0.538
+        }
+      },
+      "candidates": [
+        "e4e5"
+      ],
+      "lines": [],
+      "annotation_ids": []
+    },
+    {
+      "ply": 6,
+      "move_number": 3,
+      "color": "black",
+      "san": "dxe4",
+      "uci": "d5e4",
+      "fen_before": "rnbqkbnr/pp2pppp/2p5/3p4/3PP3/2N5/PPP2PPP/R1BQKBNR b KQkq - 1 3",
+      "fen_after": "rnbqkbnr/pp2pppp/2p5/8/3Pp3/2N5/PPP2PPP/R1BQKBNR w KQkq - 0 4",
+      "classification": {
+        "label": "book",
+        "score": 0.5
+      },
+      "is_critical": false,
+      "eval": {
+        "before": {
+          "wp": 0.462
+        },
+        "after": {
+          "wp": 0.456
+        }
+      },
+      "candidates": [],
+      "lines": [],
+      "annotation_ids": []
+    },
+    {
+      "ply": 7,
+      "move_number": 4,
+      "color": "white",
+      "san": "Nxe4",
+      "uci": "c3e4",
+      "fen_before": "rnbqkbnr/pp2pppp/2p5/8/3Pp3/2N5/PPP2PPP/R1BQKBNR w KQkq - 0 4",
+      "fen_after": "rnbqkbnr/pp2pppp/2p5/8/3PN3/8/PPP2PPP/R1BQKBNR b KQkq - 0 4",
+      "classification": {
+        "label": "book",
+        "score": 0.5
+      },
+      "is_critical": false,
+      "eval": {
+        "before": {
+          "wp": 0.544
+        },
+        "after": {
+          "wp": 0.54
+        }
+      },
+      "candidates": [],
+      "lines": [],
+      "annotation_ids": []
+    },
+    {
+      "ply": 8,
+      "move_number": 4,
+      "color": "black",
+      "san": "Nf6",
+      "uci": "g8f6",
+      "fen_before": "rnbqkbnr/pp2pppp/2p5/8/3PN3/8/PPP2PPP/R1BQKBNR b KQkq - 0 4",
+      "fen_after": "rnbqkb1r/pp2pppp/2p2n2/8/3PN3/8/PPP2PPP/R1BQKBNR w KQkq - 1 5",
+      "classification": {
+        "label": "book",
+        "score": 0.5
+      },
+      "is_critical": false,
+      "eval": {
+        "before": {
+          "wp": 0.46
+        },
+        "after": {
+          "wp": 0.452
+        }
+      },
+      "candidates": [
+        "c8f5"
+      ],
+      "lines": [],
+      "annotation_ids": []
+    },
+    {
+      "ply": 9,
+      "move_number": 5,
+      "color": "white",
+      "san": "Qd3",
+      "uci": "d1d3",
+      "fen_before": "rnbqkb1r/pp2pppp/2p2n2/8/3PN3/8/PPP2PPP/R1BQKBNR w KQkq - 1 5",
+      "fen_after": "rnbqkb1r/pp2pppp/2p2n2/8/3PN3/3Q4/PPP2PPP/R1B1KBNR b KQkq - 2 5",
+      "classification": {
+        "label": "good",
+        "score": 0.5
+      },
+      "is_critical": false,
+      "human": {
+        "played_prob": 0.24,
+        "best_prob": 0.3
+      },
+      "eval": {
+        "before": {
+          "wp": 0.548
+        },
+        "after": {
+          "wp": 0.522
+        }
+      },
+      "candidates": [
+        "e4f6"
+      ],
+      "lines": [],
+      "annotation_ids": []
+    },
+    {
+      "ply": 10,
+      "move_number": 5,
+      "color": "black",
+      "san": "e5",
+      "uci": "e7e5",
+      "fen_before": "rnbqkb1r/pp2pppp/2p2n2/8/3PN3/3Q4/PPP2PPP/R1B1KBNR b KQkq - 2 5",
+      "fen_after": "rnbqkb1r/pp3ppp/2p2n2/4p3/3PN3/3Q4/PPP2PPP/R1B1KBNR w KQkq - 0 6",
+      "classification": {
+        "label": "mistake",
+        "score": 0.5
+      },
+      "is_critical": true,
+      "human": {
+        "played_prob": 0.42,
+        "best_prob": 0.26
+      },
+      "eval": {
+        "before": {
+          "wp": 0.478
+        },
+        "after": {
+          "wp": 0.381
+        }
+      },
+      "candidates": [
+        "f6e4"
+      ],
+      "lines": [
+        {
+          "id": "v10-best",
+          "pv": "f6e4 d3e4 d8d5 e4e3 c8f5 c2c4"
+        },
+        {
+          "id": "v10-refutation",
+          "pv": "d4e5 d8d3 f1d3 f6e4 d3e4 b8d7"
+        },
+        {
+          "id": "v10-alt1",
+          "pv": "g7g6 g1f3 a7a5 e4f6 e7f6 f1e2"
+        }
+      ],
+      "annotation_ids": [
+        "5bd21b6a-ec89-47a6-8a0a-c984f71ab247"
+      ]
+    },
+    {
+      "ply": 11,
+      "move_number": 6,
+      "color": "white",
+      "san": "dxe5",
+      "uci": "d4e5",
+      "fen_before": "rnbqkb1r/pp3ppp/2p2n2/4p3/3PN3/3Q4/PPP2PPP/R1B1KBNR w KQkq - 0 6",
+      "fen_after": "rnbqkb1r/pp3ppp/2p2n2/4P3/4N3/3Q4/PPP2PPP/R1B1KBNR b KQkq - 0 6",
+      "classification": {
+        "label": "best",
+        "score": 0.5
+      },
+      "is_critical": false,
+      "human": {
+        "played_prob": 0.48,
+        "best_prob": 0.48
+      },
+      "eval": {
+        "before": {
+          "wp": 0.619
+        },
+        "after": {
+          "wp": 0.638
+        }
+      },
+      "candidates": [],
+      "lines": [],
+      "annotation_ids": []
+    },
+    {
+      "ply": 12,
+      "move_number": 6,
+      "color": "black",
+      "san": "Qa5+",
+      "uci": "d8a5",
+      "fen_before": "rnbqkb1r/pp3ppp/2p2n2/4P3/4N3/3Q4/PPP2PPP/R1B1KBNR b KQkq - 0 6",
+      "fen_after": "rnb1kb1r/pp3ppp/2p2n2/q3P3/4N3/3Q4/PPP2PPP/R1B1KBNR w KQkq - 1 7",
+      "classification": {
+        "label": "mistake",
+        "score": 0.5
+      },
+      "is_critical": true,
+      "human": {
+        "played_prob": 0.29,
+        "best_prob": 0.13
+      },
+      "eval": {
+        "before": {
+          "wp": 0.362
+        },
+        "after": {
+          "wp": 0.26
+        }
+      },
+      "candidates": [
+        "d8d3"
+      ],
+      "lines": [
+        {
+          "id": "v12-best",
+          "pv": "d8d3 f1d3 f6e4 d3e4 b8d7 c1f4"
+        },
+        {
+          "id": "v12-refutation",
+          "pv": "c1d2 a5e5 e1c1 f8e7 e4f6 e5f6"
+        },
+        {
+          "id": "v12-alt1",
+          "pv": "f6e4 d3e4 c8e6 f1c4 e6c4 e4c4"
+        }
+      ],
+      "annotation_ids": [
+        "80e6b5d0-a9d9-4650-8c6b-df0d7796668d"
+      ]
+    },
+    {
+      "ply": 13,
+      "move_number": 7,
+      "color": "white",
+      "san": "Bd2",
+      "uci": "c1d2",
+      "fen_before": "rnb1kb1r/pp3ppp/2p2n2/q3P3/4N3/3Q4/PPP2PPP/R1B1KBNR w KQkq - 1 7",
+      "fen_after": "rnb1kb1r/pp3ppp/2p2n2/q3P3/4N3/3Q4/PPPB1PPP/R3KBNR b KQkq - 2 7",
+      "classification": {
+        "label": "inaccuracy",
+        "score": 0.5
+      },
+      "is_critical": false,
+      "human": {
+        "played_prob": 0.48,
+        "best_prob": 0.48
+      },
+      "eval": {
+        "before": {
+          "wp": 0.74
+        },
+        "after": {
+          "wp": 0.701
+        }
+      },
+      "candidates": [],
+      "lines": [],
+      "annotation_ids": []
+    },
+    {
+      "ply": 14,
+      "move_number": 7,
+      "color": "black",
+      "san": "Qxe5",
+      "uci": "a5e5",
+      "fen_before": "rnb1kb1r/pp3ppp/2p2n2/q3P3/4N3/3Q4/PPPB1PPP/R3KBNR b KQkq - 2 7",
+      "fen_after": "rnb1kb1r/pp3ppp/2p2n2/4q3/4N3/3Q4/PPPB1PPP/R3KBNR w KQkq - 0 8",
+      "classification": {
+        "label": "best",
+        "score": 0.5
+      },
+      "is_critical": false,
+      "human": {
+        "played_prob": 0.53,
+        "best_prob": 0.53
+      },
+      "eval": {
+        "before": {
+          "wp": 0.299
+        },
+        "after": {
+          "wp": 0.314
+        }
+      },
+      "candidates": [],
+      "lines": [],
+      "annotation_ids": []
+    },
+    {
+      "ply": 15,
+      "move_number": 8,
+      "color": "white",
+      "san": "O-O-O",
+      "uci": "e1c1",
+      "fen_before": "rnb1kb1r/pp3ppp/2p2n2/4q3/4N3/3Q4/PPPB1PPP/R3KBNR w KQkq - 0 8",
+      "fen_after": "rnb1kb1r/pp3ppp/2p2n2/4q3/4N3/3Q4/PPPB1PPP/2KR1BNR b kq - 1 8",
+      "classification": {
+        "label": "best",
+        "score": 0.5
+      },
+      "is_critical": false,
+      "human": {
+        "played_prob": 0.61,
+        "best_prob": 0.61
+      },
+      "eval": {
+        "before": {
+          "wp": 0.686
+        },
+        "after": {
+          "wp": 0.736
+        }
+      },
+      "candidates": [],
+      "lines": [],
+      "annotation_ids": []
+    },
+    {
+      "ply": 16,
+      "move_number": 8,
+      "color": "black",
+      "san": "Nxe4",
+      "uci": "f6e4",
+      "fen_before": "rnb1kb1r/pp3ppp/2p2n2/4q3/4N3/3Q4/PPPB1PPP/2KR1BNR b kq - 1 8",
+      "fen_after": "rnb1kb1r/pp3ppp/2p5/4q3/4n3/3Q4/PPPB1PPP/2KR1BNR w kq - 0 9",
+      "classification": {
+        "label": "blunder",
+        "score": 0.5
+      },
+      "is_critical": true,
+      "human": {
+        "played_prob": 0.1,
+        "best_prob": 0.19
+      },
+      "eval": {
+        "before": {
+          "wp": 0.264
+        },
+        "after": {
+          "wp": 0.0
+        }
+      },
+      "candidates": [
+        "f8e7"
+      ],
+      "lines": [
+        {
+          "id": "v16-best",
+          "pv": "f8e7 e4f6 e5f6 g1f3 e8g8 d2g5"
+        },
+        {
+          "id": "v16-refutation",
+          "pv": "d3d8 e8d8 d2g5 d8c7 g5d8"
+        },
+        {
+          "id": "v16-alt1",
+          "pv": "c8e6 e4f6 g7f6 g1f3 e5d5 d3d5"
+        }
+      ],
+      "annotation_ids": [
+        "eae3732d-38c1-45d6-9a1f-7aa536eafa28"
+      ]
+    },
+    {
+      "ply": 17,
+      "move_number": 9,
+      "color": "white",
+      "san": "Qd8+",
+      "uci": "d3d8",
+      "fen_before": "rnb1kb1r/pp3ppp/2p5/4q3/4n3/3Q4/PPPB1PPP/2KR1BNR w kq - 0 9",
+      "fen_after": "rnbQkb1r/pp3ppp/2p5/4q3/4n3/8/PPPB1PPP/2KR1BNR b kq - 1 9",
+      "classification": {
+        "label": "best",
+        "score": 0.5
+      },
+      "is_critical": false,
+      "human": {
+        "played_prob": 0.29,
+        "best_prob": 0.29
+      },
+      "eval": {
+        "before": {
+          "wp": 1.0
+        },
+        "after": {
+          "wp": 1.0
+        }
+      },
+      "candidates": [],
+      "lines": [],
+      "annotation_ids": []
+    },
+    {
+      "ply": 18,
+      "move_number": 9,
+      "color": "black",
+      "san": "Kxd8",
+      "uci": "e8d8",
+      "fen_before": "rnbQkb1r/pp3ppp/2p5/4q3/4n3/8/PPPB1PPP/2KR1BNR b kq - 1 9",
+      "fen_after": "rnbk1b1r/pp3ppp/2p5/4q3/4n3/8/PPPB1PPP/2KR1BNR w - - 0 10",
+      "classification": {
+        "label": "best",
+        "score": 0.5
+      },
+      "is_critical": false,
+      "human": {
+        "played_prob": 0.61,
+        "best_prob": 0.61
+      },
+      "eval": {
+        "before": {
+          "wp": 0.0
+        },
+        "after": {
+          "wp": 0.0
+        }
+      },
+      "candidates": [],
+      "lines": [],
+      "annotation_ids": []
+    },
+    {
+      "ply": 19,
+      "move_number": 10,
+      "color": "white",
+      "san": "Bg5+",
+      "uci": "d2g5",
+      "fen_before": "rnbk1b1r/pp3ppp/2p5/4q3/4n3/8/PPPB1PPP/2KR1BNR w - - 0 10",
+      "fen_after": "rnbk1b1r/pp3ppp/2p5/4q1B1/4n3/8/PPP2PPP/2KR1BNR b - - 1 10",
+      "classification": {
+        "label": "best",
+        "score": 0.5
+      },
+      "is_critical": false,
+      "human": {
+        "played_prob": 0.56,
+        "best_prob": 0.56
+      },
+      "eval": {
+        "before": {
+          "wp": 1.0
+        },
+        "after": {
+          "wp": 1.0
+        }
+      },
+      "candidates": [],
+      "lines": [],
+      "annotation_ids": []
+    },
+    {
+      "ply": 20,
+      "move_number": 10,
+      "color": "black",
+      "san": "Kc7",
+      "uci": "d8c7",
+      "fen_before": "rnbk1b1r/pp3ppp/2p5/4q1B1/4n3/8/PPP2PPP/2KR1BNR b - - 1 10",
+      "fen_after": "rnb2b1r/ppk2ppp/2p5/4q1B1/4n3/8/PPP2PPP/2KR1BNR w - - 2 11",
+      "classification": {
+        "label": "best",
+        "score": 0.5
+      },
+      "is_critical": false,
+      "human": {
+        "played_prob": 0.27,
+        "best_prob": 0.27
+      },
+      "eval": {
+        "before": {
+          "wp": 0.0
+        },
+        "after": {
+          "wp": 0.0
+        }
+      },
+      "candidates": [],
+      "lines": [],
+      "annotation_ids": []
+    },
+    {
+      "ply": 21,
+      "move_number": 11,
+      "color": "white",
+      "san": "Bd8#",
+      "uci": "g5d8",
+      "fen_before": "rnb2b1r/ppk2ppp/2p5/4q1B1/4n3/8/PPP2PPP/2KR1BNR w - - 2 11",
+      "fen_after": "rnbB1b1r/ppk2ppp/2p5/4q3/4n3/8/PPP2PPP/2KR1BNR b - - 3 11",
+      "classification": {
+        "label": "best",
+        "score": 0.5
+      },
+      "is_critical": false,
+      "human": {
+        "played_prob": 0.69,
+        "best_prob": 0.69
+      },
+      "eval": {
+        "before": {
+          "wp": 1.0
+        },
+        "after": {
+          "wp": 1.0
+        }
+      },
+      "candidates": [],
+      "lines": [],
+      "annotation_ids": []
+    }
+  ],
+  "summary": {
+    "lessons": [
+      {
+        "id": "c87383f4-b142-4de1-bc47-571849dc9b34",
+        "title": "Castle before you open the centre",
+        "text": "Both big losses came from opening lines while your king was still in the middle. Get castled first; central pawn breaks can wait one or two moves.",
+        "evidence_plies": [
+          10,
+          16
+        ],
+        "theme": "king_safety"
+      },
+      {
+        "id": "701f9706-f89a-4643-943b-cd04365e52e7",
+        "title": "Ask what a check achieves",
+        "text": "A queen check looked active but let White develop a piece with tempo. Before giving a check, picture the reply and ask who it really helps.",
+        "evidence_plies": [
+          12
+        ],
+        "theme": "calculation"
+      },
+      {
+        "id": "293ba8b9-317b-4b86-8157-89161202d125",
+        "title": "Look for forcing replies first",
+        "text": "Before capturing a piece, check every check and capture your opponent has in reply. One queen sacrifice was enough to end this game.",
+        "evidence_plies": [
+          16
+        ],
+        "theme": "tactics"
+      }
+    ],
+    "model": {
+      "provider": "azure",
+      "id": "gpt-4.1"
+    },
+    "prompt_version": "1.0.0+3fa9c1d2",
+    "verification": {
+      "status": "passed",
+      "checks_version": 1
+    }
+  },
+  "annotations": {
+    "5bd21b6a-ec89-47a6-8a0a-c984f71ab247": {
+      "kind": "critical_moment",
+      "ply": 10,
+      "body": [
+        {
+          "md": "Playing e5 opens the position while your king is still in the middle. After dxe5 you are a pawn down and have to spend time winning it back. Nxe4 was simpler: you trade White's active knight, and after Qxe4 you can develop calmly with Qd5 and Bf5."
+        }
+      ]
+    },
+    "80e6b5d0-a9d9-4650-8c6b-df0d7796668d": {
+      "kind": "critical_moment",
+      "ply": 12,
+      "body": [
+        {
+          "md": "Qa5+ wins the pawn back, but Bd2 develops with tempo and after Qxe5 your queen is exposed in front of your own king. Trading queens with Qxd3 and then Nxe4 would have removed White's most dangerous pieces and kept your king safe."
+        }
+      ]
+    },
+    "eae3732d-38c1-45d6-9a1f-7aa536eafa28": {
+      "kind": "critical_moment",
+      "ply": 16,
+      "body": [
+        {
+          "md": "Nxe4 grabs a knight but allows a forced mate: Qd8+ Kxd8 Bg5+ is a double check, and after Kc7 comes Bd8#. With your king in the centre and the file in front of it open, development came first. Be7 prepares castling and keeps the game going."
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "data": {
+    "myMobileGames": {
+      "totalCount": 1,
+      "pageInfo": {
+        "hasNextPage": false,
+        "endCursor": "c1"
+      },
+      "nodes": [
+        {
+          "id": "game-9",
+          "clientGameId": null,
+          "playerColor": "BOTH",
+          "result": "ABANDONED",
+          "resultText": "?",
+          "playedDate": "not-a-date",
+          "eventName": "Club Championship",
+          "timeControl": "5400+30",
+          "opponentName": "Jonas Keller",
+          "whitePlayerName": "Fake User",
+          "blackPlayerName": "Jonas Keller",
+          "whiteElo": 1650,
+          "blackElo": 1712,
+          "created": "2026-09-12T18:30:00.000Z",
+          "hasAnalysis": false,
+          "latestAnalysisJob": {
+            "id": "job-9",
+            "chessGameId": "game-9",
+            "status": "PAUSED",
+            "stage": null,
+            "queuePosition": 4,
+            "requestedAt": "2026-09-19T10:00:00.000Z",
+            "finishedAt": null,
+            "failureCode": null
+          }
+        }
+      ]
+    }
+  }
+}

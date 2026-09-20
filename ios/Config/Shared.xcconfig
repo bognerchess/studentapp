@@ -1,0 +1,52 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Bogner Chess
+// Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
+//
+// Build settings live here, not in the project file.
+//
+// A changed setting is then a one-line diff that a reviewer can read, instead
+// of a hunk of project.pbxproj that nobody can. The project file keeps only
+// what the Flutter template put there and what is a file path by nature
+// (INFOPLIST_FILE, the bridging header). docs/ios-project.md has the details.
+//
+// This file reaches the build in two ways:
+//   - the Runner target, through Flutter's own ios/Flutter/{Debug,Release}.xcconfig,
+//     which include Generated.xcconfig first and ../Config/<x>.xcconfig second;
+//   - the ShareExtension target, through ShareExtension-{Debug,Release}.xcconfig,
+//     which do the same and add ShareExtension.xcconfig last;
+//   - every other target (RunnerTests), because Config/<x>.xcconfig is the
+//     base configuration of the project.
+// A setting in project.pbxproj wins over both, so none of the keys below may
+// appear there for the Runner target or at project level.
+
+// Identity. The URL scheme in Info.plist and the OIDC redirect URI use the
+// same string, as a literal, because they are a contract with the server.
+PRODUCT_BUNDLE_IDENTIFIER = com.bognerchess.mobile
+
+// Versions come from `version:` in pubspec.yaml. Flutter writes both values
+// into ios/Flutter/Generated.xcconfig on every build.
+MARKETING_VERSION = $(FLUTTER_BUILD_NAME)
+CURRENT_PROJECT_VERSION = $(FLUTTER_BUILD_NUMBER)
+
+// iOS 16 is one above Flutter's floor. It gives us UTType and the modern
+// authentication session without availability checks. Flutter reads this value
+// through `xcodebuild -showBuildSettings` and raises the platform version of
+// its generated Swift package to match.
+IPHONEOS_DEPLOYMENT_TARGET = 16.0
+
+// iPhone only. On an iPad the app runs in iPhone compatibility mode.
+TARGETED_DEVICE_FAMILY = 1
+
+// Signing. Automatic everywhere, and the team is never committed: it comes
+// from the untracked Local.xcconfig (see Local.example.xcconfig). Debug.xcconfig
+// signs simulator builds ad hoc, so a simulator build needs no team, no
+// certificate and no Apple account.
+CODE_SIGN_STYLE = Automatic
+CODE_SIGN_IDENTITY[sdk=iphoneos*] = Apple Development
+
+// Entitlements are per target, and this file also applies to targets that have
+// none. The nested lookup resolves to the file for a target named below and
+// to nothing for any other target (RunnerTests).
+CODE_SIGN_ENTITLEMENTS = $(BC_ENTITLEMENTS_$(TARGET_NAME))
+BC_ENTITLEMENTS_Runner = Runner/Runner.entitlements
+BC_ENTITLEMENTS_ShareExtension = ShareExtension/ShareExtension.entitlements

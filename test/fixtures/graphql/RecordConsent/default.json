@@ -1,0 +1,14 @@
+{
+  "data": {
+    "recordConsent": {
+      "consentStatus": {
+        "key": "ANALYTICS_CONSENT",
+        "currentVersion": 1,
+        "acceptedVersion": 1,
+        "required": false,
+        "withdrawnAt": null
+      },
+      "errors": null
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "data": {
+    "deleteChessGame": {
+      "chessGame": null,
+      "errors": [
+        {
+          "__typename": "SomethingNewError"
+        }
+      ]
+    }
+  }
+}

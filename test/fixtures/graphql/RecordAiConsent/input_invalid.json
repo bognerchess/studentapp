@@ -1,0 +1,14 @@
+{
+  "data": {
+    "recordAiConsent": {
+      "aiConsentStatus": null,
+      "errors": [
+        {
+          "__typename": "InputValidationError",
+          "message": "web_api_errors.invalid_input",
+          "propertyName": "Version"
+        }
+      ]
+    }
+  }
+}

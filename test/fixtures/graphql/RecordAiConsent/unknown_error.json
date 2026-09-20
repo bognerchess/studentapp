@@ -1,0 +1,12 @@
+{
+  "data": {
+    "recordAiConsent": {
+      "aiConsentStatus": null,
+      "errors": [
+        {
+          "__typename": "SomethingNewError"
+        }
+      ]
+    }
+  }
+}

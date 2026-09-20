@@ -1,0 +1,103 @@
+mutation RequestGameAnalysis($input: RequestGameAnalysisInput!) {
+  requestGameAnalysis(input: $input) {
+    analysisJob {
+      ...JobFields
+    }
+    errors {
+      __typename
+      ... on AnalysisLimitReachedError {
+        message
+        window
+        limit
+        used
+        resetAt
+      }
+      ... on AnalysisQueueFullError {
+        message
+        maxQueuedJobs
+      }
+      ... on RateLimitedError {
+        message
+        retryAfterSeconds
+      }
+      ... on EmailNotVerifiedError {
+        message
+      }
+      ... on AiConsentRequiredError {
+        message
+        requiredVersion
+      }
+      ... on BusinessError {
+        message
+      }
+      ... on InputValidationError {
+        message
+        propertyName
+      }
+      ... on TechnicalError {
+        message
+      }
+    }
+  }
+}
+
+query AnalysisJob($id: ID!) {
+  analysisJob(id: $id) {
+    ...JobFields
+  }
+}
+
+query MyActiveAnalysisJobs {
+  myActiveAnalysisJobs {
+    ...JobFields
+  }
+}
+
+query GameAnalysis($gameId: ID!, $maxSchemaVersion: Int!) {
+  gameAnalysis(gameId: $gameId, maxSchemaVersion: $maxSchemaVersion) {
+    id
+    chessGameId
+    schemaVersion
+    schemaMinor
+    createdAt
+    document
+    commentFeedback {
+      ...FeedbackFields
+    }
+  }
+}
+
+mutation SubmitCoachCommentFeedback($input: SubmitCoachCommentFeedbackInput!) {
+  submitCoachCommentFeedback(input: $input) {
+    coachCommentFeedback {
+      ...FeedbackFields
+    }
+    errors {
+      __typename
+      ... on BusinessError {
+        message
+      }
+      ... on InputValidationError {
+        message
+        propertyName
+      }
+      ... on TechnicalError {
+        message
+      }
+    }
+  }
+}
+
+query MyAnalysisUsage {
+  myAnalysisUsage {
+    policy
+    dailyLimit
+    dailyUsed
+    dailyResetAt
+    monthlyLimit
+    monthlyUsed
+    monthlyResetAt
+    queuedJobs
+    maxQueuedJobs
+  }
+}

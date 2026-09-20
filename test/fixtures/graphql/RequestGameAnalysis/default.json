@@ -1,0 +1,17 @@
+{
+  "data": {
+    "requestGameAnalysis": {
+      "analysisJob": {
+        "id": "job-10",
+        "chessGameId": "game-10",
+        "status": "QUEUED",
+        "stage": null,
+        "queuePosition": 0,
+        "requestedAt": "2026-09-19T10:00:00.000Z",
+        "finishedAt": null,
+        "failureCode": null
+      },
+      "errors": null
+    }
+  }
+}

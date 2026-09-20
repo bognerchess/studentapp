@@ -1,0 +1,14 @@
+{
+  "data": {
+    "analysisJob": {
+      "id": "job-1",
+      "chessGameId": "game-1",
+      "status": "FAILED",
+      "stage": null,
+      "queuePosition": null,
+      "requestedAt": "2026-09-19T10:00:00.000Z",
+      "finishedAt": "2026-09-19T10:03:30.000Z",
+      "failureCode": "engine_timeout"
+    }
+  }
+}

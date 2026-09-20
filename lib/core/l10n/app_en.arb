@@ -1,0 +1,2407 @@
+{
+  "@@locale": "en",
+  "appTitle": "Bogner Chess",
+  "@appTitle": {
+    "description": "Name of the app, shown by the system in the app switcher."
+  },
+  "tabGames": "Games",
+  "@tabGames": {
+    "description": "Label of the first tab: the library of the player's games."
+  },
+  "tabNewGame": "New game",
+  "@tabNewGame": {
+    "description": "Label of the second tab: start entering or importing a game."
+  },
+  "tabSettings": "Settings",
+  "@tabSettings": {
+    "description": "Label of the third tab."
+  },
+  "commonRetry": "Try again",
+  "@commonRetry": {
+    "description": "Button that repeats a failed action."
+  },
+  "commonErrorTitle": "Something went wrong",
+  "@commonErrorTitle": {
+    "description": "Generic headline of the error view."
+  },
+  "commonErrorMessage": "Please check your connection and try again.",
+  "@commonErrorMessage": {
+    "description": "Generic body text of the error view."
+  },
+  "commonPlaceholderMessage": "This screen is not built yet.",
+  "@commonPlaceholderMessage": {
+    "description": "Body of a placeholder screen during development. Never visible in a release."
+  },
+  "notFoundTitle": "Page not found",
+  "@notFoundTitle": {
+    "description": "Headline when a link points to a screen that does not exist."
+  },
+  "notFoundMessage": "This link does not lead anywhere in the app.",
+  "@notFoundMessage": {
+    "description": "Body text when a link points to a screen that does not exist."
+  },
+  "notFoundAction": "Go to my games",
+  "@notFoundAction": {
+    "description": "Button on the not-found screen that opens the games tab."
+  },
+  "libraryTitle": "Games",
+  "@libraryTitle": {
+    "description": "Title of the games library screen."
+  },
+  "libraryEmptyTitle": "No games yet",
+  "@libraryEmptyTitle": {
+    "description": "Headline of the empty games library."
+  },
+  "libraryEmptyMessage": "Enter a game or import a PGN to have it analysed.",
+  "@libraryEmptyMessage": {
+    "description": "Body text of the empty games library."
+  },
+  "libraryEmptyAction": "New game",
+  "@libraryEmptyAction": {
+    "description": "Button in the empty games library that opens the new-game tab."
+  },
+  "libraryGameTitle": "Game",
+  "@libraryGameTitle": {
+    "description": "Title of the screen that shows one game."
+  },
+  "newGameTitle": "New game",
+  "@newGameTitle": {
+    "description": "Title of the screen where the player chooses how to add a game."
+  },
+  "newGameEnterMoves": "Enter moves",
+  "@newGameEnterMoves": {
+    "description": "Choice: enter the game move by move on the board."
+  },
+  "newGameEnterMovesHint": "Play through the game on the board, move by move.",
+  "@newGameEnterMovesHint": {
+    "description": "Explanation under the enter-moves choice."
+  },
+  "newGameImportPgn": "Import PGN",
+  "@newGameImportPgn": {
+    "description": "Choice: import a game from PGN text or a PGN file."
+  },
+  "newGameImportPgnHint": "Paste the text or open a PGN file.",
+  "@newGameImportPgnHint": {
+    "description": "Explanation under the import-PGN choice."
+  },
+  "entryTitle": "Enter moves",
+  "@entryTitle": {
+    "description": "Title of the move-entry screen."
+  },
+  "importTitle": "Import PGN",
+  "@importTitle": {
+    "description": "Title of the PGN import screen."
+  },
+  "reviewTitle": "Review",
+  "@reviewTitle": {
+    "description": "Title of the screen that shows the analysed game."
+  },
+  "settingsTitle": "Settings",
+  "@settingsTitle": {
+    "description": "Title of the settings screen."
+  },
+  "settingsAccount": "Account",
+  "@settingsAccount": {
+    "description": "Settings entry that opens the account screen."
+  },
+  "settingsLegal": "Privacy and terms",
+  "@settingsLegal": {
+    "description": "Settings entry that opens the legal documents."
+  },
+  "settingsAbout": "About and licences",
+  "@settingsAbout": {
+    "description": "Settings entry that opens the about screen."
+  },
+  "settingsVersion": "Version {version} ({build})",
+  "@settingsVersion": {
+    "description": "App version and build number at the bottom of the settings.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "0.1.0"
+      },
+      "build": {
+        "type": "String",
+        "example": "1"
+      }
+    }
+  },
+  "accountTitle": "Account",
+  "@accountTitle": {
+    "description": "Title of the account screen."
+  },
+  "legalTitle": "Privacy and terms",
+  "@legalTitle": {
+    "description": "Title of the legal documents screen."
+  },
+  "aboutTitle": "About and licences",
+  "@aboutTitle": {
+    "description": "Title of the about screen."
+  },
+  "consentAiTitle": "AI coach",
+  "@consentAiTitle": {
+    "description": "Title of the one-time consent screen shown before the first analysis."
+  },
+  "signInTitle": "Sign in",
+  "@signInTitle": {
+    "description": "Title of the sign-in screen."
+  },
+  "metadataTitle": "Game details",
+  "@metadataTitle": {
+    "description": "Title of the game metadata screen."
+  },
+  "metadataSave": "Save",
+  "@metadataSave": {
+    "description": "Primary button of the game metadata screen."
+  },
+  "metadataSaveNeedsColor": "Choose the colour you played.",
+  "@metadataSaveNeedsColor": {
+    "description": "Shown above the disabled Save button while the colour played is not chosen."
+  },
+  "metadataSaveNeedsFix": "Check the marked fields.",
+  "@metadataSaveNeedsFix": {
+    "description": "Shown above the disabled Save button while a field is invalid."
+  },
+  "metadataColorLabel": "I played",
+  "@metadataColorLabel": {
+    "description": "Heading above the White/Black choice: which colour the user played. Read together with the choice: 'I played White'."
+  },
+  "metadataColorWhite": "White",
+  "@metadataColorWhite": {
+    "description": "The white side: a choice in the colour control and a label for White's name."
+  },
+  "metadataColorBlack": "Black",
+  "@metadataColorBlack": {
+    "description": "The black side: a choice in the colour control and a label for Black's name."
+  },
+  "metadataResultLabel": "Result",
+  "@metadataResultLabel": {
+    "description": "Heading above the result chips."
+  },
+  "metadataResultUnknown": "Unknown",
+  "@metadataResultUnknown": {
+    "description": "Result chip for a game whose result is not known or that was not finished."
+  },
+  "metadataResultWhiteWinsA11y": "White won, 1-0",
+  "@metadataResultWhiteWinsA11y": {
+    "description": "Screen-reader label of the 1-0 result chip."
+  },
+  "metadataResultBlackWinsA11y": "Black won, 0-1",
+  "@metadataResultBlackWinsA11y": {
+    "description": "Screen-reader label of the 0-1 result chip."
+  },
+  "metadataResultDrawA11y": "Draw, one half each",
+  "@metadataResultDrawA11y": {
+    "description": "Screen-reader label of the draw result chip."
+  },
+  "metadataOutcomeWin": "You won.",
+  "@metadataOutcomeWin": {
+    "description": "Shown under the result chips when the chosen result is a win for the user's colour."
+  },
+  "metadataOutcomeLoss": "You lost.",
+  "@metadataOutcomeLoss": {
+    "description": "Shown under the result chips when the chosen result is a loss for the user's colour."
+  },
+  "metadataOutcomeDraw": "A draw.",
+  "@metadataOutcomeDraw": {
+    "description": "Shown under the result chips when the chosen result is a draw."
+  },
+  "metadataPlayersLabel": "Players",
+  "@metadataPlayersLabel": {
+    "description": "Heading above the name and rating fields."
+  },
+  "metadataOpponentName": "Opponent",
+  "@metadataOpponentName": {
+    "description": "Label of the opponent's name field."
+  },
+  "metadataPlayerName": "Your name",
+  "@metadataPlayerName": {
+    "description": "Label of the user's own name field."
+  },
+  "metadataRatingLabel": "Rating",
+  "@metadataRatingLabel": {
+    "description": "Short label of a rating field next to a name. German players say Elo for any rating number."
+  },
+  "metadataPlayerRatingA11y": "Your rating",
+  "@metadataPlayerRatingA11y": {
+    "description": "Screen-reader label of the user's own rating field."
+  },
+  "metadataOpponentRatingA11y": "Opponent's rating",
+  "@metadataOpponentRatingA11y": {
+    "description": "Screen-reader label of the opponent's rating field."
+  },
+  "metadataWhiteRatingA11y": "White's rating",
+  "@metadataWhiteRatingA11y": {
+    "description": "Screen-reader label of White's rating field, used while the colour played is not known."
+  },
+  "metadataBlackRatingA11y": "Black's rating",
+  "@metadataBlackRatingA11y": {
+    "description": "Screen-reader label of Black's rating field, used while the colour played is not known."
+  },
+  "metadataRatingHint": "With your rating the coach explains at your level. An online rating or a rough guess is fine.",
+  "@metadataRatingHint": {
+    "description": "Gentle encouragement shown while the user's own rating is empty."
+  },
+  "metadataDateLabel": "Date",
+  "@metadataDateLabel": {
+    "description": "Label of the date field: the day the game was played."
+  },
+  "metadataDateUnknown": "Unknown",
+  "@metadataDateUnknown": {
+    "description": "Text of the date field when no date is set."
+  },
+  "metadataDateClear": "Clear date",
+  "@metadataDateClear": {
+    "description": "Tooltip of the button that removes the date."
+  },
+  "metadataDateFuture": "This date is in the future.",
+  "@metadataDateFuture": {
+    "description": "Error under the date field."
+  },
+  "metadataEventLabel": "Event",
+  "@metadataEventLabel": {
+    "description": "Label of the event field: the tournament, league or occasion."
+  },
+  "metadataEventHint": "e.g. Club championship",
+  "@metadataEventHint": {
+    "description": "Placeholder inside the empty event field."
+  },
+  "metadataTimeControlLabel": "Time control",
+  "@metadataTimeControlLabel": {
+    "description": "Heading above the time-control chips."
+  },
+  "metadataTimeControlClassical": "Classical",
+  "@metadataTimeControlClassical": {
+    "description": "Time-control chip: long games, an hour or more each."
+  },
+  "metadataTimeControlRapid": "Rapid",
+  "@metadataTimeControlRapid": {
+    "description": "Time-control chip: more than 10 and less than 60 minutes each."
+  },
+  "metadataTimeControlBlitz": "Blitz",
+  "@metadataTimeControlBlitz": {
+    "description": "Time-control chip: 3 to 10 minutes each."
+  },
+  "metadataTimeControlBullet": "Bullet",
+  "@metadataTimeControlBullet": {
+    "description": "Time-control chip: less than 3 minutes each."
+  },
+  "metadataTimeControlOther": "Other",
+  "@metadataTimeControlOther": {
+    "description": "Time-control chip: anything else, such as correspondence or no clock."
+  },
+  "metadataTimeControlDetail": "Minutes + increment",
+  "@metadataTimeControlDetail": {
+    "description": "Label of the optional free-text field for the exact time control."
+  },
+  "metadataTimeControlDetailHint": "e.g. 90+30",
+  "@metadataTimeControlDetailHint": {
+    "description": "Placeholder inside the empty time-control detail field: 90 minutes plus 30 seconds per move."
+  },
+  "metadataRatingError": "{min}–{max}",
+  "@metadataRatingError": {
+    "description": "Error under a rating field: the accepted range, kept short because the field is narrow.",
+    "placeholders": {
+      "min": {
+        "type": "int",
+        "example": "100"
+      },
+      "max": {
+        "type": "int",
+        "example": "3500"
+      }
+    }
+  },
+  "aboutDescription": "Bogner Chess helps you learn from your own games. Enter a game on the board or import a PGN, have it analysed on bognerchess.com, and review it with the comments of the AI coach.",
+  "@aboutDescription": {
+    "description": "One-paragraph description of the app at the top of the about screen."
+  },
+  "aboutNotAffiliated": "Bogner Chess is not affiliated with or endorsed by Lichess. It uses free software that the Lichess project publishes.",
+  "@aboutNotAffiliated": {
+    "description": "Statement on the about screen. Must stay; do not soften it."
+  },
+  "aboutFreeSoftwareNotice": "Copyright © 2026 Bogner Chess. This app is free software: you may redistribute and modify it under the GNU General Public License, version 3 or any later version. It comes with no warranty.",
+  "@aboutFreeSoftwareNotice": {
+    "description": "The legal notice the GPL asks an interactive program to show: copyright, no warranty, licence."
+  },
+  "aboutSourceForBuild": "Source code for this build",
+  "@aboutSourceForBuild": {
+    "description": "About screen row that opens the public source repository at the tag of the running build. The address is shown below it."
+  },
+  "aboutGplLicence": "GNU General Public License v3",
+  "@aboutGplLicence": {
+    "description": "About screen row that opens the full GPL text. The licence name stays in English."
+  },
+  "aboutGplLicenceHint": "Full licence text, in English",
+  "@aboutGplLicenceHint": {
+    "description": "Explanation under the GPL row."
+  },
+  "aboutAppStorePermission": "Additional permission for app stores",
+  "@aboutAppStorePermission": {
+    "description": "About screen row and screen title: the additional permission under GPL section 7 for distribution through app stores."
+  },
+  "aboutAppStorePermissionDraft": "Draft, not in force yet",
+  "@aboutAppStorePermissionDraft": {
+    "description": "Explanation under the additional-permission row while the text has no legal sign-off."
+  },
+  "aboutAppStorePermissionDraftBanner": "This text is a draft. It grants nothing until the copyright holder publishes the final wording. Until then only the GNU General Public License applies.",
+  "@aboutAppStorePermissionDraftBanner": {
+    "description": "Warning above the additional-permission text while it is a draft."
+  },
+  "aboutThirdPartyNotices": "Third-party notices",
+  "@aboutThirdPartyNotices": {
+    "description": "About screen row and screen title: the NOTICE file with artwork and source code from other projects."
+  },
+  "aboutThirdPartyNoticesHint": "Chess pieces and source code from other projects",
+  "@aboutThirdPartyNoticesHint": {
+    "description": "Explanation under the third-party notices row."
+  },
+  "aboutOpenSourceLicences": "Open-source licences",
+  "@aboutOpenSourceLicences": {
+    "description": "About screen row that opens the list of packages with their licence texts."
+  },
+  "aboutOpenSourceLicencesHint": "The packages this app is built with",
+  "@aboutOpenSourceLicencesHint": {
+    "description": "Explanation under the open-source licences row."
+  },
+  "aboutLinkFailed": "The link could not be opened.",
+  "@aboutLinkFailed": {
+    "description": "Message when the browser could not be opened for a link on the about screen."
+  },
+  "aboutDocumentLoadFailed": "This text could not be loaded. It is also part of the source code of this app.",
+  "@aboutDocumentLoadFailed": {
+    "description": "Body of the error view when a bundled licence text cannot be read."
+  },
+  "importPasteButton": "Paste from clipboard",
+  "@importPasteButton": {
+    "description": "Button that puts the clipboard text into the PGN field."
+  },
+  "importOpenFileButton": "Open file…",
+  "@importOpenFileButton": {
+    "description": "Button that opens the system file picker for a PGN or text file."
+  },
+  "importFieldLabel": "PGN or moves",
+  "@importFieldLabel": {
+    "description": "Label of the large text field on the import screen."
+  },
+  "importFieldHint": "1. e4 e5 2. Nf3 Nc6 3. Bb5 …",
+  "@importFieldHint": {
+    "description": "Example shown inside the empty PGN field. The German example is only an illustration; the field itself needs English piece letters."
+  },
+  "importClear": "Clear",
+  "@importClear": {
+    "description": "Tooltip of the button that empties the PGN field."
+  },
+  "importEmptyHint": "Paste a game from another chess app, open a PGN file, or type the moves. Tags such as [White \"…\"] are optional.",
+  "@importEmptyHint": {
+    "description": "Help text under the empty PGN field."
+  },
+  "importChecking": "Checking the moves…",
+  "@importChecking": {
+    "description": "Shown while a large PGN text is being validated."
+  },
+  "importClipboardEmpty": "There is no text on the clipboard.",
+  "@importClipboardEmpty": {
+    "description": "Snackbar after tapping paste with an empty clipboard."
+  },
+  "importFileUnreadable": "This file could not be read.",
+  "@importFileUnreadable": {
+    "description": "Snackbar when the picked file cannot be read."
+  },
+  "importErrorTitleGame": "This game can't be imported",
+  "@importErrorTitleGame": {
+    "description": "Headline of the error panel when one game is invalid."
+  },
+  "importErrorTitleText": "This text can't be imported",
+  "@importErrorTitleText": {
+    "description": "Headline of the error panel when the whole text is refused."
+  },
+  "importErrorTooLarge": "The text is too large. At most 2 MB can be imported at once.",
+  "@importErrorTooLarge": {
+    "description": "Error: the pasted text or the file exceeds the size limit."
+  },
+  "importErrorTooManyGames": "There are more than {max} games in this text. Please import a smaller file.",
+  "@importErrorTooManyGames": {
+    "description": "Error: more games than the limit.",
+    "placeholders": {
+      "max": {
+        "type": "int",
+        "example": "500"
+      }
+    }
+  },
+  "importErrorNoGames": "No chess game was found in this text. A game looks like this: 1. e4 e5 2. Nf3 Nc6",
+  "@importErrorNoGames": {
+    "description": "Error: the text contains neither tags nor moves."
+  },
+  "importErrorNoMoves": "This game has no moves.",
+  "@importErrorNoMoves": {
+    "description": "Error: a game with tags but without moves."
+  },
+  "importErrorCustomStart": "This game starts from a set-up position (FEN). For now, only games that start from the normal starting position can be imported.",
+  "@importErrorCustomStart": {
+    "description": "Error: the PGN has a FEN or SetUp tag."
+  },
+  "importErrorVariant": "This is a game of {variant}. Only standard chess can be imported.",
+  "@importErrorVariant": {
+    "description": "Error: the PGN has a Variant tag other than standard chess.",
+    "placeholders": {
+      "variant": {
+        "type": "String",
+        "example": "Chess960"
+      }
+    }
+  },
+  "importErrorIllegalMove": "{move} is not a legal move in this position.",
+  "@importErrorIllegalMove": {
+    "description": "Error: a move of the main line is illegal. The placeholder is the numbered move as written.",
+    "placeholders": {
+      "move": {
+        "type": "String",
+        "example": "13. Rh5"
+      }
+    }
+  },
+  "importErrorAmbiguousMove": "{move} is ambiguous: more than one piece can make this move. Add the file or rank it starts from, as in Nbd7.",
+  "@importErrorAmbiguousMove": {
+    "description": "Error: a SAN move fits several legal moves.",
+    "placeholders": {
+      "move": {
+        "type": "String",
+        "example": "10... Nd7"
+      }
+    }
+  },
+  "importErrorUnreadable": "“{token}” is not a chess move.",
+  "@importErrorUnreadable": {
+    "description": "Error: a word in the movetext is not a move. Moves use English piece letters (K, Q, R, B, N).",
+    "placeholders": {
+      "token": {
+        "type": "String",
+        "example": "Nf9"
+      }
+    }
+  },
+  "importErrorUnreadableHint": "Moves need the English piece letters K, Q, R, B and N.",
+  "@importErrorUnreadableHint": {
+    "description": "Second sentence of the unreadable-move error."
+  },
+  "importErrorUnterminatedComment": "A comment that opens with a curly bracket is never closed.",
+  "@importErrorUnterminatedComment": {
+    "description": "Error: unterminated brace comment."
+  },
+  "importErrorUnterminatedVariation": "A variation that opens with a round bracket is never closed.",
+  "@importErrorUnterminatedVariation": {
+    "description": "Error: unterminated variation."
+  },
+  "importErrorWhereLine": "Line {line}",
+  "@importErrorWhereLine": {
+    "description": "Where in the text the error is.",
+    "placeholders": {
+      "line": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "importErrorWhereLineMove": "Line {line}, at move {number}",
+  "@importErrorWhereLineMove": {
+    "description": "Where in the text the error is, with the move number.",
+    "placeholders": {
+      "line": {
+        "type": "int",
+        "example": "12"
+      },
+      "number": {
+        "type": "int",
+        "example": "13"
+      }
+    }
+  },
+  "importErrorFixHint": "Correct the text above. It is checked again as you type.",
+  "@importErrorFixHint": {
+    "description": "Closing line of the error panel."
+  },
+  "importGamesFound": "{count, plural, =1{1 game found} other{{count} games found}}",
+  "@importGamesFound": {
+    "description": "Headline above the list of games found in the text.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "importChooseGame": "Choose the game you want to import.",
+  "@importChooseGame": {
+    "description": "Instruction above the list of games."
+  },
+  "importGameNotImportable": "Can't be imported",
+  "@importGameNotImportable": {
+    "description": "Marks a game in the list that failed validation."
+  },
+  "importChooseAnother": "Choose another game",
+  "@importChooseAnother": {
+    "description": "Button that returns from the preview to the list of games."
+  },
+  "importPreviewTitle": "Ready to import",
+  "@importPreviewTitle": {
+    "description": "Headline of the preview card of a valid game."
+  },
+  "importPlayers": "{white} – {black}",
+  "@importPlayers": {
+    "description": "The two players of a game, White first.",
+    "placeholders": {
+      "white": {
+        "type": "String",
+        "example": "Anna"
+      },
+      "black": {
+        "type": "String",
+        "example": "Bruno"
+      }
+    }
+  },
+  "importPlayerWhite": "White",
+  "@importPlayerWhite": {
+    "description": "Stands in for a missing name of the player with the white pieces."
+  },
+  "importPlayerBlack": "Black",
+  "@importPlayerBlack": {
+    "description": "Stands in for a missing name of the player with the black pieces."
+  },
+  "importMoves": "{count, plural, =1{1 move} other{{count} moves}}",
+  "@importMoves": {
+    "description": "Length of the game in full moves.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "34"
+      }
+    }
+  },
+  "importResultOpen": "No result",
+  "@importResultOpen": {
+    "description": "Shown when the PGN has no result or the result *."
+  },
+  "importFinalPosition": "Final position",
+  "@importFinalPosition": {
+    "description": "Accessibility label of the small board on the preview."
+  },
+  "importWarningVariations": "Variations were removed. Only the main line is imported.",
+  "@importWarningVariations": {
+    "description": "Warning on the preview: the PGN contained variations."
+  },
+  "importWarningComments": "Comments and annotation symbols were removed.",
+  "@importWarningComments": {
+    "description": "Warning on the preview: the PGN contained comments, NAGs or glyphs."
+  },
+  "importContinue": "Continue",
+  "@importContinue": {
+    "description": "Primary button: hand the chosen game to the next step."
+  },
+  "entryFlipBoard": "Flip board",
+  "@entryFlipBoard": {
+    "description": "Tooltip and screen-reader label of the button that turns the board around on the move-entry screen."
+  },
+  "entryMoreOptions": "More options",
+  "@entryMoreOptions": {
+    "description": "Tooltip of the overflow menu on the move-entry screen."
+  },
+  "entryAutoQueen": "Always promote to queen",
+  "@entryAutoQueen": {
+    "description": "Checkable menu item: when on, a pawn reaching the last rank becomes a queen without showing the promotion picker."
+  },
+  "entryUndo": "Undo",
+  "@entryUndo": {
+    "description": "Large button that takes back the move shown on the board."
+  },
+  "entryRedo": "Forward",
+  "@entryRedo": {
+    "description": "Tooltip and screen-reader label of the button that steps one move forward or restores a move that was just undone."
+  },
+  "entryDone": "Done",
+  "@entryDone": {
+    "description": "Button that finishes move entry."
+  },
+  "entryMoveListEmpty": "Play the first move on the board.",
+  "@entryMoveListEmpty": {
+    "description": "Hint shown in place of the move list while no move has been entered."
+  },
+  "entryMoveListStart": "Start",
+  "@entryMoveListStart": {
+    "description": "Screen-reader label of the first item of the move list, which jumps back to the starting position."
+  },
+  "entryMoveSemantics": "{number}. {side, select, white{White} other{Black}}, {san}",
+  "@entryMoveSemantics": {
+    "description": "Screen-reader label of one move in the move list; activating it jumps to that move.",
+    "placeholders": {
+      "number": {
+        "type": "int",
+        "example": "12"
+      },
+      "side": {
+        "type": "String",
+        "example": "white"
+      },
+      "san": {
+        "type": "String",
+        "example": "Nf3"
+      }
+    }
+  },
+  "entryStatusToMove": "Move {number} · {side, select, white{White to move} other{Black to move}}",
+  "@entryStatusToMove": {
+    "description": "Status line under the board while the game goes on.",
+    "placeholders": {
+      "number": {
+        "type": "int",
+        "example": "12"
+      },
+      "side": {
+        "type": "String",
+        "example": "white"
+      }
+    }
+  },
+  "entryStatusCheckmate": "Checkmate · {winner, select, white{White wins} other{Black wins}}",
+  "@entryStatusCheckmate": {
+    "description": "Status line under the board when the position shown is checkmate.",
+    "placeholders": {
+      "winner": {
+        "type": "String",
+        "example": "white"
+      }
+    }
+  },
+  "entryStatusStalemate": "Stalemate · draw",
+  "@entryStatusStalemate": {
+    "description": "Status line under the board when the position shown is stalemate."
+  },
+  "entryStatusInsufficientMaterial": "Draw · insufficient material",
+  "@entryStatusInsufficientMaterial": {
+    "description": "Status line under the board when neither side can checkmate any more."
+  },
+  "entryOverwriteTitle": "{count, plural, =1{Replace the following move?} other{Replace the following {count} moves?}}",
+  "@entryOverwriteTitle": {
+    "description": "Title of the confirmation shown when a different move is played in the middle of the entered game.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "entryOverwriteMessage": "{newSan} is not the move you entered here before ({oldSan}). Everything from {oldSan} on will be removed.",
+  "@entryOverwriteMessage": {
+    "description": "Body of the overwrite confirmation.",
+    "placeholders": {
+      "newSan": {
+        "type": "String",
+        "example": "Nf6"
+      },
+      "oldSan": {
+        "type": "String",
+        "example": "Nc6"
+      }
+    }
+  },
+  "entryOverwriteConfirm": "Replace",
+  "@entryOverwriteConfirm": {
+    "description": "Confirms the overwrite: the new move replaces the rest of the game."
+  },
+  "entryOverwriteCancel": "Keep moves",
+  "@entryOverwriteCancel": {
+    "description": "Dismisses the overwrite confirmation; nothing changes."
+  },
+  "entrySavedAsDraft": "Saved as draft",
+  "@entrySavedAsDraft": {
+    "description": "Confirmation after tapping Done while the next step of the flow is not available."
+  },
+  "boardSquareEmpty": "{square}, empty",
+  "@boardSquareEmpty": {
+    "description": "Screen-reader label of an empty board square.",
+    "placeholders": {
+      "square": {
+        "type": "String",
+        "example": "e5"
+      }
+    }
+  },
+  "boardSquarePiece": "{square}, {piece, select, whiteKing{white king} whiteQueen{white queen} whiteRook{white rook} whiteBishop{white bishop} whiteKnight{white knight} whitePawn{white pawn} blackKing{black king} blackQueen{black queen} blackRook{black rook} blackBishop{black bishop} blackKnight{black knight} other{black pawn}}",
+  "@boardSquarePiece": {
+    "description": "Screen-reader label of an occupied board square.",
+    "placeholders": {
+      "square": {
+        "type": "String",
+        "example": "e4"
+      },
+      "piece": {
+        "type": "String",
+        "example": "whitePawn"
+      }
+    }
+  },
+  "boardPromoteTo": "Promote to {role, select, queen{queen} rook{rook} bishop{bishop} other{knight}}",
+  "@boardPromoteTo": {
+    "description": "Screen-reader label of a choice in the promotion picker.",
+    "placeholders": {
+      "role": {
+        "type": "String",
+        "example": "queen"
+      }
+    }
+  },
+  "boardCancelPromotion": "Cancel promotion",
+  "@boardCancelPromotion": {
+    "description": "Screen-reader label of every square outside the promotion picker while it is open."
+  },
+  "signInTagline": "Enter or import your games, have them analysed and review them with coach comments.",
+  "@signInTagline": {
+    "description": "Sign-in screen: one sentence under the app name that says what the app is for."
+  },
+  "signInPrimary": "Sign in",
+  "@signInPrimary": {
+    "description": "Sign-in screen: button that opens the login page with e-mail and password."
+  },
+  "signInRegister": "Create account",
+  "@signInRegister": {
+    "description": "Sign-in screen: button that opens the registration page."
+  },
+  "signInApple": "Continue with Apple",
+  "@signInApple": {
+    "description": "Sign-in screen: Sign in with Apple button. Use Apple's official wording for the language."
+  },
+  "signInGoogle": "Continue with Google",
+  "@signInGoogle": {
+    "description": "Sign-in screen: Sign in with Google button."
+  },
+  "signInOr": "or",
+  "@signInOr": {
+    "description": "Sign-in screen: divider between the Apple/Google buttons and the e-mail buttons."
+  },
+  "signInSameAccount": "The same account works on bognerchess.com.",
+  "@signInSameAccount": {
+    "description": "Sign-in screen: note that app and website share one account. Keep the domain as it is."
+  },
+  "signInBusy": "Waiting for the sign-in page …",
+  "@signInBusy": {
+    "description": "Sign-in screen: shown (and announced by VoiceOver) while the system browser sheet is open."
+  },
+  "signInErrorOfflineTitle": "No connection",
+  "@signInErrorOfflineTitle": {
+    "description": "Sign-in screen: title of the message shown when the identity server could not be reached."
+  },
+  "signInErrorOfflineMessage": "The sign-in page could not be reached. Check your internet connection and try again.",
+  "@signInErrorOfflineMessage": {
+    "description": "Sign-in screen: body of the offline message."
+  },
+  "signInErrorTitle": "Sign-in did not work",
+  "@signInErrorTitle": {
+    "description": "Sign-in screen: title of the message shown when sign-in failed for a reason other than the connection."
+  },
+  "signInErrorMessage": "Something went wrong on our side. Please try again in a moment.",
+  "@signInErrorMessage": {
+    "description": "Sign-in screen: body of the generic sign-in error."
+  },
+  "signInVerifyToggle": "E-mail not confirmed yet?",
+  "@signInVerifyToggle": {
+    "description": "Sign-in screen: text button that opens the help for people who registered but have not clicked the confirmation link."
+  },
+  "signInVerifyTitle": "Confirm your e-mail address",
+  "@signInVerifyTitle": {
+    "description": "Sign-in screen: title of the e-mail confirmation help."
+  },
+  "signInVerifyBody": "We sent you an e-mail with a confirmation link. Open the link (it may open in Safari, that is fine), then come back here and sign in.",
+  "@signInVerifyBody": {
+    "description": "Sign-in screen: body of the e-mail confirmation help. The link usually opens outside the app."
+  },
+  "signInVerifyAction": "I have confirmed it – sign in",
+  "@signInVerifyAction": {
+    "description": "Sign-in screen: button in the e-mail confirmation help; starts a normal sign-in."
+  },
+  "reviewSideName": "{side, select, white{White} other{Black}}",
+  "@reviewSideName": {
+    "description": "Name of a colour on the review screen: fallback player name, column head of the move-quality table.",
+    "placeholders": {
+      "side": {
+        "type": "String",
+        "example": "white"
+      }
+    }
+  },
+  "reviewAccuracySemantics": "Accuracy of {side, select, white{White} other{Black}}: {value} percent",
+  "@reviewAccuracySemantics": {
+    "description": "Screen-reader label of an accuracy chip in the review header.",
+    "placeholders": {
+      "side": {
+        "type": "String",
+        "example": "white"
+      },
+      "value": {
+        "type": "String",
+        "example": "91.6"
+      }
+    }
+  },
+  "reviewMenu": "Board options",
+  "@reviewMenu": {
+    "description": "Tooltip of the menu button in the review app bar."
+  },
+  "reviewShowBestArrow": "Show best move",
+  "@reviewShowBestArrow": {
+    "description": "Checkable menu item: green arrow for the best move of the engine."
+  },
+  "reviewShowPlayedArrow": "Show played move",
+  "@reviewShowPlayedArrow": {
+    "description": "Checkable menu item: amber arrow on the move that was played."
+  },
+  "reviewFlipBoard": "Flip board",
+  "@reviewFlipBoard": {
+    "description": "Menu item that turns the review board around."
+  },
+  "reviewGoToStart": "Go to start",
+  "@reviewGoToStart": {
+    "description": "Tooltip and screen-reader label of the button that jumps to the start position."
+  },
+  "reviewPreviousMove": "Previous move",
+  "@reviewPreviousMove": {
+    "description": "Tooltip and screen-reader label of the step-back button."
+  },
+  "reviewNextMove": "Next move",
+  "@reviewNextMove": {
+    "description": "Tooltip and screen-reader label of the step-forward button."
+  },
+  "reviewGoToEnd": "Go to end",
+  "@reviewGoToEnd": {
+    "description": "Tooltip and screen-reader label of the button that jumps to the last move."
+  },
+  "reviewPreviousMoment": "Previous key moment",
+  "@reviewPreviousMoment": {
+    "description": "Tooltip and screen-reader label of the button that jumps to the previous moment the coach commented on."
+  },
+  "reviewNextMoment": "Next key moment",
+  "@reviewNextMoment": {
+    "description": "Button (and tooltip) that jumps to the next moment the coach commented on."
+  },
+  "reviewTabCoach": "Coach",
+  "@reviewTabCoach": {
+    "description": "Tab below the review board: the comments of the AI coach. Keep it very short."
+  },
+  "reviewTabMoves": "Moves",
+  "@reviewTabMoves": {
+    "description": "Tab below the review board: the move list. Keep it very short."
+  },
+  "reviewTabSummary": "Summary",
+  "@reviewTabSummary": {
+    "description": "Tab below the review board: the lessons of the game and the move-quality table. Keep it very short."
+  },
+  "reviewClassification": "{classification, select, book{Book move} best{Best move} good{Good move} inaccuracy{Inaccuracy} mistake{Mistake} blunder{Blunder} strong{Strong move} other{Move}}",
+  "@reviewClassification": {
+    "description": "The quality of a move in words. \"strong\" is a move the coach praised.",
+    "placeholders": {
+      "classification": {
+        "type": "String",
+        "example": "blunder"
+      }
+    }
+  },
+  "reviewTheme": "{theme, select, opening{Opening} development{Development} centralBreak{Central break} kingSafety{King safety} tactics{Tactics} hangingPiece{Hanging piece} calculation{Calculation} pieceActivity{Piece activity} pawnStructure{Pawn structure} endgame{Endgame} materialConversion{Converting an advantage} other{Chess}}",
+  "@reviewTheme": {
+    "description": "The theme of a coach comment or lesson, shown as a small chip.",
+    "placeholders": {
+      "theme": {
+        "type": "String",
+        "example": "kingSafety"
+      }
+    }
+  },
+  "reviewEvalEqual": "Equal position",
+  "@reviewEvalEqual": {
+    "description": "Evaluation in words: nobody is better."
+  },
+  "reviewEvalSlight": "{side, select, white{White is slightly better} other{Black is slightly better}}",
+  "@reviewEvalSlight": {
+    "description": "Evaluation in words: a small advantage.",
+    "placeholders": {
+      "side": {
+        "type": "String",
+        "example": "white"
+      }
+    }
+  },
+  "reviewEvalClear": "{side, select, white{White is clearly better} other{Black is clearly better}}",
+  "@reviewEvalClear": {
+    "description": "Evaluation in words: a clear advantage.",
+    "placeholders": {
+      "side": {
+        "type": "String",
+        "example": "white"
+      }
+    }
+  },
+  "reviewEvalWinning": "{side, select, white{White is winning} other{Black is winning}}",
+  "@reviewEvalWinning": {
+    "description": "Evaluation in words: a decisive advantage.",
+    "placeholders": {
+      "side": {
+        "type": "String",
+        "example": "white"
+      }
+    }
+  },
+  "reviewEvalMate": "Mate in {count} for {side, select, white{White} other{Black}}",
+  "@reviewEvalMate": {
+    "description": "Evaluation in words: a forced mate.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      },
+      "side": {
+        "type": "String",
+        "example": "white"
+      }
+    }
+  },
+  "reviewEvalCheckmate": "{side, select, white{Checkmate. White wins} black{Checkmate. Black wins} other{Checkmate}}",
+  "@reviewEvalCheckmate": {
+    "description": "Evaluation in words: checkmate is on the board.",
+    "placeholders": {
+      "side": {
+        "type": "String",
+        "example": "white"
+      }
+    }
+  },
+  "reviewMomentCounter": "Key moment {index} of {total}",
+  "@reviewMomentCounter": {
+    "description": "Small line above a coach comment: which of the moments the coach picked this is.",
+    "placeholders": {
+      "index": {
+        "type": "int",
+        "example": "2"
+      },
+      "total": {
+        "type": "int",
+        "example": "8"
+      }
+    }
+  },
+  "reviewCoachAiNote": "AI-generated. May contain mistakes.",
+  "@reviewCoachAiNote": {
+    "description": "Small footnote under every coach comment."
+  },
+  "reviewThumbUp": "Helpful",
+  "@reviewThumbUp": {
+    "description": "Screen-reader label and tooltip of the thumbs-up button of a coach comment."
+  },
+  "reviewThumbDown": "Not helpful",
+  "@reviewThumbDown": {
+    "description": "Screen-reader label and tooltip of the thumbs-down button of a coach comment."
+  },
+  "reviewFeedbackFailed": "Your rating could not be saved.",
+  "@reviewFeedbackFailed": {
+    "description": "Snackbar after a thumbs up or down could not be stored."
+  },
+  "reviewShowLine": "Show line: {label}",
+  "@reviewShowLine": {
+    "description": "Screen-reader label of a button under a coach comment that plays a line on the board. The label comes from the server, for example Better.",
+    "placeholders": {
+      "label": {
+        "type": "String",
+        "example": "Better"
+      }
+    }
+  },
+  "reviewFactBetterWas": "Better was {san}.",
+  "@reviewFactBetterWas": {
+    "description": "Engine fact on a move without a coach comment: the move the engine prefers.",
+    "placeholders": {
+      "san": {
+        "type": "String",
+        "example": "Nf3"
+      }
+    }
+  },
+  "reviewStartPositionTitle": "The moments that mattered",
+  "@reviewStartPositionTitle": {
+    "description": "Headline of the coach tab on the start position."
+  },
+  "reviewStartPositionHint": "The coach picked the moments that decided this game. Swipe through them, or step through every move.",
+  "@reviewStartPositionHint": {
+    "description": "Explanation on the coach tab on the start position."
+  },
+  "reviewFirstMoment": "First key moment",
+  "@reviewFirstMoment": {
+    "description": "Button on the start position that jumps to the first moment the coach commented on."
+  },
+  "reviewOpenSummary": "See your lessons",
+  "@reviewOpenSummary": {
+    "description": "Button on the coach tab after the last key moment: opens the summary tab."
+  },
+  "reviewLineKind": "{kind, select, bestLine{Best continuation} refutation{Why the move fails} alternative{Another good option} other{Line}}",
+  "@reviewLineKind": {
+    "description": "What kind of line the line viewer is showing.",
+    "placeholders": {
+      "kind": {
+        "type": "String",
+        "example": "bestLine"
+      }
+    }
+  },
+  "reviewLineBack": "Back to game",
+  "@reviewLineBack": {
+    "description": "Button that leaves the line viewer."
+  },
+  "reviewLinePrevious": "Previous move of the line",
+  "@reviewLinePrevious": {
+    "description": "Tooltip and screen-reader label of the step-back button of the line viewer."
+  },
+  "reviewLineNext": "Next move of the line",
+  "@reviewLineNext": {
+    "description": "Tooltip and screen-reader label of the step-forward button of the line viewer."
+  },
+  "reviewMoveHasComment": "with coach comment",
+  "@reviewMoveHasComment": {
+    "description": "Screen-reader suffix of a move in the move list that has a coach comment."
+  },
+  "reviewLessonsTitle": "What to take away",
+  "@reviewLessonsTitle": {
+    "description": "Headline of the lessons on the summary tab."
+  },
+  "reviewLessonEvidence": "Move {label}",
+  "@reviewLessonEvidence": {
+    "description": "Chip under a lesson that jumps to the move the lesson is about.",
+    "placeholders": {
+      "label": {
+        "type": "String",
+        "example": "12... Nxe4"
+      }
+    }
+  },
+  "reviewLessonsEmpty": "There are no lessons for this game.",
+  "@reviewLessonsEmpty": {
+    "description": "Shown on the summary tab when the analysis has no lessons."
+  },
+  "reviewQualityTitle": "Move quality",
+  "@reviewQualityTitle": {
+    "description": "Headline of the table that counts moves by quality for both sides."
+  },
+  "reviewAccuracy": "Accuracy",
+  "@reviewAccuracy": {
+    "description": "Row label of the accuracy of both sides in the move-quality table."
+  },
+  "reviewGraphLabel": "Evaluation graph",
+  "@reviewGraphLabel": {
+    "description": "Screen-reader label of the evaluation graph."
+  },
+  "reviewUpdateBanner": "Update the app to see this analysis.",
+  "@reviewUpdateBanner": {
+    "description": "Banner when the analysis was made in a newer format than this app version understands. Board and moves still work."
+  },
+  "reviewInvalidMessage": "This analysis could not be read.",
+  "@reviewInvalidMessage": {
+    "description": "Error message when the analysis document is damaged."
+  },
+  "reviewStartPosition": "Start position",
+  "@reviewStartPosition": {
+    "description": "Status line under the review board before the first move."
+  },
+  "reviewLoading": "Loading analysis",
+  "@reviewLoading": {
+    "description": "Screen-reader label of the loading state of the review screen."
+  },
+  "legalPrivacyPolicy": "Privacy policy",
+  "@legalPrivacyPolicy": {
+    "description": "Name of the privacy policy, as a list row, a link and the title of its screen."
+  },
+  "legalTerms": "Terms of use",
+  "@legalTerms": {
+    "description": "Name of the terms of use, as a list row and the title of its screen."
+  },
+  "legalDraftLabel": "DRAFT",
+  "@legalDraftLabel": {
+    "description": "Badge on a legal text that has had no legal review yet. Shown on test builds. Capitals."
+  },
+  "legalDraftHint": "This text is a placeholder and has not been legally reviewed.",
+  "@legalDraftHint": {
+    "description": "Explanation next to the draft badge on a legal text."
+  },
+  "legalNotPublishedTitle": "Not available yet",
+  "@legalNotPublishedTitle": {
+    "description": "Title when the backend has no published version of a legal text."
+  },
+  "legalNotPublishedMessage": "This text has not been published yet. You can find it on bognerchess.com.",
+  "@legalNotPublishedMessage": {
+    "description": "Message when the backend has no published version of a legal text. Keep the domain as it is."
+  },
+  "legalOfflineTitle": "You are offline",
+  "@legalOfflineTitle": {
+    "description": "Title when a legal text cannot be loaded without a connection."
+  },
+  "legalOfflineMessage": "The text is loaded from the server, so that it is always the current version. Connect to the internet and try again.",
+  "@legalOfflineMessage": {
+    "description": "Message when a legal text cannot be loaded without a connection."
+  },
+  "legalLoading": "Loading text",
+  "@legalLoading": {
+    "description": "Screen-reader label of the loading indicator of a legal text."
+  },
+  "legalVersionLine": "Version {version} · {date}",
+  "@legalVersionLine": {
+    "description": "Line under the title of a legal text: its version number and the date it was published.",
+    "placeholders": {
+      "version": {
+        "type": "int",
+        "example": "3"
+      },
+      "date": {
+        "type": "String",
+        "example": "1 September 2026"
+      }
+    }
+  },
+  "legalEnglishOnly": "This text is only available in English at the moment.",
+  "@legalEnglishOnly": {
+    "description": "Note when a legal text was asked for in German and the server only has English."
+  },
+  "consentAiClose": "Close",
+  "@consentAiClose": {
+    "description": "Tooltip of the close button of the AI consent screen. Closing means not agreeing."
+  },
+  "consentAiLoading": "Loading text",
+  "@consentAiLoading": {
+    "description": "Screen-reader label of the loading indicator of the AI consent screen."
+  },
+  "consentAiProvider": "Analysis comments are generated by {provider}.",
+  "@consentAiProvider": {
+    "description": "Prominent sentence on the AI consent screen that names the third-party AI provider. The placeholder is a company or product name from the server.",
+    "placeholders": {
+      "provider": {
+        "type": "String",
+        "example": "Example AI Provider"
+      }
+    }
+  },
+  "consentAiProviderUnnamed": "Analysis comments are generated by an AI language model of an external provider.",
+  "@consentAiProviderUnnamed": {
+    "description": "The same sentence when the server did not name the provider."
+  },
+  "consentAiSentTitle": "What is sent to the AI provider",
+  "@consentAiSentTitle": {
+    "description": "Headline of the list of data that is sent to the AI provider."
+  },
+  "consentAiSentMoves": "The moves of the game",
+  "@consentAiSentMoves": {
+    "description": "Item of the list of data sent to the AI provider."
+  },
+  "consentAiSentPositions": "The positions on the board",
+  "@consentAiSentPositions": {
+    "description": "Item of the list of data sent to the AI provider."
+  },
+  "consentAiSentEvaluations": "The chess engine's evaluations and best lines",
+  "@consentAiSentEvaluations": {
+    "description": "Item of the list of data sent to the AI provider."
+  },
+  "consentAiSentColour": "Which colour you played",
+  "@consentAiSentColour": {
+    "description": "Item of the list of data sent to the AI provider."
+  },
+  "consentAiSentRatingBand": "A rough rating range, so that the explanations fit your level",
+  "@consentAiSentRatingBand": {
+    "description": "Item of the list of data sent to the AI provider. A rating band is a range like 1200 to 1400, not the exact rating."
+  },
+  "consentAiNotSentTitle": "What is never sent",
+  "@consentAiNotSentTitle": {
+    "description": "Headline of the list of data that is not sent to the AI provider."
+  },
+  "consentAiNotSentName": "Your name and the name of your opponent",
+  "@consentAiNotSentName": {
+    "description": "Item of the list of data that is never sent to the AI provider."
+  },
+  "consentAiNotSentEmail": "Your e-mail address",
+  "@consentAiNotSentEmail": {
+    "description": "Item of the list of data that is never sent to the AI provider."
+  },
+  "consentAiNotSentAccount": "Your account or anything that identifies it",
+  "@consentAiNotSentAccount": {
+    "description": "Item of the list of data that is never sent to the AI provider."
+  },
+  "consentAiNotSentEvent": "Event, place and date of the game",
+  "@consentAiNotSentEvent": {
+    "description": "Item of the list of data that is never sent to the AI provider."
+  },
+  "consentAiAgree": "Agree and continue",
+  "@consentAiAgree": {
+    "description": "Primary button of the AI consent screen: records the consent."
+  },
+  "consentAiNotNow": "Not now",
+  "@consentAiNotNow": {
+    "description": "Secondary button of the AI consent screen: closes it without consent. No analysis is requested."
+  },
+  "consentAiSaveFailed": "Your consent could not be saved. Check your connection and try again.",
+  "@consentAiSaveFailed": {
+    "description": "Error under the AI consent text when recording (or withdrawing) the consent failed."
+  },
+  "consentAiAlreadyAgreed": "You have agreed to this version.",
+  "@consentAiAlreadyAgreed": {
+    "description": "Shown instead of the agree button when the AI consent screen is opened from the settings and the consent is already given."
+  },
+  "consentAiWithdraw": "Withdraw consent",
+  "@consentAiWithdraw": {
+    "description": "Button on the AI consent screen, when the consent is given: withdraws it. New analyses are then refused until the user agrees again."
+  },
+  "consentAiOfflineTitle": "You are offline",
+  "@consentAiOfflineTitle": {
+    "description": "Title of the AI consent screen when the text cannot be loaded without a connection."
+  },
+  "consentAiOfflineMessage": "Consent can only be given online, because the server has to know about it before a game is analysed. Your game is kept on this device.",
+  "@consentAiOfflineMessage": {
+    "description": "Message of the AI consent screen when there is no connection."
+  },
+  "consentAiErrorMessage": "The consent text could not be loaded. Please try again.",
+  "@consentAiErrorMessage": {
+    "description": "Message of the AI consent screen when loading failed for another reason than the connection."
+  },
+  "consentAiUnavailableTitle": "Not available yet",
+  "@consentAiUnavailableTitle": {
+    "description": "Title of the AI consent screen when the server has no reviewed consent text."
+  },
+  "consentAiUnavailableMessage": "The consent text for the AI analysis is not available yet. Your games are saved; please try again later.",
+  "@consentAiUnavailableMessage": {
+    "description": "Message of the AI consent screen when the server has no reviewed consent text."
+  },
+  "consentAnalyticsTitle": "Help improve the app?",
+  "@consentAnalyticsTitle": {
+    "description": "Title of the one-time question about usage statistics and crash reports, when the server's own text is not available."
+  },
+  "consentAnalyticsBody": "May the app send usage statistics and crash reports? They tell us which screens are used and where the app fails. They never contain your games, your moves or your name.",
+  "@consentAnalyticsBody": {
+    "description": "Body of the one-time question about usage statistics and crash reports, when the server's own text is not available."
+  },
+  "consentAnalyticsFootnote": "This is switched off unless you allow it, and you can change it in the settings at any time. It also covers crash reports.",
+  "@consentAnalyticsFootnote": {
+    "description": "Small print under the question about usage statistics: opt-in, changeable, and the same switch covers crash reports."
+  },
+  "consentAnalyticsAllow": "Allow",
+  "@consentAnalyticsAllow": {
+    "description": "Button that grants the consent for usage statistics and crash reports."
+  },
+  "consentAnalyticsDecline": "No thanks",
+  "@consentAnalyticsDecline": {
+    "description": "Button that refuses the consent for usage statistics and crash reports."
+  },
+  "settingsAccountSignedIn": "Signed in",
+  "@settingsAccountSignedIn": {
+    "description": "Title of the account row and card when the sign-in token carries neither a name nor an e-mail address."
+  },
+  "settingsSectionAnalyses": "Analyses",
+  "@settingsSectionAnalyses": {
+    "description": "Settings section with the analysis quota."
+  },
+  "settingsSectionBoard": "Board",
+  "@settingsSectionBoard": {
+    "description": "Settings section with piece set and board colours."
+  },
+  "settingsSectionEntry": "Entering moves",
+  "@settingsSectionEntry": {
+    "description": "Settings section with options of the move-entry screen."
+  },
+  "settingsSectionPrivacy": "Your data",
+  "@settingsSectionPrivacy": {
+    "description": "Settings section with the analytics switch and the AI consent."
+  },
+  "settingsAutoQueenHint": "Skips the choice of piece when a pawn reaches the last rank.",
+  "@settingsAutoQueenHint": {
+    "description": "Explanation under the \"always promote to queen\" switch in the settings."
+  },
+  "settingsAnalytics": "Usage statistics and crash reports",
+  "@settingsAnalytics": {
+    "description": "Switch in the settings: consent for product analytics and crash reports. Off by default."
+  },
+  "settingsAnalyticsHint": "Helps us improve the app. Never contains your games or your name.",
+  "@settingsAnalyticsHint": {
+    "description": "Explanation under the analytics switch."
+  },
+  "settingsAiConsent": "AI analysis consent",
+  "@settingsAiConsent": {
+    "description": "Row in the settings that shows whether the AI consent is given."
+  },
+  "settingsAiConsentAgreed": "Agreed (version {version})",
+  "@settingsAiConsentAgreed": {
+    "description": "State of the AI consent row: given, with the version of the text.",
+    "placeholders": {
+      "version": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "settingsAiConsentNewVersion": "The text has changed. Please read it again.",
+  "@settingsAiConsentNewVersion": {
+    "description": "State of the AI consent row: an older version was accepted and a new one is published."
+  },
+  "settingsAiConsentNotYet": "Not agreed yet. You are asked before your first analysis.",
+  "@settingsAiConsentNotYet": {
+    "description": "State of the AI consent row: not given."
+  },
+  "settingsAiConsentUnknown": "The status could not be loaded.",
+  "@settingsAiConsentUnknown": {
+    "description": "State of the AI consent row: the server could not be asked."
+  },
+  "settingsAiConsentLoading": "Loading …",
+  "@settingsAiConsentLoading": {
+    "description": "State of the AI consent row while the server is asked."
+  },
+  "settingsAiConsentReview": "Review",
+  "@settingsAiConsentReview": {
+    "description": "Button of the AI consent row: opens the consent text."
+  },
+  "settingsUsageToday": "Today",
+  "@settingsUsageToday": {
+    "description": "Label of the number of analyses used today."
+  },
+  "settingsUsageMonth": "This month",
+  "@settingsUsageMonth": {
+    "description": "Label of the number of analyses used this month."
+  },
+  "settingsUsageOf": "{used} of {limit}",
+  "@settingsUsageOf": {
+    "description": "Analyses used and allowed in a period, e.g. \"1 of 3\".",
+    "placeholders": {
+      "used": {
+        "type": "int",
+        "example": "1"
+      },
+      "limit": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "settingsUsageCount": "{used, plural, =1{1 analysis} other{{used} analyses}}",
+  "@settingsUsageCount": {
+    "description": "Analyses used in a period that has no limit.",
+    "placeholders": {
+      "used": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "settingsUsageResetsAt": "Resets at {time}.",
+  "@settingsUsageResetsAt": {
+    "description": "When the daily analysis count starts again; the placeholder is a time of day like 02:00.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "02:00"
+      }
+    }
+  },
+  "settingsUsageResetsOn": "Resets on {date}.",
+  "@settingsUsageResetsOn": {
+    "description": "When an analysis count starts again; the placeholder is a date like \"October 1\", possibly with a time.",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "October 1"
+      }
+    }
+  },
+  "settingsUsageLimitReached": "Limit reached.",
+  "@settingsUsageLimitReached": {
+    "description": "In front of the reset time when all analyses of a period are used."
+  },
+  "settingsUsageUnlimited": "Unlimited",
+  "@settingsUsageUnlimited": {
+    "description": "Badge for accounts without an analysis limit."
+  },
+  "settingsUsageQueued": "{count, plural, =1{1 analysis in progress} other{{count} analyses in progress}} (at most {max} at a time)",
+  "@settingsUsageQueued": {
+    "description": "How many analyses are queued or running, and how many may be at once.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "1"
+      },
+      "max": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "settingsUsageError": "The numbers could not be loaded.",
+  "@settingsUsageError": {
+    "description": "Shown instead of the analysis quota when loading failed; a retry button is next to it."
+  },
+  "settingsUsageLoading": "Loading analysis quota",
+  "@settingsUsageLoading": {
+    "description": "Screen-reader label of the loading indicator of the analysis quota."
+  },
+  "settingsBoardPieces": "Pieces",
+  "@settingsBoardPieces": {
+    "description": "Label above the choice of piece set."
+  },
+  "settingsBoardColors": "Board colours",
+  "@settingsBoardColors": {
+    "description": "Label above the choice of board colours."
+  },
+  "settingsBoardColorsBrown": "Brown",
+  "@settingsBoardColorsBrown": {
+    "description": "Name of a board colour scheme."
+  },
+  "settingsBoardColorsBlue": "Blue",
+  "@settingsBoardColorsBlue": {
+    "description": "Name of a board colour scheme."
+  },
+  "settingsBoardColorsGreen": "Green",
+  "@settingsBoardColorsGreen": {
+    "description": "Name of a board colour scheme."
+  },
+  "settingsBoardColorsOlive": "Olive",
+  "@settingsBoardColorsOlive": {
+    "description": "Name of a board colour scheme (light grey and olive squares)."
+  },
+  "settingsBoardPreviewLabel": "Board preview: {pieces} pieces, {colours}",
+  "@settingsBoardPreviewLabel": {
+    "description": "Screen-reader label of the preview board in the settings. Placeholders: the name of the piece set and of the colour scheme.",
+    "placeholders": {
+      "pieces": {
+        "type": "String",
+        "example": "Merida"
+      },
+      "colours": {
+        "type": "String",
+        "example": "Blue"
+      }
+    }
+  },
+  "updateRequiredTitle": "Please update the app",
+  "@updateRequiredTitle": {
+    "description": "Title of the blocking screen when the server no longer supports this version of the app."
+  },
+  "updateRequiredMessage": "This version of Bogner Chess is no longer supported. Install the current version to continue. Your games and drafts are kept.",
+  "@updateRequiredMessage": {
+    "description": "Message of the blocking update screen."
+  },
+  "updateRequiredAction": "Open the App Store",
+  "@updateRequiredAction": {
+    "description": "Button of the blocking update screen."
+  },
+  "accountSameAccount": "This is your bognerchess.com account. The app and the website share it: the same sign-in, the same games.",
+  "@accountSameAccount": {
+    "description": "Note on the account screen. Keep the domain as it is."
+  },
+  "accountEmailNotVerified": "Your e-mail address is not confirmed yet. Open the link in the e-mail we sent you.",
+  "@accountEmailNotVerified": {
+    "description": "Hint on the account screen when the e-mail address is not verified."
+  },
+  "accountSignOut": "Sign out",
+  "@accountSignOut": {
+    "description": "Button on the account screen, and the confirm button of its dialog."
+  },
+  "accountSignOutHint": "Games you have not sent yet stay on this device.",
+  "@accountSignOutHint": {
+    "description": "Small print under the sign-out button."
+  },
+  "accountSignOutConfirmTitle": "Sign out?",
+  "@accountSignOutConfirmTitle": {
+    "description": "Title of the dialog that confirms the sign-out."
+  },
+  "accountSignOutConfirmMessage": "Your games stay in your account. Drafts you have not sent yet stay on this device and are there when you sign in again.",
+  "@accountSignOutConfirmMessage": {
+    "description": "Message of the dialog that confirms the sign-out."
+  },
+  "accountCancel": "Cancel",
+  "@accountCancel": {
+    "description": "Cancel button of dialogs on the account screen."
+  },
+  "accountBack": "Back",
+  "@accountBack": {
+    "description": "Button that leaves the \"cannot be deleted\" screen."
+  },
+  "accountDeleteSection": "Delete account",
+  "@accountDeleteSection": {
+    "description": "Headline of the account-deletion part of the account screen."
+  },
+  "accountDeleteTeaser": "Deletes your bognerchess.com account with all games and analyses, in the app and on the website.",
+  "@accountDeleteTeaser": {
+    "description": "One sentence above the link to the account deletion. Keep the domain as it is."
+  },
+  "accountDelete": "Delete account …",
+  "@accountDelete": {
+    "description": "Link on the account screen that opens the account deletion. The ellipsis says that more steps follow."
+  },
+  "accountDeleteTitle": "Delete account",
+  "@accountDeleteTitle": {
+    "description": "Title of the account-deletion screen."
+  },
+  "accountDeleteSameAccountTitle": "This deletes your bognerchess.com account",
+  "@accountDeleteSameAccountTitle": {
+    "description": "Headline of the warning box on the account-deletion screen. Keep the domain as it is."
+  },
+  "accountDeleteSameAccountBody": "The app has no account of its own. You sign in with your bognerchess.com account, and that account is deleted: you lose access to the website as well, not only to this app.",
+  "@accountDeleteSameAccountBody": {
+    "description": "Body of the warning box on the account-deletion screen. Keep the domain as it is."
+  },
+  "accountDeleteWhatGoesTitle": "What is deleted",
+  "@accountDeleteWhatGoesTitle": {
+    "description": "Headline on the account-deletion screen."
+  },
+  "accountDeleteGoesGames": "All your games, analyses and coach comments",
+  "@accountDeleteGoesGames": {
+    "description": "Item of \"what is deleted\"."
+  },
+  "accountDeleteGoesProfile": "Your profile and your sign-in; your personal data is anonymised",
+  "@accountDeleteGoesProfile": {
+    "description": "Item of \"what is deleted\"."
+  },
+  "accountDeleteGoesDevice": "Everything the app has stored on this device, including drafts",
+  "@accountDeleteGoesDevice": {
+    "description": "Item of \"what is deleted\"."
+  },
+  "accountDeleteWhatStaysTitle": "What we have to keep",
+  "@accountDeleteWhatStaysTitle": {
+    "description": "Headline on the account-deletion screen."
+  },
+  "accountDeleteStaysInvoices": "Paid invoices, for as long as the law requires us to keep them",
+  "@accountDeleteStaysInvoices": {
+    "description": "Item of \"what we have to keep\"."
+  },
+  "accountDeleteGoodToKnowTitle": "Before you go on",
+  "@accountDeleteGoodToKnowTitle": {
+    "description": "Headline on the account-deletion screen."
+  },
+  "accountDeleteIrreversible": "This cannot be undone. Nobody can restore a deleted account, not even our support.",
+  "@accountDeleteIrreversible": {
+    "description": "Item of \"before you go on\"."
+  },
+  "accountDeleteMayBeBlocked": "Accounts with an active membership, open invoices or linked child accounts cannot be deleted here. If that applies to you, we tell you what to do.",
+  "@accountDeleteMayBeBlocked": {
+    "description": "Item of \"before you go on\"."
+  },
+  "accountDeleteTypeInstruction": "To confirm, type {word} into the field.",
+  "@accountDeleteTypeInstruction": {
+    "description": "Instruction above the confirmation field. The word is always the English word DELETE, in capitals; do not translate it.",
+    "placeholders": {
+      "word": {
+        "type": "String",
+        "example": "DELETE"
+      }
+    }
+  },
+  "accountDeleteFieldLabel": "Type {word}",
+  "@accountDeleteFieldLabel": {
+    "description": "Label of the confirmation field. The word is always DELETE.",
+    "placeholders": {
+      "word": {
+        "type": "String",
+        "example": "DELETE"
+      }
+    }
+  },
+  "accountDeleteConfirm": "Delete my account for good",
+  "@accountDeleteConfirm": {
+    "description": "The button that deletes the account. Enabled once the word was typed."
+  },
+  "accountDeleteRetry": "Try again",
+  "@accountDeleteRetry": {
+    "description": "The delete button after a failed attempt."
+  },
+  "accountDeleteInProgress": "Deleting account",
+  "@accountDeleteInProgress": {
+    "description": "Screen-reader label of the progress indicator while the deletion request runs."
+  },
+  "accountDeleteFailed": "The account could not be deleted. Nothing was changed. Please try again.",
+  "@accountDeleteFailed": {
+    "description": "Error on the account-deletion screen."
+  },
+  "accountDeleteFailedOffline": "You are offline. The account can only be deleted with a connection. Nothing was changed.",
+  "@accountDeleteFailedOffline": {
+    "description": "Error on the account-deletion screen without a connection."
+  },
+  "accountDeleteBlockedTitle": "This account cannot be deleted here",
+  "@accountDeleteBlockedTitle": {
+    "description": "Title when the server refuses the account deletion."
+  },
+  "accountDeleteBlockedKid": "This is a child account. It belongs to a parent's account, and only they can have it deleted. Ask them, or write to us.",
+  "@accountDeleteBlockedKid": {
+    "description": "Why the deletion was refused: a child account."
+  },
+  "accountDeleteBlockedDependents": "Child accounts are linked to your account and would lose their access. Write to us and we sort that out with you first.",
+  "@accountDeleteBlockedDependents": {
+    "description": "Why the deletion was refused: the account has dependent child accounts."
+  },
+  "accountDeleteBlockedMembership": "You have an active membership. End it first on bognerchess.com or write to us; after that the account can be deleted.",
+  "@accountDeleteBlockedMembership": {
+    "description": "Why the deletion was refused: an active membership. Keep the domain as it is."
+  },
+  "accountDeleteBlockedInvoices": "There are open invoices on your account. Once they are settled, the account can be deleted. Write to us if you have questions.",
+  "@accountDeleteBlockedInvoices": {
+    "description": "Why the deletion was refused: unpaid invoices."
+  },
+  "accountDeleteBlockedOther": "Something on your account has to be sorted out before it can be deleted. Write to us and we take care of it.",
+  "@accountDeleteBlockedOther": {
+    "description": "Why the deletion was refused: a reason this version of the app does not know."
+  },
+  "accountDeleteBlockedNothingDeleted": "Nothing was deleted.",
+  "@accountDeleteBlockedNothingDeleted": {
+    "description": "Reassurance under the reason for a refused deletion."
+  },
+  "accountDeleteContactSupport": "Write to support",
+  "@accountDeleteContactSupport": {
+    "description": "Button that opens an e-mail to the support address."
+  },
+  "accountDeleteSupportSubject": "Delete my Bogner Chess account",
+  "@accountDeleteSupportSubject": {
+    "description": "Subject of the e-mail to support about a refused account deletion."
+  },
+  "accountDeletedTitle": "Your account has been deleted",
+  "@accountDeletedTitle": {
+    "description": "Title of the final confirmation after an account deletion."
+  },
+  "accountDeletedMessage": "Your games, analyses and personal data are being removed, and everything the app stored on this device is gone. Thank you for playing with us.",
+  "@accountDeletedMessage": {
+    "description": "Message of the final confirmation after an account deletion."
+  },
+  "accountDeletedDone": "Done",
+  "@accountDeletedDone": {
+    "description": "Button of the final confirmation after an account deletion; leads to the sign-in screen."
+  },
+  "pushExplainerTitle": "Know when your analysis is ready",
+  "@pushExplainerTitle": {
+    "description": "Headline of the sheet that explains notifications, shown after the first analysis request and before the iOS permission prompt."
+  },
+  "pushExplainerBody": "An analysis takes a few minutes. We'll let you know when your analysis is ready, so you don't have to wait here. No advertising, no reminders.",
+  "@pushExplainerBody": {
+    "description": "Body of the notification explainer sheet. Says what notifications are used for and what they are not used for."
+  },
+  "pushExplainerAllow": "Notify me",
+  "@pushExplainerAllow": {
+    "description": "Primary button of the notification explainer sheet. Leads to the iOS permission prompt."
+  },
+  "pushExplainerNotNow": "Not now",
+  "@pushExplainerNotNow": {
+    "description": "Secondary button of the notification explainer sheet. Closes it without showing the iOS permission prompt."
+  },
+  "pushSettingsDeniedHint": "Notifications are turned off for Bogner Chess. You can turn them on in the Settings app.",
+  "@pushSettingsDeniedHint": {
+    "description": "Hint in the settings when the user has denied notifications in iOS."
+  },
+  "pushSettingsOpenSettings": "Open Settings",
+  "@pushSettingsOpenSettings": {
+    "description": "Button that opens the page of this app in the iOS Settings app."
+  },
+  "newGameSaveAndAnalyse": "Save & analyse",
+  "@newGameSaveAndAnalyse": {
+    "description": "Primary button at the end of the new-game flow: stores the game and requests the coach analysis."
+  },
+  "newGameSaveOnly": "Save only",
+  "@newGameSaveOnly": {
+    "description": "Secondary button at the end of the new-game flow: stores the game without requesting an analysis."
+  },
+  "newGameSavedUploading": "Game saved. It is being uploaded.",
+  "@newGameSavedUploading": {
+    "description": "Confirmation after saving a game without analysis while online."
+  },
+  "newGameSavedAnalysing": "Game saved. It is being uploaded and analysed.",
+  "@newGameSavedAnalysing": {
+    "description": "Confirmation after 'Save & analyse' while online."
+  },
+  "newGameSavedOffline": "Game saved. It will be uploaded as soon as you are online.",
+  "@newGameSavedOffline": {
+    "description": "Confirmation after saving a game while the device is offline."
+  },
+  "newGameSavedWithoutConsent": "Game saved without analysis. You can start the analysis from the game later.",
+  "@newGameSavedWithoutConsent": {
+    "description": "Confirmation after 'Save & analyse' when the user did not give the AI consent."
+  },
+  "newGameAlreadySaved": "This game has already been saved.",
+  "@newGameAlreadySaved": {
+    "description": "Message when the user tries to save a draft that was already handed to the upload queue."
+  },
+  "newGameSaveFailed": "The game could not be saved. Please try again.",
+  "@newGameSaveFailed": {
+    "description": "Message when storing the game on the device failed."
+  },
+  "submitQueueUploading": "{count, plural, =1{Uploading 1 game…} other{Uploading {count} games…}}",
+  "@submitQueueUploading": {
+    "description": "Queue banner while games are being uploaded.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "submitQueueWaiting": "{count, plural, =1{1 game waiting to upload} other{{count} games waiting to upload}}",
+  "@submitQueueWaiting": {
+    "description": "Queue banner: games that are saved on the device and not uploaded yet.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "submitQueueWaitingOffline": "{count, plural, =1{1 game waiting to upload · offline} other{{count} games waiting to upload · offline}}",
+  "@submitQueueWaitingOffline": {
+    "description": "Queue banner while the device has no network.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "submitQueueWaitingRetry": "{count, plural, =1{1 game waiting to upload · will retry automatically} other{{count} games waiting to upload · will retry automatically}}",
+  "@submitQueueWaitingRetry": {
+    "description": "Queue banner after a failed upload attempt, while the queue waits before it tries again.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "submitQueueFailed": "{count, plural, =1{1 game could not be uploaded} other{{count} games could not be uploaded}}",
+  "@submitQueueFailed": {
+    "description": "Queue banner for games the queue has given up on.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "submitQueueRetry": "Retry",
+  "@submitQueueRetry": {
+    "description": "Button that makes the upload queue try again now."
+  },
+  "submitQueueDetails": "Details",
+  "@submitQueueDetails": {
+    "description": "Snack bar action that opens the list of waiting and failed uploads."
+  },
+  "submitQueueSheetTitle": "Uploads",
+  "@submitQueueSheetTitle": {
+    "description": "Title of the sheet that lists games waiting for upload."
+  },
+  "submitQueueSheetEmpty": "All games are uploaded.",
+  "@submitQueueSheetEmpty": {
+    "description": "Shown in the uploads sheet when nothing is waiting any more."
+  },
+  "submitQueueDraftUntitled": "Game without names",
+  "@submitQueueDraftUntitled": {
+    "description": "Title of a waiting game whose players are not known."
+  },
+  "submitQueueDraftPlayers": "{white} – {black}",
+  "@submitQueueDraftPlayers": {
+    "description": "Title of a waiting game: the two players.",
+    "placeholders": {
+      "white": {
+        "type": "String"
+      },
+      "black": {
+        "type": "String"
+      }
+    }
+  },
+  "submitQueueDraftUnknownPlayer": "?",
+  "@submitQueueDraftUnknownPlayer": {
+    "description": "Stands for a player whose name is not known in the title of a waiting game."
+  },
+  "submitQueueStateWaiting": "Waiting to upload",
+  "@submitQueueStateWaiting": {
+    "description": "State of a game in the uploads sheet."
+  },
+  "submitQueueStateUploading": "Uploading…",
+  "@submitQueueStateUploading": {
+    "description": "State of a game in the uploads sheet."
+  },
+  "submitQueueStateRetrying": "Last attempt failed: {reason} Will retry automatically.",
+  "@submitQueueStateRetrying": {
+    "description": "State of a game in the uploads sheet after a failed attempt. {reason} is a full sentence.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "submitQueueStateFailed": "Not uploaded: {reason}",
+  "@submitQueueStateFailed": {
+    "description": "State of a game the queue has given up on. {reason} is a full sentence.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "submitQueueDelete": "Delete",
+  "@submitQueueDelete": {
+    "description": "Button that deletes a game that was not uploaded."
+  },
+  "submitQueueDeleteTitle": "Delete this game?",
+  "@submitQueueDeleteTitle": {
+    "description": "Title of the confirmation before deleting a game that was not uploaded."
+  },
+  "submitQueueDeleteMessage": "It only exists on this device. Deleting it cannot be undone.",
+  "@submitQueueDeleteMessage": {
+    "description": "Body of the confirmation before deleting a game that was not uploaded."
+  },
+  "submitQueueCancel": "Cancel",
+  "@submitQueueCancel": {
+    "description": "Dismisses the delete confirmation."
+  },
+  "submitQueueErrorNetwork": "No connection to the server.",
+  "@submitQueueErrorNetwork": {
+    "description": "Reason a game was not uploaded."
+  },
+  "submitQueueErrorServer": "The server had a problem.",
+  "@submitQueueErrorServer": {
+    "description": "Reason a game was not uploaded."
+  },
+  "submitQueueErrorRateLimited": "Too many requests in a short time.",
+  "@submitQueueErrorRateLimited": {
+    "description": "Reason a game was not uploaded."
+  },
+  "submitQueueErrorUnauthenticated": "Your session has ended. Please sign in again.",
+  "@submitQueueErrorUnauthenticated": {
+    "description": "Reason a game was not uploaded."
+  },
+  "submitQueueErrorPgnInvalid": "The server could not read the moves.",
+  "@submitQueueErrorPgnInvalid": {
+    "description": "Reason a game was not uploaded: the server rejected the notation."
+  },
+  "submitQueueErrorPgnInvalidAt": "The server could not read the moves (move {moveNumber}: {san}).",
+  "@submitQueueErrorPgnInvalidAt": {
+    "description": "Reason a game was not uploaded, with the move the server stumbled over.",
+    "placeholders": {
+      "moveNumber": {
+        "type": "int"
+      },
+      "san": {
+        "type": "String"
+      }
+    }
+  },
+  "submitQueueErrorRejected": "The server did not accept this game.",
+  "@submitQueueErrorRejected": {
+    "description": "Reason a game was not uploaded."
+  },
+  "submitQueueErrorInternal": "Something went wrong in the app.",
+  "@submitQueueErrorInternal": {
+    "description": "Reason a game was not uploaded."
+  },
+  "submitQueueUploaded": "Game uploaded.",
+  "@submitQueueUploaded": {
+    "description": "Snack bar when a saved game reached the server (no analysis was requested)."
+  },
+  "submitQueueUploadedAnalysing": "Game uploaded. The analysis has started.",
+  "@submitQueueUploadedAnalysing": {
+    "description": "Snack bar when a saved game reached the server and its analysis was queued."
+  },
+  "submitQueueUploadedHeld": "Game saved. Analysis not started: {reason}",
+  "@submitQueueUploadedHeld": {
+    "description": "Snack bar when the game was uploaded but the analysis could not be requested. {reason} is a full sentence.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "submitQueueOpenGame": "Open",
+  "@submitQueueOpenGame": {
+    "description": "Snack bar action that opens the uploaded game."
+  },
+  "submitQueueHoldLimitReached": "Your analysis limit is used up.",
+  "@submitQueueHoldLimitReached": {
+    "description": "Reason an analysis was not started."
+  },
+  "submitQueueHoldQueueFull": "Too many of your analyses are still waiting.",
+  "@submitQueueHoldQueueFull": {
+    "description": "Reason an analysis was not started."
+  },
+  "submitQueueHoldRateLimited": "Too many requests in a short time.",
+  "@submitQueueHoldRateLimited": {
+    "description": "Reason an analysis was not started."
+  },
+  "submitQueueHoldEmailNotVerified": "Your e-mail address is not confirmed yet.",
+  "@submitQueueHoldEmailNotVerified": {
+    "description": "Reason an analysis was not started."
+  },
+  "submitQueueHoldAiConsentRequired": "Your consent to the AI analysis is missing.",
+  "@submitQueueHoldAiConsentRequired": {
+    "description": "Reason an analysis was not started."
+  },
+  "submitQueueHoldRequestFailed": "The request did not get through.",
+  "@submitQueueHoldRequestFailed": {
+    "description": "Reason an analysis was not started."
+  },
+  "librarySearchHint": "Search player or event",
+  "@librarySearchHint": {
+    "description": "Hint in the search field of the game library."
+  },
+  "librarySearchClear": "Clear search",
+  "@librarySearchClear": {
+    "description": "Tooltip of the button that empties the search field."
+  },
+  "libraryFilterDates": "Date",
+  "@libraryFilterDates": {
+    "description": "Chip that opens the date-range filter of the library while no range is set."
+  },
+  "libraryFilterDatesRange": "{from} – {to}",
+  "@libraryFilterDatesRange": {
+    "description": "Chip label while a date range is set.",
+    "placeholders": {
+      "from": {
+        "type": "String",
+        "example": "01/09/2026"
+      },
+      "to": {
+        "type": "String",
+        "example": "30/09/2026"
+      }
+    }
+  },
+  "libraryFilterDatesClear": "Clear date filter",
+  "@libraryFilterDatesClear": {
+    "description": "Tooltip of the chip's delete button."
+  },
+  "libraryDatePickerHelp": "Games played between",
+  "@libraryDatePickerHelp": {
+    "description": "Heading of the date-range picker."
+  },
+  "libraryNoMatchesTitle": "No games found",
+  "@libraryNoMatchesTitle": {
+    "description": "Headline when search or date filter match nothing."
+  },
+  "libraryNoMatchesMessage": "Try another name or a wider date range.",
+  "@libraryNoMatchesMessage": {
+    "description": "Explanation under libraryNoMatchesTitle."
+  },
+  "libraryClearFilters": "Clear filters",
+  "@libraryClearFilters": {
+    "description": "Button that removes search text and date range."
+  },
+  "libraryOfflineBanner": "You're offline. These are the games saved on this device.",
+  "@libraryOfflineBanner": {
+    "description": "Banner above the library list when the server cannot be reached."
+  },
+  "libraryOfflineEmpty": "You're offline, and no games are saved on this device yet.",
+  "@libraryOfflineEmpty": {
+    "description": "Message of the error state of an empty library without a connection."
+  },
+  "libraryRefreshFailedBanner": "The list could not be updated.",
+  "@libraryRefreshFailedBanner": {
+    "description": "Banner above the library list when the refresh failed for another reason than being offline."
+  },
+  "libraryPlayersVs": "{white} – {black}",
+  "@libraryPlayersVs": {
+    "description": "Title of a library row: the two players.",
+    "placeholders": {
+      "white": {
+        "type": "String",
+        "example": "Anna Muster"
+      },
+      "black": {
+        "type": "String",
+        "example": "Jonas Keller"
+      }
+    }
+  },
+  "libraryWhite": "White",
+  "@libraryWhite": {
+    "description": "Stands in for a missing name of the player with the white pieces."
+  },
+  "libraryBlack": "Black",
+  "@libraryBlack": {
+    "description": "Stands in for a missing name of the player with the black pieces."
+  },
+  "libraryDateUnknown": "No date",
+  "@libraryDateUnknown": {
+    "description": "Shown in a library row when the game has no date."
+  },
+  "libraryStatusDraft": "Draft",
+  "@libraryStatusDraft": {
+    "description": "Badge of a game that is still being entered on this device."
+  },
+  "libraryStatusWaiting": "Waiting to upload",
+  "@libraryStatusWaiting": {
+    "description": "Badge of a finished game that was not sent to the server yet."
+  },
+  "libraryStatusUploadFailed": "Upload failed",
+  "@libraryStatusUploadFailed": {
+    "description": "Badge of a game the app gave up sending."
+  },
+  "libraryStatusAnalysing": "Analysing…",
+  "@libraryStatusAnalysing": {
+    "description": "Badge of a game whose analysis job is queued or running."
+  },
+  "libraryStatusReady": "Analysis ready",
+  "@libraryStatusReady": {
+    "description": "Badge of a game with a finished analysis."
+  },
+  "libraryStatusFailed": "Analysis failed",
+  "@libraryStatusFailed": {
+    "description": "Badge of a game whose last analysis job failed."
+  },
+  "libraryStatusNotAnalysed": "Not analysed",
+  "@libraryStatusNotAnalysed": {
+    "description": "Badge of a game without an analysis."
+  },
+  "libraryDeleteTitle": "Delete this game?",
+  "@libraryDeleteTitle": {
+    "description": "Title of the confirmation before a game is deleted."
+  },
+  "libraryDeleteMessage": "The game and its analysis are removed from your account, on the website too. This cannot be undone.",
+  "@libraryDeleteMessage": {
+    "description": "Body of the delete confirmation."
+  },
+  "libraryDeleteDraftTitle": "Delete this draft?",
+  "@libraryDeleteDraftTitle": {
+    "description": "Title of the confirmation before a draft is deleted."
+  },
+  "libraryDeleteDraftMessage": "The moves you entered will be lost.",
+  "@libraryDeleteDraftMessage": {
+    "description": "Body of the draft delete confirmation."
+  },
+  "libraryDeleteConfirm": "Delete",
+  "@libraryDeleteConfirm": {
+    "description": "Destructive button of the delete confirmation; also the name of the VoiceOver action on a row."
+  },
+  "libraryDeleteCancel": "Cancel",
+  "@libraryDeleteCancel": {
+    "description": "Button that closes the delete confirmation without deleting."
+  },
+  "libraryDeleted": "Game deleted",
+  "@libraryDeleted": {
+    "description": "Snack bar after a game was deleted."
+  },
+  "libraryDraftDeleted": "Draft deleted",
+  "@libraryDraftDeleted": {
+    "description": "Snack bar after a draft was deleted."
+  },
+  "libraryDeleteFailed": "That could not be deleted. Try again.",
+  "@libraryDeleteFailed": {
+    "description": "Snack bar when deleting failed."
+  },
+  "libraryDraftWaitingInfo": "This game is sent as soon as you're online.",
+  "@libraryDraftWaitingInfo": {
+    "description": "Snack bar after a tap on a draft that waits for upload."
+  },
+  "libraryDraftFailedInfo": "This game could not be uploaded.",
+  "@libraryDraftFailedInfo": {
+    "description": "Snack bar after a tap on a draft whose upload failed."
+  },
+  "libraryLoadingMore": "Loading more games",
+  "@libraryLoadingMore": {
+    "description": "Screen-reader label of the spinner at the end of the library list."
+  },
+  "gameDetailNotFoundTitle": "Game not found",
+  "@gameDetailNotFoundTitle": {
+    "description": "Headline when the opened game does not exist on the server."
+  },
+  "gameDetailNotFoundMessage": "It may have been deleted on another device.",
+  "@gameDetailNotFoundMessage": {
+    "description": "Explanation under gameDetailNotFoundTitle."
+  },
+  "gameDetailOutcomeWin": "You won",
+  "@gameDetailOutcomeWin": {
+    "description": "Result of the game from the user's side, after the score."
+  },
+  "gameDetailOutcomeLoss": "You lost",
+  "@gameDetailOutcomeLoss": {
+    "description": "Result of the game from the user's side, after the score."
+  },
+  "gameDetailOutcomeDraw": "Draw",
+  "@gameDetailOutcomeDraw": {
+    "description": "Result of the game, after the score."
+  },
+  "gameDetailMoves": "{count, plural, =1{1 move} other{{count} moves}}",
+  "@gameDetailMoves": {
+    "description": "Length of the game in full moves, on the game screen.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "34"
+      }
+    }
+  },
+  "gameDetailFinalPosition": "Final position",
+  "@gameDetailFinalPosition": {
+    "description": "Heading above the board with the last position of the game."
+  },
+  "gameDetailDelete": "Delete game",
+  "@gameDetailDelete": {
+    "description": "Tooltip of the delete button on the game screen."
+  },
+  "gameDetailAnalyse": "Analyse this game",
+  "@gameDetailAnalyse": {
+    "description": "Primary button that requests the analysis of the game."
+  },
+  "gameDetailAnalyseHint": "The coach goes through your game and explains the key moments. It takes a few minutes.",
+  "@gameDetailAnalyseHint": {
+    "description": "Text above the analyse button."
+  },
+  "gameDetailOpenAnalysis": "Open analysis",
+  "@gameDetailOpenAnalysis": {
+    "description": "Primary button that opens the review of an analysed game."
+  },
+  "gameDetailReadyMessage": "Your analysis is ready.",
+  "@gameDetailReadyMessage": {
+    "description": "Title of the card on the game screen once the analysis is done."
+  },
+  "gameDetailQueuedTitle": "Waiting in the queue",
+  "@gameDetailQueuedTitle": {
+    "description": "Title of the progress card while the analysis job is queued."
+  },
+  "gameDetailQueuedNext": "Your game is next.",
+  "@gameDetailQueuedNext": {
+    "description": "Progress text for a queued job with nothing ahead of it."
+  },
+  "gameDetailQueuedPosition": "{count, plural, =1{1 game is ahead of yours.} other{{count} games are ahead of yours.}}",
+  "@gameDetailQueuedPosition": {
+    "description": "Progress text for a queued job: how many of the user's jobs come first.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "gameDetailRunningTitle": "Analysing your game",
+  "@gameDetailRunningTitle": {
+    "description": "Title of the progress card while the analysis job runs."
+  },
+  "gameDetailStageEngine": "The engine is checking every move.",
+  "@gameDetailStageEngine": {
+    "description": "Progress text for the engine stage of the analysis."
+  },
+  "gameDetailStageCoach": "The coach is writing the comments.",
+  "@gameDetailStageCoach": {
+    "description": "Progress text for the coach stage of the analysis."
+  },
+  "gameDetailStageOther": "This takes a few minutes.",
+  "@gameDetailStageOther": {
+    "description": "Progress text when the stage is not known."
+  },
+  "gameDetailLeaveHint": "You can leave the app. We'll notify you when the analysis is ready.",
+  "@gameDetailLeaveHint": {
+    "description": "Reassurance at the bottom of the progress card."
+  },
+  "gameDetailFailedTitle": "The analysis failed",
+  "@gameDetailFailedTitle": {
+    "description": "Title of the card on the game screen after a failed job."
+  },
+  "gameDetailFailedMessage": "Something went wrong on our side. This attempt does not count towards your limit.",
+  "@gameDetailFailedMessage": {
+    "description": "Body of the failed card. A failed job is refunded."
+  },
+  "gameDetailSheetClose": "Close",
+  "@gameDetailSheetClose": {
+    "description": "Button that closes an information sheet on the game screen."
+  },
+  "gameDetailLimitTitleDay": "Daily limit reached",
+  "@gameDetailLimitTitleDay": {
+    "description": "Title of the sheet shown when the daily analysis limit is used up."
+  },
+  "gameDetailLimitTitleMonth": "Monthly limit reached",
+  "@gameDetailLimitTitleMonth": {
+    "description": "Title of the sheet shown when the monthly analysis limit is used up."
+  },
+  "gameDetailLimitTitleOther": "Analysis limit reached",
+  "@gameDetailLimitTitleOther": {
+    "description": "Title of the limit sheet when the kind of limit is not known."
+  },
+  "gameDetailLimitBodyDay": "{limit, plural, =1{You can have 1 game analysed per day, and you've used it today.} other{You can have {limit} games analysed per day, and you've used them all today.}}",
+  "@gameDetailLimitBodyDay": {
+    "description": "First paragraph of the daily limit sheet.",
+    "placeholders": {
+      "limit": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "gameDetailLimitBodyMonth": "{limit, plural, =1{You can have 1 game analysed per month, and you've used it this month.} other{You can have {limit} games analysed per month, and you've used them all this month.}}",
+  "@gameDetailLimitBodyMonth": {
+    "description": "First paragraph of the monthly limit sheet.",
+    "placeholders": {
+      "limit": {
+        "type": "int",
+        "example": "30"
+      }
+    }
+  },
+  "gameDetailLimitBodyOther": "{limit, plural, =1{You have used your 1 analysis.} other{You have used all {limit} analyses.}}",
+  "@gameDetailLimitBodyOther": {
+    "description": "First paragraph of the limit sheet when the kind of limit is not known.",
+    "placeholders": {
+      "limit": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "gameDetailLimitReset": "You can request analyses again from {when}.",
+  "@gameDetailLimitReset": {
+    "description": "Second paragraph of the limit sheet. 'when' is a local time, or a date and a time.",
+    "placeholders": {
+      "when": {
+        "type": "String",
+        "example": "00:00"
+      }
+    }
+  },
+  "gameDetailLimitSaved": "Your game is saved. You can have it analysed later.",
+  "@gameDetailLimitSaved": {
+    "description": "Third paragraph of the limit sheet."
+  },
+  "gameDetailLimitFree": "Entering, importing and reviewing games is never limited.",
+  "@gameDetailLimitFree": {
+    "description": "Footer of the limit sheet."
+  },
+  "gameDetailQueueFullTitle": "Too many analyses at once",
+  "@gameDetailQueueFullTitle": {
+    "description": "Title of the sheet shown when the user has too many jobs waiting."
+  },
+  "gameDetailQueueFullBody": "{max, plural, =1{Only 1 of your games can be analysed at a time. Wait until it is finished, then try again.} other{Only {max} of your games can be analysed at a time. Wait until one is finished, then try again.}}",
+  "@gameDetailQueueFullBody": {
+    "description": "Body of the queue-full sheet.",
+    "placeholders": {
+      "max": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "gameDetailRateLimited": "{seconds, plural, =1{Too many requests. Try again in 1 second.} other{Too many requests. Try again in {seconds} seconds.}}",
+  "@gameDetailRateLimited": {
+    "description": "Snack bar when the server rate-limits the analysis request.",
+    "placeholders": {
+      "seconds": {
+        "type": "int",
+        "example": "30"
+      }
+    }
+  },
+  "gameDetailEmailTitle": "Confirm your e-mail address",
+  "@gameDetailEmailTitle": {
+    "description": "Title of the sheet shown when analyses need a verified e-mail address."
+  },
+  "gameDetailEmailBody": "To have games analysed, open the link in the e-mail we sent you when you registered. Then come back and tap the button below.",
+  "@gameDetailEmailBody": {
+    "description": "Body of the e-mail verification sheet."
+  },
+  "gameDetailEmailAction": "I've confirmed it",
+  "@gameDetailEmailAction": {
+    "description": "Button of the e-mail verification sheet: checks again and requests the analysis."
+  },
+  "gameDetailEmailStill": "Your address is not confirmed yet.",
+  "@gameDetailEmailStill": {
+    "description": "Shown in the e-mail verification sheet when the check still fails."
+  },
+  "gameDetailConsentNeeded": "The analysis needs your consent to AI processing.",
+  "@gameDetailConsentNeeded": {
+    "description": "Snack bar after the user closed the AI consent screen without agreeing."
+  },
+  "gameDetailRequestFailed": "The analysis could not be requested. Try again.",
+  "@gameDetailRequestFailed": {
+    "description": "Snack bar when the analysis request failed."
+  },
+  "gameDetailRequestOffline": "You're offline. Connect to the internet and try again.",
+  "@gameDetailRequestOffline": {
+    "description": "Snack bar when the analysis request failed without a connection."
+  },
+  "usageTitle": "Analyses",
+  "@usageTitle": {
+    "description": "Heading of the usage block (settings)."
+  },
+  "usageDailyLeft": "{remaining} of {limit} analyses left today · resets at {time}",
+  "@usageDailyLeft": {
+    "description": "Usage line: what is left of the daily limit and the local time of the reset.",
+    "placeholders": {
+      "remaining": {
+        "type": "int",
+        "example": "2"
+      },
+      "limit": {
+        "type": "int",
+        "example": "3"
+      },
+      "time": {
+        "type": "String",
+        "example": "00:00"
+      }
+    }
+  },
+  "usageDailyNone": "No analyses left today · resets at {time}",
+  "@usageDailyNone": {
+    "description": "Usage line when the daily limit is used up.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "00:00"
+      }
+    }
+  },
+  "usageMonthlyLeft": "{remaining} of {limit} analyses left this month · resets on {date}",
+  "@usageMonthlyLeft": {
+    "description": "Usage line: what is left of the monthly limit and the date of the reset.",
+    "placeholders": {
+      "remaining": {
+        "type": "int",
+        "example": "18"
+      },
+      "limit": {
+        "type": "int",
+        "example": "30"
+      },
+      "date": {
+        "type": "String",
+        "example": "1 Oct"
+      }
+    }
+  },
+  "usageMonthlyNone": "No analyses left this month · resets on {date}",
+  "@usageMonthlyNone": {
+    "description": "Usage line when the monthly limit is used up.",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "1 Oct"
+      }
+    }
+  },
+  "usageUnlimited": "Unlimited analyses",
+  "@usageUnlimited": {
+    "description": "Usage block for an account without limits."
+  },
+  "usageUnavailable": "The numbers are not available right now.",
+  "@usageUnavailable": {
+    "description": "Usage block when the quota could not be loaded."
+  },
+  "analysisNoticeReady": "Your analysis is ready.",
+  "@analysisNoticeReady": {
+    "description": "Snack bar shown anywhere in the app when an analysis job finished."
+  },
+  "analysisNoticeReadyOpponent": "Your game against {name} has been analysed.",
+  "@analysisNoticeReadyOpponent": {
+    "description": "Snack bar shown anywhere in the app when an analysis job finished and the opponent is known.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Jonas Keller"
+      }
+    }
+  },
+  "analysisNoticeOpen": "Open",
+  "@analysisNoticeOpen": {
+    "description": "Action of the analysis-ready snack bar: opens the review."
+  },
+  "analysisNoticeFailed": "An analysis failed. It doesn't count towards your limit.",
+  "@analysisNoticeFailed": {
+    "description": "Snack bar shown anywhere in the app when an analysis job failed."
+  },
+  "analysisNoticeView": "View",
+  "@analysisNoticeView": {
+    "description": "Action of the analysis-failed snack bar: opens the game."
+  }
+}

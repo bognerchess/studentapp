@@ -1,0 +1,22 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Bogner Chess
+// Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
+
+#include "Shared.xcconfig"
+
+// Expanded into Runner/Runner.entitlements as the value of aps-environment.
+APS_ENVIRONMENT = development
+
+// Simulator builds are signed ad hoc ("-", Xcode's "Sign to Run Locally").
+// That needs no team, no certificate and no Apple account, so CI and every
+// contributor can build and launch the app. It is not switched off entirely,
+// because an unsigned build carries no entitlements, and without the App
+// Group entitlement the app and the share extension get no common container
+// in the simulator. A debug build for a real device is still signed
+// automatically and needs DEVELOPMENT_TEAM.
+CODE_SIGNING_ALLOWED[sdk=iphonesimulator*] = YES
+CODE_SIGNING_REQUIRED[sdk=iphonesimulator*] = NO
+CODE_SIGN_IDENTITY[sdk=iphonesimulator*] = -
+
+// Last, so that a developer's local values win over everything above.
+#include? "Local.xcconfig"

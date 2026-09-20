@@ -1,0 +1,9 @@
+{
+  "data": {
+    "myAiConsent": {
+      "currentVersion": 2,
+      "acceptedVersion": 1,
+      "required": true
+    }
+  }
+}

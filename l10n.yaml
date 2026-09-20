@@ -1,0 +1,15 @@
+# flutter gen-l10n configuration. The output is checked in (tool/gen.sh
+# regenerates it, the codegen-clean check compares it).
+arb-dir: lib/core/l10n
+template-arb-file: app_en.arb
+output-dir: lib/core/l10n/generated
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+# English first: Flutter falls back to the first supported locale when the
+# system language is neither German nor English.
+preferred-supported-locales:
+  - en
+header-file: header.txt
+nullable-getter: false
+required-resource-attributes: true
+format: true

@@ -1,0 +1,14 @@
+{
+  "data": {
+    "analysisJob": {
+      "id": "job-1",
+      "chessGameId": "game-1",
+      "status": "QUEUED",
+      "stage": null,
+      "queuePosition": 2,
+      "requestedAt": "2026-09-19T10:00:00.000Z",
+      "finishedAt": null,
+      "failureCode": null
+    }
+  }
+}

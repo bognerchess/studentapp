@@ -1,0 +1,17 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Bogner Chess
+// Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
+//
+// Used by the Release configuration and by Flutter's Profile configuration,
+// which has always shared Release.xcconfig in the Flutter template.
+
+#include "Shared.xcconfig"
+
+// Expanded into Runner/Runner.entitlements as the value of aps-environment.
+// A profile build is installed from a developer's machine with a development
+// profile, so it talks to the APNs sandbox like a debug build.
+APS_ENVIRONMENT = production
+APS_ENVIRONMENT[config=Profile] = development
+
+// Last, so that a developer's local values win over everything above.
+#include? "Local.xcconfig"
