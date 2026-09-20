@@ -860,4 +860,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reviewLoading => 'Loading analysis';
+
+  @override
+  String get pushExplainerTitle => 'Know when your analysis is ready';
+
+  @override
+  String get pushExplainerBody =>
+      'An analysis takes a few minutes. We\'ll let you know when your analysis is ready, so you don\'t have to wait here. No advertising, no reminders.';
+
+  @override
+  String get pushExplainerAllow => 'Notify me';
+
+  @override
+  String get pushExplainerNotNow => 'Not now';
+
+  @override
+  String get pushSettingsDeniedHint =>
+      'Notifications are turned off for Bogner Chess. You can turn them on in the Settings app.';
+
+  @override
+  String get pushSettingsOpenSettings => 'Open Settings';
 }

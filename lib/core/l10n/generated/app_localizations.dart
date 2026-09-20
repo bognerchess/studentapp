@@ -1391,6 +1391,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Loading analysis'**
   String get reviewLoading;
+
+  /// Headline of the sheet that explains notifications, shown after the first analysis request and before the iOS permission prompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Know when your analysis is ready'**
+  String get pushExplainerTitle;
+
+  /// Body of the notification explainer sheet. Says what notifications are used for and what they are not used for.
+  ///
+  /// In en, this message translates to:
+  /// **'An analysis takes a few minutes. We\'ll let you know when your analysis is ready, so you don\'t have to wait here. No advertising, no reminders.'**
+  String get pushExplainerBody;
+
+  /// Primary button of the notification explainer sheet. Leads to the iOS permission prompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Notify me'**
+  String get pushExplainerAllow;
+
+  /// Secondary button of the notification explainer sheet. Closes it without showing the iOS permission prompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get pushExplainerNotNow;
+
+  /// Hint in the settings when the user has denied notifications in iOS.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are turned off for Bogner Chess. You can turn them on in the Settings app.'**
+  String get pushSettingsDeniedHint;
+
+  /// Button that opens the page of this app in the iOS Settings app.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Settings'**
+  String get pushSettingsOpenSettings;
 }
 
 class _AppLocalizationsDelegate

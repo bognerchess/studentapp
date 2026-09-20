@@ -122,12 +122,50 @@ const List<AdditionalLicense> _adaptedSource = [
 /// full text of its licence (the SIL Open Font License asks for that).
 const List<AdditionalLicense> _fonts = [];
 
+/// Native libraries that come in through Swift Package Manager and whose
+/// licence asks for its text in copies: the "Native libraries" table in
+/// NOTICE. Flutter collects the licences of pub packages only.
+const List<AdditionalLicense> _nativeLibraries = [
+  AdditionalLicense(
+    package: 'sentry-cocoa',
+    text:
+        'Crash reports are sent, with your consent only, by the Sentry SDK '
+        'for Apple platforms, github.com/getsentry/sentry-cocoa, version '
+        '8.58.4, which the sentry_flutter package links as a framework.\n'
+        '\n'
+        'The MIT License (MIT)\n'
+        '\n'
+        'Copyright (c) 2015 Sentry\n'
+        '\n'
+        'Permission is hereby granted, free of charge, to any person '
+        'obtaining a copy of this software and associated documentation '
+        'files (the "Software"), to deal in the Software without '
+        'restriction, including without limitation the rights to use, copy, '
+        'modify, merge, publish, distribute, sublicense, and/or sell copies '
+        'of the Software, and to permit persons to whom the Software is '
+        'furnished to do so, subject to the following conditions:\n'
+        '\n'
+        'The above copyright notice and this permission notice shall be '
+        'included in all copies or substantial portions of the Software.\n'
+        '\n'
+        'THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, '
+        'EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF '
+        'MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND '
+        'NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS '
+        'BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN '
+        'ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN '
+        'CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE '
+        'SOFTWARE.',
+  ),
+];
+
 /// Everything [registerAdditionalLicenses] adds, in the order of NOTICE.
 const List<AdditionalLicense> additionalLicenses = [
   ..._adaptedSource,
   ..._vendoredSource,
   ..._pieceSets,
   ..._fonts,
+  ..._nativeLibraries,
 ];
 
 /// The collector behind [registerAdditionalLicenses]. Public so that a test

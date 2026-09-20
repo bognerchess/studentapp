@@ -23,6 +23,7 @@ class AppAuthRepository implements AuthRepository {
     required this._store,
     required this._installMarker,
     this._onSignedOut,
+    this._onBeforeSignOut,
     DateTime Function()? now,
     this.refreshTimeout = AuthConfig.refreshTimeout,
     this.revokeTimeout = AuthConfig.revokeTimeout,
@@ -40,6 +41,7 @@ class AppAuthRepository implements AuthRepository {
   final TokenStore _store;
   final InstallMarker _installMarker;
   final SignedOutHook? _onSignedOut;
+  final SignedOutHook? _onBeforeSignOut;
   final DateTime Function() _now;
 
   // Synchronous, so that `await signIn()` returns with `authStateProvider`
@@ -236,6 +238,16 @@ class AppAuthRepository implements AuthRepository {
 
   @override
   Future<void> signOut() async {
+    final subBefore = _currentSub;
+    if (subBefore != null && _onBeforeSignOut != null) {
+      // While the access token still works: unregister push, send analytics.
+      // The hook is bounded in time and must not be able to stop a sign-out.
+      try {
+        await _onBeforeSignOut(subBefore);
+      } on Object catch (e) {
+        _log.error('before-sign-out hook failed (${e.runtimeType})');
+      }
+    }
     final tokens = _tokens;
     final sub = _currentSub;
     _epoch++;

@@ -37,7 +37,18 @@ void main() {
       'Chess pieces: cburnett',
       'Chess pieces: merida',
       'Chess pieces: rhosgfx',
+      'sentry-cocoa',
     ]);
+  });
+
+  test('the native crash reporter carries its MIT text', () async {
+    final entries = await additionalLicenseEntries().toList();
+    final sentry = _textOf(
+      entries.singleWhere((e) => e.packages.contains('sentry-cocoa')),
+    );
+    expect(sentry, contains('The MIT License (MIT)'));
+    expect(sentry, contains('Copyright (c) 2015 Sentry'));
+    expect(sentry, contains('with your consent only'));
   });
 
   test('each piece set names author, licence and source', () async {

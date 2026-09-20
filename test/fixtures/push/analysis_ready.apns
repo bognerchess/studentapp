@@ -1,0 +1,13 @@
+{
+  "Simulator Target Bundle": "com.bognerchess.mobile",
+  "aps": {
+    "alert": {
+      "title-loc-key": "PUSH_ANALYSIS_READY_TITLE",
+      "loc-key": "PUSH_ANALYSIS_READY_BODY"
+    },
+    "sound": "default"
+  },
+  "type": "analysis_ready",
+  "gameId": "game-1",
+  "jobId": "job-1"
+}

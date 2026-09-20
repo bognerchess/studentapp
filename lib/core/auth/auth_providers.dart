@@ -9,6 +9,7 @@ import 'package:bogner_chess/core/auth/auth_repository.dart';
 import 'package:bogner_chess/core/auth/fake_auth_repository.dart';
 import 'package:bogner_chess/core/auth/install_marker.dart';
 import 'package:bogner_chess/core/auth/oidc_client.dart';
+import 'package:bogner_chess/core/auth/sign_out_hooks.dart';
 import 'package:bogner_chess/core/auth/token_store.dart';
 import 'package:bogner_chess/core/log.dart';
 import 'package:bogner_chess/core/storage/preferences.dart';
@@ -48,13 +49,21 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
     _log.info('local data of the signed-out user removed, drafts kept');
   }
 
+  // Read at sign-out time: push and analytics add their hooks after this
+  // provider was built (see sign_out_hooks.dart).
+  Future<void> beforeSignOut(String sub) =>
+      ref.read(beforeSignOutHooksProvider).run(sub);
+
   if (env.usesFakeAuth) {
     // Env.fromEnvironment already refuses this in a release build. Checked
     // again here, because an Env can also be constructed directly.
     if (kReleaseMode || env.isProd) {
       throw StateError('AUTH_MODE=fake is not allowed for ${env.envName}');
     }
-    final repository = FakeAuthRepository(onSignedOut: wipeOwner);
+    final repository = FakeAuthRepository(
+      onSignedOut: wipeOwner,
+      onBeforeSignOut: beforeSignOut,
+    );
     ref.onDispose(repository.dispose);
     return repository;
   }
@@ -64,6 +73,7 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
     store: ref.watch(tokenStoreProvider),
     installMarker: ref.watch(installMarkerProvider),
     onSignedOut: wipeOwner,
+    onBeforeSignOut: beforeSignOut,
   );
   ref.onDispose(repository.dispose);
   return repository;

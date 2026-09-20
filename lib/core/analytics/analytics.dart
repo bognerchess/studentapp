@@ -22,6 +22,26 @@ abstract final class AnalyticsEvents {
   static const consentAiAccepted = 'consent_ai_accepted';
   static const consentAnalyticsChanged = 'consent_analytics_changed';
   static const accountDeleted = 'account_deleted';
+
+  /// Every name above. An event with another name is dropped on the device
+  /// already; the server would drop it too.
+  static const Set<String> all = {
+    appOpen,
+    signIn,
+    gameEntryStarted,
+    gameEntryCompleted,
+    pgnImported,
+    gameSubmitted,
+    analysisRequested,
+    analysisLimitHit,
+    analysisReadyOpened,
+    reviewOpened,
+    commentFeedback,
+    pushPermissionResult,
+    consentAiAccepted,
+    consentAnalyticsChanged,
+    accountDeleted,
+  };
 }
 
 /// Fire-and-forget product analytics. Features call [track]; whether anything
@@ -39,6 +59,8 @@ class NoopAnalytics implements Analytics {
   void track(String name, [Map<String, Object?> props = const {}]) {}
 }
 
-/// Overridden by the analytics work package with the consent-gated,
-/// outbox-backed implementation.
+/// A no-op unless overridden: `main.dart` installs the consent-gated,
+/// outbox-backed implementation (`analyticsOverrides` in
+/// `analytics_providers.dart`), so that widget tests record nothing and open
+/// no database.
 final analyticsProvider = Provider<Analytics>((ref) => const NoopAnalytics());

@@ -214,5 +214,11 @@
   "reviewUpdateBanner": "Aktualisiere die App, um diese Analyse zu sehen.",
   "reviewInvalidMessage": "Diese Analyse konnte nicht gelesen werden.",
   "reviewStartPosition": "Ausgangsstellung",
-  "reviewLoading": "Analyse wird geladen"
+  "reviewLoading": "Analyse wird geladen",
+  "pushExplainerTitle": "Erfahre, wann deine Analyse fertig ist",
+  "pushExplainerBody": "Eine Analyse dauert ein paar Minuten. Wir sagen dir Bescheid, sobald deine Analyse fertig ist, damit du hier nicht warten musst. Keine Werbung, keine Erinnerungen.",
+  "pushExplainerAllow": "Benachrichtige mich",
+  "pushExplainerNotNow": "Nicht jetzt",
+  "pushSettingsDeniedHint": "Mitteilungen sind für Bogner Chess ausgeschaltet. Du kannst sie in der Einstellungen-App einschalten.",
+  "pushSettingsOpenSettings": "Einstellungen öffnen"
 }

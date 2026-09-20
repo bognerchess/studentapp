@@ -6,10 +6,13 @@ import 'dart:async';
 
 import 'package:bogner_chess/app.dart';
 import 'package:bogner_chess/config/env.dart';
+import 'package:bogner_chess/core/analytics/analytics_providers.dart';
 import 'package:bogner_chess/core/auth/auth_providers.dart';
+import 'package:bogner_chess/core/crash/crash_providers.dart';
 import 'package:bogner_chess/core/crash/crash_reporter.dart';
 import 'package:bogner_chess/core/links/incoming_link_service.dart';
 import 'package:bogner_chess/core/log.dart';
+import 'package:bogner_chess/core/push/push_service.dart';
 import 'package:bogner_chess/features/about/domain/additional_licenses.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
@@ -20,12 +23,23 @@ const _log = Log('main');
 void main() {
   // One container for the whole process, created before the first frame so
   // that errors during start-up already reach the crash reporter.
-  final container = ProviderContainer();
-  final crash = container.read(crashReporterProvider);
+  // The running app records analytics and crashes (both only with consent);
+  // tests build their own scope and keep the no-op defaults.
+  final container = ProviderContainer(
+    overrides: [...analyticsOverrides, ...crashOverrides],
+  );
 
   void report(Object error, StackTrace? stack, String reason, bool fatal) {
     _log.error('uncaught ($reason)', error: error, stackTrace: stack);
-    crash.recordError(error, stack, fatal: fatal, reason: reason);
+    try {
+      // Read here, not once at the top: the reporter reads the stored consent
+      // when it is created, which needs the binding.
+      container
+          .read(crashReporterProvider)
+          .recordError(error, stack, fatal: fatal, reason: reason);
+    } on Object {
+      // An error handler must not throw.
+    }
   }
 
   runZonedGuarded(
@@ -49,6 +63,9 @@ void main() {
       final env = container.read(envProvider);
       _log.info('starting env=${env.envName} auth=${env.authMode.name}');
 
+      // Creates the crash reporter: from here on it follows the consent.
+      container.read(crashReporterProvider);
+
       // Artwork and vendored source that Flutter's licence collector cannot
       // see (About -> Open-source licences).
       registerAdditionalLicenses();
@@ -62,6 +79,14 @@ void main() {
         // Links and documents from outside the app ("Open in Bogner Chess").
         // What arrived before this line, on a cold start, is delivered first.
         container.read(incomingLinkServiceProvider).start();
+
+        // Push: a tap that started the app is delivered first, like a link.
+        // Registers the device for a signed-in user; asks for nothing (the
+        // permission prompt has its own moment, see PushService).
+        container.read(pushServiceProvider).start();
+
+        // app_open, sign_in, and when the event outbox is sent.
+        container.read(analyticsLifecycleProvider).start();
 
         runApp(
           UncontrolledProviderScope(
