@@ -42,4 +42,4 @@ Scope, dependencies and acceptance for every WP are in `../product-hub/docs/mobi
 | WP-51 | GPL compliance script + release checklist | S | WP-04 | review | [WP-51](WP-51-gpl-compliance.md) |
 | WP-52 | Accessibility, Dynamic Type, dark mode, German pass | M | features done | todo | – |
 | WP-53 | Screenshot generator, privacy doc, review notes | S | features done, H8 | todo | – |
-| WP-54 | Reproducible build from a clean clone | S | WP-50 | todo | – |
+| WP-54 | Reproducible build from a clean clone | S | WP-50 | review | [WP-54](WP-54-reproducible-build.md) |
