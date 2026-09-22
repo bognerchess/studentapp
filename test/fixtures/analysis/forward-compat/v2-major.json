@@ -18,7 +18,7 @@
       "nodes": 3000000,
       "multipv": 3
     },
-    "human_model": "maia2-rapid"
+    "human_model": "maia3-5m"
   },
   "coach": {
     "provider": "azure",

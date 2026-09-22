@@ -22,14 +22,14 @@ void main() {
     test('envelope', () {
       expect(result.warnings, isEmpty);
       expect(doc.schemaVersion, 1);
-      expect(doc.schemaMinor, 0);
+      expect(doc.schemaMinor, 1);
       expect(doc.analysisId, 'e88b7591-31db-4e32-98dc-b35f94c662cd');
       expect(doc.generatedAt, DateTime.utc(2026, 9, 19, 9, 12, 41));
       expect(doc.language, 'en');
       expect(doc.perspective, AnalysisPerspective.black);
       expect(doc.ratingBand, '1000-1200');
       expect(doc.engine.name, 'Stockfish 19');
-      expect(doc.engine.humanModel, 'maia2-rapid');
+      expect(doc.engine.humanModel, 'maia3-5m');
       expect(doc.engine.hasHumanModel, isTrue);
       expect(doc.engine.pass1Nodes, 400000);
       expect(doc.engine.pass2Nodes, 3000000);

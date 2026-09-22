@@ -1,7 +1,7 @@
 {
   "schema": "bognerchess.game-analysis",
   "schema_version": 1,
-  "schema_minor": 0,
+  "schema_minor": 1,
   "analysis_id": "bd8ec9a1-f803-45ed-bd7c-9ec7081ab44d",
   "generated_at": "2026-09-19T09:31:55Z",
   "language": "en",
