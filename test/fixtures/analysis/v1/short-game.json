@@ -1,7 +1,7 @@
 {
   "schema": "bognerchess.game-analysis",
   "schema_version": 1,
-  "schema_minor": 0,
+  "schema_minor": 1,
   "analysis_id": "e88b7591-31db-4e32-98dc-b35f94c662cd",
   "generated_at": "2026-09-19T09:12:41Z",
   "language": "en",
@@ -18,7 +18,7 @@
       "nodes": 3000000,
       "multipv": 3
     },
-    "human_model": "maia2-rapid"
+    "human_model": "maia3-5m"
   },
   "coach": {
     "provider": "azure",

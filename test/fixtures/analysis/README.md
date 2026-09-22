@@ -12,7 +12,7 @@ copied byte for byte together with their `SHA256SUMS`.
 | --- | --- |
 | Source | the analysis service repository (`chess-ai`, private), directory `contracts/` |
 | Files | `contracts/game-analysis.v1.schema.json`, `contracts/fixtures/game-analysis.v1/*.json`, `contracts/SHA256SUMS` |
-| Commit | `e2d8c9f` (branch `mobile-mvp`; `contracts/` last changed in `c362379`), vendored 2026-09-19 |
+| Commit | `062dc36` (branch `main`; `contracts/` last changed by the Maia-2 -> Maia-3 upgrade, `schema_minor` 0 -> 1), vendored 2026-09-22 |
 
 The document format is an API fact and may be vendored. Nothing else from that repository is.
 

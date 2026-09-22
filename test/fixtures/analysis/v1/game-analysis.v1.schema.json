@@ -184,7 +184,7 @@
         "human_model": {
           "type": "string",
           "minLength": 1,
-          "x-known-values": ["maia2-rapid", "unavailable"],
+          "x-known-values": ["maia3-5m", "maia3-23m", "maia3-79m", "unavailable"],
           "description": "unavailable: the pipeline degraded to eval-only selection; no node carries a human object."
         }
       },
