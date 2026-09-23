@@ -4,6 +4,7 @@
 
 import 'package:bogner_chess/core/analysis/analysis_parser.dart';
 import 'package:bogner_chess/core/analysis/analysis_view.dart';
+import 'package:bogner_chess/core/chess/san_localizer.dart';
 import 'package:bogner_chess/core/l10n/l10n.dart';
 import 'package:bogner_chess/core/ui/theme.dart';
 import 'package:dartchess/dartchess.dart' show Side;
@@ -152,7 +153,7 @@ class _LessonCard extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.only(top: 3),
                       child: Text(
-                        lesson.title,
+                        context.displaySanInText(lesson.title),
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w700,
                           fontSize: 15,
@@ -162,7 +163,7 @@ class _LessonCard extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      lesson.text,
+                      context.displaySanInText(lesson.text),
                       style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
                     ),
                     if (themeLabel != null || evidence.isNotEmpty) ...[
@@ -177,7 +178,9 @@ class _LessonCard extends StatelessWidget {
                                 number,
                                 node.ply,
                               ),
-                              label: l10n.reviewLessonEvidence(node.moveLabel),
+                              label: l10n.reviewLessonEvidence(
+                                context.displaySanInText(node.moveLabel),
+                              ),
                               onTap: () => onEvidence(node.ply),
                               child: ActionChip(
                                 visualDensity: VisualDensity.compact,
@@ -188,7 +191,9 @@ class _LessonCard extends StatelessWidget {
                                   color: scheme.primary,
                                 ),
                                 label: Text(
-                                  l10n.reviewLessonEvidence(node.moveLabel),
+                                  l10n.reviewLessonEvidence(
+                                    context.displaySanInText(node.moveLabel),
+                                  ),
                                 ),
                               ),
                             ),

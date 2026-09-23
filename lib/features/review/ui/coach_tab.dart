@@ -4,6 +4,7 @@
 
 import 'package:bogner_chess/core/analysis/analysis_parser.dart';
 import 'package:bogner_chess/core/analysis/analysis_view.dart';
+import 'package:bogner_chess/core/chess/san_localizer.dart';
 import 'package:bogner_chess/core/l10n/l10n.dart';
 import 'package:bogner_chess/core/ui/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -234,7 +235,7 @@ class CommentCard extends StatelessWidget {
             ),
             if (comment.title.isNotEmpty) ...[
               Text(
-                comment.title,
+                context.displaySanInText(comment.title),
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                   height: 1.2,
@@ -244,7 +245,15 @@ class CommentCard extends StatelessWidget {
             ],
             Text.rich(
               TextSpan(
-                children: emphasizeMoves(comment.text, comment.movesMentioned),
+                // Both sides of the match are localised, so the German
+                // reader still gets the German move in semi-bold.
+                children: emphasizeMoves(
+                  context.displaySanInText(comment.text),
+                  [
+                    for (final move in comment.movesMentioned)
+                      context.displaySan(move),
+                  ],
+                ),
               ),
               style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
             ),
@@ -404,10 +413,11 @@ class _LineButton extends StatelessWidget {
     final l10n = context.l10n;
     final name = label.isEmpty
         ? l10n.reviewLineKind(variation.kind.name)
-        : label;
+        : context.displaySanInText(label);
+    final first = context.displaySan(variation.moves.first.san);
     return ReviewIdentified(
       identifier: identifier,
-      label: l10n.reviewShowLine('$name, ${variation.moves.first.san}'),
+      label: l10n.reviewShowLine('$name, $first'),
       onTap: onTap,
       child: ActionChip(
         onPressed: onTap,
@@ -417,7 +427,7 @@ class _LineButton extends StatelessWidget {
           size: 18,
           color: lineColor(context, variation.kind),
         ),
-        label: Text('$name · ${variation.moves.first.san}'),
+        label: Text('$name · $first'),
       ),
     );
   }
@@ -528,7 +538,7 @@ class _EngineFact extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Text(
-              node.moveLabel,
+              context.displaySanInText(node.moveLabel),
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -543,7 +553,8 @@ class _EngineFact extends StatelessWidget {
         const SizedBox(height: AppSpacing.xs),
         Text(
           [
-            if (showBest) l10n.reviewFactBetterWas(best.san),
+            if (showBest)
+              l10n.reviewFactBetterWas(context.displaySan(best.san)),
             '${l10n.evalWords(node.evalAfter)}.',
           ].join(' '),
           style: theme.textTheme.bodyMedium?.copyWith(

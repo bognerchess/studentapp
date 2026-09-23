@@ -3,6 +3,7 @@
 // Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
 
 import 'package:bogner_chess/core/analysis/analysis_parser.dart';
+import 'package:bogner_chess/core/chess/san_localizer.dart';
 import 'package:bogner_chess/core/l10n/l10n.dart';
 import 'package:bogner_chess/core/ui/theme.dart';
 import 'package:dartchess/dartchess.dart' show Side;
@@ -56,6 +57,9 @@ class LinePanel extends StatelessWidget {
     final scheme = theme.colorScheme;
     final color = lineColor(context, variation.kind);
     final kind = l10n.reviewLineKind(variation.kind.name);
+    // The coach's label can name a move ("Statt Nf3"), so it goes through
+    // the same filter as the moves below it.
+    final coachLabel = label == null ? null : context.displaySanInText(label!);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -72,14 +76,14 @@ class LinePanel extends StatelessWidget {
               child: Text.rich(
                 TextSpan(
                   children: [
-                    if (label != null)
+                    if (coachLabel != null)
                       TextSpan(
-                        text: '$label  ',
+                        text: '$coachLabel  ',
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                     TextSpan(
                       text: kind,
-                      style: label == null
+                      style: coachLabel == null
                           ? const TextStyle(fontWeight: FontWeight.w700)
                           : TextStyle(color: scheme.onSurfaceVariant),
                     ),
@@ -134,12 +138,13 @@ class LinePanel extends StatelessWidget {
           : i == 0
           ? '$number... '
           : '';
+      final san = context.displaySan(move.san);
       final current = i + 1 == index;
       final played = i + 1 <= index;
       widgets.add(
         ReviewIdentified(
           identifier: ReviewIds.lineMove(i + 1),
-          label: '$prefix${move.san}',
+          label: '$prefix$san',
           selected: current,
           onTap: () => onSelect(i + 1),
           child: InkWell(
@@ -153,7 +158,7 @@ class LinePanel extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
                 child: Text(
-                  '$prefix${move.san}',
+                  '$prefix$san',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                     fontFeatures: const [FontFeature.tabularFigures()],

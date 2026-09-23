@@ -9,6 +9,7 @@ import 'package:bogner_chess/core/analysis/analysis_parser.dart';
 import 'package:bogner_chess/core/analysis/analysis_view.dart';
 import 'package:bogner_chess/core/chess/board_theme_preference.dart';
 import 'package:bogner_chess/core/chess/board_view.dart';
+import 'package:bogner_chess/core/chess/san_localizer.dart';
 import 'package:bogner_chess/core/l10n/board_labels.dart';
 import 'package:bogner_chess/core/l10n/l10n.dart';
 import 'package:bogner_chess/core/ui/theme.dart';
@@ -242,7 +243,7 @@ class _ReviewBodyState extends ConsumerState<_ReviewBody> {
                           onPlySelected: controller.goTo,
                           semanticLabel: l10n.reviewGraphLabel,
                           semanticValueOf: (ply) =>
-                              _evalWordsAt(l10n, document, ply),
+                              _evalWordsAt(context, l10n, document, ply),
                         ),
                         const SizedBox(height: AppSpacing.sm),
                       ],
@@ -268,7 +269,7 @@ class _ReviewBodyState extends ConsumerState<_ReviewBody> {
                       _ => MovesTab(
                         moves: document != null
                             ? _movesOf(context, document)
-                            : _movesOfPartial(partial!),
+                            : _movesOfPartial(context, partial!),
                         currentPly: state.ply,
                         onSelect: controller.goTo,
                       ),
@@ -317,6 +318,7 @@ class _ReviewBodyState extends ConsumerState<_ReviewBody> {
   }
 
   static String _evalWordsAt(
+    BuildContext context,
     AppLocalizations l10n,
     AnalysisDocument document,
     int ply,
@@ -324,7 +326,10 @@ class _ReviewBodyState extends ConsumerState<_ReviewBody> {
     final node = document.nodeAt(ply);
     final eval = node?.evalAfter ?? document.nodes.firstOrNull?.evalBefore;
     return [
-      node?.moveLabel ?? l10n.reviewStartPosition,
+      if (node != null)
+        context.displaySanInText(node.moveLabel)
+      else
+        l10n.reviewStartPosition,
       if (eval != null) l10n.evalWords(eval),
     ].join(', ');
   }
@@ -356,12 +361,12 @@ class _ReviewBodyState extends ConsumerState<_ReviewBody> {
             ply: node.ply,
             moveNumber: node.moveNumber,
             isWhite: node.side == Side.white,
-            san: node.san,
+            san: context.displaySan(node.san),
             glyph: glyph?.symbol,
             glyphColor: colors.ofGlyph(glyph),
             hasComment: hasComment,
             semanticLabel: [
-              node.moveLabel,
+              context.displaySanInText(node.moveLabel),
               l10n.classificationWords(
                 node.classification,
                 praised: glyph == AnalysisGlyph.good,
@@ -373,17 +378,23 @@ class _ReviewBodyState extends ConsumerState<_ReviewBody> {
     ];
   }
 
-  static List<MoveListEntry> _movesOfPartial(PartialAnalysis partial) => [
+  static List<MoveListEntry> _movesOfPartial(
+    BuildContext context,
+    PartialAnalysis partial,
+  ) => [
     for (final move in partial.moves)
-      MoveListEntry(
-        ply: move.ply,
-        moveNumber: move.moveNumber,
-        isWhite: move.side == Side.white,
-        san: move.san,
-        semanticLabel: move.side == Side.white
-            ? '${move.moveNumber}. ${move.san}'
-            : '${move.moveNumber}... ${move.san}',
-      ),
+      () {
+        final san = context.displaySan(move.san);
+        return MoveListEntry(
+          ply: move.ply,
+          moveNumber: move.moveNumber,
+          isWhite: move.side == Side.white,
+          san: san,
+          semanticLabel: move.side == Side.white
+              ? '${move.moveNumber}. $san'
+              : '${move.moveNumber}... $san',
+        );
+      }(),
   ];
 }
 
@@ -592,17 +603,20 @@ class _StatusLine extends StatelessWidget {
     if (state.ply == 0) {
       move = l10n.reviewStartPosition;
     } else if (node != null) {
-      move = node.moveLabel;
+      move = context.displaySanInText(node.moveLabel);
       final g = document!.glyphFor(node);
       glyph = g?.symbol;
       glyphColor = colors.ofGlyph(g);
     } else {
       final partialMove = partial?.moves.elementAtOrNull(state.ply - 1);
+      final san = partialMove == null
+          ? ''
+          : context.displaySan(partialMove.san);
       move = partialMove == null
           ? ''
           : partialMove.side == Side.white
-          ? '${partialMove.moveNumber}. ${partialMove.san}'
-          : '${partialMove.moveNumber}... ${partialMove.san}';
+          ? '${partialMove.moveNumber}. $san'
+          : '${partialMove.moveNumber}... $san';
     }
     if (document != null && !state.inLine) {
       final eval = node?.evalAfter ?? document.nodes.firstOrNull?.evalBefore;
