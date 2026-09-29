@@ -4,7 +4,6 @@
 
 import 'dart:async';
 
-import 'package:bogner_chess/core/analysis/analysis_job_sink.dart';
 import 'package:bogner_chess/core/api/api_providers.dart';
 import 'package:bogner_chess/core/auth/auth_state.dart';
 import 'package:bogner_chess/core/connectivity/connectivity.dart';
@@ -16,18 +15,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'draft_meta.dart';
 import 'submit_models.dart';
 import 'submit_queue.dart';
-
-/// The languages the coach writes in. The server's `mobileConfig` has the
-/// authoritative list; until somebody loads it, this is what the backend
-/// ships with.
-const Set<String> kCoachLanguages = {'en', 'de'};
-
-/// The coach language for the system language: "de-CH" gives "de", anything
-/// the coach does not write in gives "en".
-String coachLanguageOf(String languageTag) {
-  final language = languageTag.split(RegExp('[-_]')).first.toLowerCase();
-  return kCoachLanguages.contains(language) ? language : 'en';
-}
 
 /// The `sub` of the signed-in user, or null.
 String? _ownerOf(Ref ref) => switch (ref.read(authStateProvider)) {
@@ -41,12 +28,10 @@ final submitQueueProvider = Provider<SubmitQueue>((ref) {
   final queue = SubmitQueue(
     database: () => ref.read(appDatabaseProvider),
     games: () => ref.read(gamesApiProvider),
-    analysis: () => ref.read(analysisApiProvider),
+    stages: () => ref.read(stageApiProvider),
     owner: () => _ownerOf(ref),
     connectivity: ref.watch(connectivityProvider),
-    jobSink: () => ref.read(analysisJobSinkProvider),
     onLibraryChanged: () => ref.read(libraryRefreshProvider.notifier).request(),
-    coachLanguage: () => coachLanguageOf(ref.read(apiLanguageTagProvider)()),
   );
   // Sign-in is a trigger; sign-out stops the timer. The drafts stay.
   ref.listen(authStateProvider, (previous, next) {

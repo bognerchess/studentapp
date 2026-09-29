@@ -53,9 +53,8 @@ class Harness {
   late final AppDatabase db;
   late SubmitQueue queue;
   final games = FakeGamesApi();
-  final analysis = FakeAnalysisApi();
+  final stages = FakeStageApi();
   final connectivity = FakeConnectivity();
-  final jobs = RecordingJobSink();
   final events = <SubmitEvent>[];
   int libraryRefreshes = 0;
   String? owner = alice;
@@ -65,12 +64,10 @@ class Harness {
   SubmitQueue newQueue() => SubmitQueue(
     database: () => db,
     games: () => games,
-    analysis: () => analysis,
+    stages: () => stages,
     owner: () => owner,
     connectivity: connectivity,
-    jobSink: () => jobs,
     onLibraryChanged: () => libraryRefreshes++,
-    coachLanguage: () => 'de',
   );
 
   /// Runs microtasks and zero-length timers until [future] is done.
@@ -162,8 +159,10 @@ void main() {
         expect(call.movetext, '1. e4 e5 2. Nf3');
         expect(call.metadata, _white);
         expect(call.source, ImportSource.share);
-        expect(h.analysis.calls.single, (gameId: 'game-1', language: 'de'));
-        expect(h.jobs.jobs.single.gameId, 'game-1');
+        expect(h.stages.started.single, 'game-1');
+        // The row the workflow tracker watches, written before the mutation.
+        final pending = h.wait(h.db.pendingWorkflowsDao.get(alice, 'game-1'))!;
+        expect(pending.targetStage, 'DEEP_EVALUATION');
         expect(h.libraryRefreshes, 1);
 
         final event = h.events.single as GameUploaded;
@@ -188,8 +187,8 @@ void main() {
 
         expect(h.draft(id).state, DraftState.submitted);
         expect(h.games.calls.single.source, ImportSource.pgn);
-        expect(h.analysis.calls, isEmpty);
-        expect(h.jobs.jobs, isEmpty);
+        expect(h.stages.started, isEmpty);
+        expect(h.wait(h.db.pendingWorkflowsDao.get(alice, 'game-1')), isNull);
         expect(
           (h.events.single as GameUploaded).analysis,
           SubmittedAnalysis.notRequested,
@@ -294,24 +293,19 @@ void main() {
   });
 
   group('the game is saved, the analysis is not started', () {
+    // The engine stages are free and need no consent, so only fair use can
+    // refuse this path. The other `AnalysisHold` values belong to the coach,
+    // which the game screen asks for.
     final cases = <AnalysisHold, RequestAnalysisOutcome>{
-      AnalysisHold.limitReached: AnalysisLimitReached(
-        window: LimitWindow.day,
-        limit: 3,
-        used: 3,
-        resetAt: DateTime.utc(2026, 9, 21),
-      ),
-      AnalysisHold.queueFull: const AnalysisQueueFull(2),
       AnalysisHold.rateLimited: const AnalysisRateLimited(
         Duration(seconds: 30),
       ),
-      AnalysisHold.emailNotVerified: const AnalysisEmailNotVerified(),
-      AnalysisHold.aiConsentRequired: const AnalysisAiConsentRequired(2),
+      AnalysisHold.requestFailed: const AnalysisPrerequisiteMissing(),
     };
     for (final MapEntry(key: hold, value: outcome) in cases.entries) {
       test('${hold.name}: submitted, reason kept, no loop', () {
         withQueue((h) {
-          h.analysis.outcomes.add(outcome);
+          h.stages.outcomes.add(outcome);
           final draft = h.ready(alice);
           h.wait(h.queue.kick());
 
@@ -323,16 +317,30 @@ void main() {
           final event = h.events.single as GameUploaded;
           expect(event.analysis, SubmittedAnalysis.held);
           expect(event.hold, hold);
-          expect(h.jobs.jobs, isEmpty);
 
           h.async.elapse(const Duration(hours: 3));
           h.queue.onAppResumed();
           h.settle();
-          expect(h.analysis.calls, hasLength(1));
+          expect(h.stages.started, hasLength(1));
           expect(h.games.calls, hasLength(1));
         });
       });
     }
+
+    test('a refused stage leaves the row for the tracker to pick up', () {
+      withQueue((h) {
+        h.stages.outcomes.add(const AnalysisRateLimited(Duration(seconds: 30)));
+        final draft = h.ready(alice);
+        h.wait(h.queue.kick());
+
+        expect(h.draft(draft.id).state, DraftState.submitted);
+        // The row went in before the command and stays: whoever polls next
+        // fires the stage, and an app kill in between resumes the pipeline.
+        final pending = h.wait(h.db.pendingWorkflowsDao.get(alice, 'game-1'))!;
+        expect(pending.targetStage, 'DEEP_EVALUATION');
+        expect(pending.state, WorkflowState.running);
+      });
+    });
   });
 
   group('failures', () {
@@ -514,9 +522,7 @@ void main() {
         'and never makes the saved game look failed', () {
       withQueue((h) {
         const offline = AnalysisRequestFailed(ApiNetworkError());
-        h.analysis.outcomes.addAll(
-          List.filled(SubmitQueue.maxAttempts, offline),
-        );
+        h.stages.outcomes.addAll(List.filled(SubmitQueue.maxAttempts, offline));
         final draft = h.ready(alice);
         h.wait(h.queue.kick());
 
@@ -533,7 +539,7 @@ void main() {
           AnalysisHold.requestFailed,
         );
         expect(h.games.calls, hasLength(1));
-        expect(h.analysis.calls, hasLength(SubmitQueue.maxAttempts));
+        expect(h.stages.started, hasLength(SubmitQueue.maxAttempts));
         expect(h.events.whereType<UploadFailed>(), isEmpty);
         expect(
           (h.events.single as GameUploaded).hold,
@@ -583,7 +589,7 @@ void main() {
         expect(after.state, DraftState.submitted);
         expect(after.serverGameId, 'game-from-before');
         expect(h.games.stored, hasLength(1));
-        expect(h.analysis.calls.single.gameId, 'game-from-before');
+        expect(h.stages.started.single, 'game-from-before');
       });
     });
 
@@ -597,7 +603,7 @@ void main() {
         h.settle();
 
         expect(h.games.calls, isEmpty);
-        expect(h.analysis.calls.single.gameId, 'game-7');
+        expect(h.stages.started.single, 'game-7');
         expect(h.draft(draft.id).state, DraftState.submitted);
       });
     });
@@ -722,19 +728,19 @@ void main() {
         gate.complete();
         h.settle();
 
-        // Her import had left with her token; the analysis request would
-        // have left with his.
+        // Her import had left with her token; the stage command would have
+        // left with his.
         final after = h.draft(hers.id);
         expect(after.state, DraftState.ready);
         expect(after.serverGameId, 'game-1');
-        expect(h.analysis.calls, isEmpty);
+        expect(h.stages.started, isEmpty);
         expect(h.draft(his.id, bob).state, DraftState.submitted);
 
         h.owner = alice;
         h.queue.onOwnerChanged();
         h.settle();
         expect(h.draft(hers.id).state, DraftState.submitted);
-        expect(h.analysis.calls.single.gameId, 'game-1');
+        expect(h.stages.started.single, 'game-1');
         expect(h.games.calls, hasLength(2), reason: 'hers once, his once');
       });
     });

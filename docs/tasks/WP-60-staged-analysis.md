@@ -395,3 +395,24 @@ next poll. `CachedGamesRepository` now puts the remembered pipeline back in
 `fetchDetail` *returns*, not only in what it stores: the game screen shows what
 it got back, not what went into the database. `GameDetail.withWorkflow` exists
 for that.
+
+**B10.** "Save & analyse" now starts the free chain: a `pending_workflows` row
+(before the mutation, so a kill resumes it) and `runBaseEvaluation`. The coach
+is never asked from the queue. `lib/core/analysis/analysis_job_sink.dart`,
+`SubmitQueue._jobSink` and `RecordingJobSink` are gone, as WP-26-28's handoff
+recommended, and with them the queue's `coachLanguage` callback and the
+`coachLanguageOf(String)` helper in `submit_queue_providers.dart`, which nothing
+but its own test still used.
+
+Only two `AnalysisHold` values are reachable from here now: `rateLimited` (fair
+use on the engine commands) and `requestFailed`. The others stay in the enum
+and in the sentences, because the coach path on the game screen produces them
+and a draft row written by an older build may still carry one. The parametrised
+test in `submit_queue_test.dart` was cut to the two.
+
+One behaviour changed that the plan does not mention. The new-game flow still
+asks for AI consent before "Save & analyse", and it still saves the game when
+that check cannot reach the server — but the analysis is no longer held for it,
+because the free stages need no consent. A consent that is genuinely missing is
+now collected on the way to the coach, where it belongs. Worth a product look:
+the consent prompt in the save flow is early by one step.

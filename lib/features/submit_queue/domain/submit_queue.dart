@@ -5,9 +5,8 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:bogner_chess/core/analysis/analysis_job_sink.dart';
-import 'package:bogner_chess/core/api/analysis_api.dart';
 import 'package:bogner_chess/core/api/games_api.dart';
+import 'package:bogner_chess/core/api/stage_api.dart';
 import 'package:bogner_chess/core/connectivity/connectivity.dart';
 import 'package:bogner_chess/core/game/game_metadata.dart';
 import 'package:bogner_chess/core/log.dart';
@@ -24,19 +23,25 @@ import 'submit_models.dart';
 /// later").
 ///
 /// One draft goes through: `ready` → `submitting` → import the game (unless
-/// the server has it already) → request the analysis (if wanted) →
+/// the server has it already) → start the analysis (if wanted) →
 /// `submitted`. The import is idempotent per `client_game_id`, so a lost
 /// answer or a killed app only costs a repetition.
 ///
+/// "Save & analyse" starts the **free** engine stages: `runBaseEvaluation`
+/// plus a `pending_workflows` row, which the workflow tracker watches and
+/// carries on from. The coach is never asked here — that step costs quota and
+/// is always a decision of the user's, taken on the game screen.
+///
 /// What ends how:
 ///
-/// * **Imported, analysis accepted**: submitted; the job goes to the
-///   [AnalysisJobSink].
-/// * **Imported, analysis refused** (limit, full queue, rate limit, e-mail
-///   address not verified, AI consent missing): submitted all the same,
-///   because the game is saved. The reason is kept in the draft's metadata
+/// * **Imported, the first stage accepted**: submitted; the tracker takes the
+///   pipeline from there.
+/// * **Imported, the stage refused**: submitted all the same, because the
+///   game is saved. The reason is kept in the draft's metadata
 ///   ([DraftMeta.analysisHold]) and the user starts the analysis from the
-///   game. The queue never asks again by itself.
+///   game. The queue never asks again by itself. Only `rateLimited` (fair
+///   use) and `requestFailed` are reachable from here; the other holds belong
+///   to the coach, which this path does not touch.
 /// * **The server cannot read the moves, or refuses the game**: failed for
 ///   good, with a [SubmitError] the UI can explain.
 /// * **Network, server trouble, rate limit on the import**: back to `ready`
@@ -57,17 +62,13 @@ class SubmitQueue {
   SubmitQueue({
     required this._database,
     required this._games,
-    required this._analysis,
+    required this._stages,
     required this._owner,
     required this._connectivity,
-    required this._jobSink,
     void Function()? onLibraryChanged,
-    String Function()? coachLanguage,
-  }) : _onLibraryChanged = onLibraryChanged ?? _nothing,
-       _coachLanguage = coachLanguage ?? _english;
+  }) : _onLibraryChanged = onLibraryChanged ?? _nothing;
 
   static void _nothing() {}
-  static String _english() => 'en';
 
   /// The delay after the first, second, ... failed attempt; the last one
   /// repeats.
@@ -90,12 +91,10 @@ class SubmitQueue {
 
   final AppDatabase Function() _database;
   final GamesApi Function() _games;
-  final AnalysisApi Function() _analysis;
+  final StageApi Function() _stages;
   final String? Function() _owner;
   final ConnectivitySource _connectivity;
-  final AnalysisJobSink Function() _jobSink;
   final void Function() _onLibraryChanged;
-  final String Function() _coachLanguage;
 
   final ValueNotifier<SubmitQueueStatus> _status = ValueNotifier(
     SubmitQueueStatus.idle,
@@ -409,38 +408,41 @@ class SubmitQueue {
     var analysis = SubmittedAnalysis.notRequested;
     if (draft.wantsAnalysis) {
       if (!await _stillOwner(owner)) return false;
-      final outcome = await _analysis().request(
+      // The row goes in before the mutation, so an app that dies in between
+      // still resumes the pipeline on the next start — the same order
+      // `WorkflowTracker.startChain` uses.
+      await _database().pendingWorkflowsDao.upsert(
+        owner,
         gameId: gameId,
-        language: _coachLanguage(),
+        targetStage: AnalysisStage.deepEvaluation.wire!,
       );
+      final outcome = await _stages().runBaseEvaluation(gameId);
       switch (outcome) {
-        case AnalysisAccepted(:final job):
-          analysis = SubmittedAnalysis.started;
-          _jobSink().track(job);
         case AnalysisStageAccepted():
-        case AnalysisPrerequisiteMissing():
-          // Neither is reachable while this path calls `requestGameAnalysis`;
-          // WP-60 B10 moves it to `runBaseEvaluation`, where the first one
-          // becomes the normal answer.
-          hold = AnalysisHold.requestFailed;
-        case AnalysisLimitReached():
-          hold = AnalysisHold.limitReached;
-        case AnalysisQueueFull():
-          hold = AnalysisHold.queueFull;
+          analysis = SubmittedAnalysis.started;
         case AnalysisRateLimited():
+          // Fair use on the engine commands. The game is saved; the user
+          // taps Analyse when they get to it.
           hold = AnalysisHold.rateLimited;
+        // The engine stages are free and need no consent, so the quota, the
+        // queue cap, the e-mail check and the consent cannot come back here.
+        // Their enum values stay for the coach path on the game screen.
+        case AnalysisPrerequisiteMissing():
+        case AnalysisAccepted():
+        case AnalysisLimitReached():
+        case AnalysisQueueFull():
         case AnalysisEmailNotVerified():
-          hold = AnalysisHold.emailNotVerified;
         case AnalysisAiConsentRequired():
-          hold = AnalysisHold.aiConsentRequired;
+          hold = AnalysisHold.requestFailed;
         case AnalysisRequestFailed(:final error):
           final submitError = _errorOf(error);
           final nextAttemptAt = submitError.isTransient
               ? _nextAttemptAt(draft.attempts)
               : null;
           if (nextAttemptAt != null) {
-            // The game is saved (server_game_id is set); only the request
-            // is repeated.
+            // The game is saved (server_game_id is set); only the stage
+            // command is repeated. The `pending_workflows` row stays, so a
+            // tracker that starts meanwhile fires it instead.
             await dao.markSubmitFailed(
               owner,
               draft.id,
