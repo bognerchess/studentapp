@@ -325,10 +325,8 @@ void main() {
     expect(limited, isA<AnalysisRateLimited>());
     expect(
       (limited as AnalysisRateLimited).retryAfter,
-      const Duration(seconds: 60),
-      reason:
-          'the union does not carry retryAfterSeconds until BE-22, so the '
-          'app waits a minute',
+      const Duration(seconds: 12),
+      reason: 'the engine unions carry retryAfterSeconds since BE-22',
     );
 
     server.backend.applyScenario('default', const {});
