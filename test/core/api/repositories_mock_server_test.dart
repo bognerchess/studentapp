@@ -11,6 +11,7 @@ import 'package:bogner_chess/core/api/events_api.dart';
 import 'package:bogner_chess/core/api/games_api.dart';
 import 'package:bogner_chess/core/api/generated/operations/config.graphql.dart';
 import 'package:bogner_chess/core/api/legal_api.dart';
+import 'package:bogner_chess/core/api/stage_api.dart';
 import 'package:bogner_chess/core/api/usage_api.dart';
 import 'package:bogner_chess/core/auth/fake_auth_repository.dart';
 import 'package:bogner_chess/core/game/game_metadata.dart';
@@ -156,6 +157,214 @@ void main() {
 
     // The accepted request counts against the quota.
     expect((await usage.usage()).dailyUsed, 1);
+  });
+
+  test('the staged chain: three engine stages, the coach, and a document '
+      'GameAnalysis serves', () async {
+    final stages = StageApi(executor);
+    final analysis = AnalysisApi(executor);
+    final games = GamesApi(executor);
+    final usage = UsageApi(executor);
+    await LegalApi(executor).recordAiConsent(version: 1);
+    final game = await importGame('client-1');
+
+    /// The workflow of [game], polled until [stage] is no longer active.
+    Future<AnalysisWorkflow> until(AnalysisStage stage) async {
+      for (var i = 0; i < 10; i++) {
+        final workflow = (await stages.workflow(game.id))!;
+        if (!workflow.stateOf(stage).isActive) {
+          return workflow;
+        }
+      }
+      fail('${stage.name} never finished');
+    }
+
+    // Nothing has run: only the first stage can start.
+    var workflow = (await stages.workflow(game.id))!;
+    expect(workflow.gameId, game.id);
+    expect(workflow.stages.map((s) => s.state), [
+      AnalysisStageState.notRun,
+      AnalysisStageState.notRun,
+      AnalysisStageState.notRun,
+      AnalysisStageState.notRun,
+    ]);
+    expect(workflow.nextRunnableStage, AnalysisStage.baseEvaluation);
+    expect(workflow.anyActive, isFalse);
+    expect(workflow.newestReadyEngineStage, isNull);
+    expect(
+      workflow.stageOf(AnalysisStage.coaching)?.blockedBy,
+      AnalysisStage.deepEvaluation,
+    );
+    expect(
+      workflow.stageOf(AnalysisStage.coaching)?.usesModel,
+      isTrue,
+      reason: 'the server says which stage is metered',
+    );
+
+    // A game that is not ours reads as null, which is how the tracker learns
+    // to stop watching it.
+    expect(await stages.workflow('does-not-exist'), isNull);
+
+    // Out of order is refused with the prerequisite key, not a hard failure.
+    expect(
+      await stages.runBaseClassification(game.id),
+      isA<AnalysisPrerequisiteMissing>(),
+    );
+
+    // Stage 1.
+    final started =
+        await stages.runBaseEvaluation(game.id) as AnalysisStageAccepted;
+    expect(started.stage, AnalysisStage.baseEvaluation);
+    expect(started.run.status, JobStatus.queued);
+    expect(started.run.gameId, game.id);
+    expect(started.run.artifact, isNull);
+    expect(
+      ((await stages.runBaseEvaluation(
+        game.id,
+      )) as AnalysisStageAccepted).run.id,
+      started.run.id,
+      reason: 'a second tap gets the run that is under way',
+    );
+
+    workflow = (await stages.workflow(game.id))!;
+    expect(workflow.activeStage, AnalysisStage.baseEvaluation);
+    expect(workflow.stageOf(AnalysisStage.baseEvaluation)?.runnable, isFalse);
+
+    workflow = await until(AnalysisStage.baseEvaluation);
+    expect(
+      workflow.stateOf(AnalysisStage.baseEvaluation),
+      AnalysisStageState.ready,
+    );
+    expect(workflow.newestReadyEngineStage, AnalysisStage.baseEvaluation);
+    expect(workflow.engineReady, isFalse);
+    expect(workflow.nextRunnableStage, AnalysisStage.baseClassification);
+    expect(workflow.readyRunIds, {
+      AnalysisStage.baseEvaluation: started.run.id,
+    });
+
+    // The artifact comes by run id, once.
+    final base = (await stages.artifact(started.run.id))!;
+    expect(base.stage, AnalysisStage.baseEvaluation);
+    expect(base.status, JobStatus.done);
+    expect(base.artifact?.json['stage'], 'base_evaluation');
+    expect(base.artifact?.json['nodes'], isA<List<Object?>>());
+    expect(await stages.artifact('run-does-not-exist'), isNull);
+
+    // Stages 2 and 3.
+    expect(
+      await stages.runBaseClassification(game.id, maxMoments: 6),
+      isA<AnalysisStageAccepted>(),
+    );
+    await until(AnalysisStage.baseClassification);
+    final deep =
+        await stages.runDeepEvaluation(game.id) as AnalysisStageAccepted;
+    workflow = await until(AnalysisStage.deepEvaluation);
+    expect(workflow.engineReady, isTrue);
+    expect(workflow.coachReady, isFalse);
+    expect(workflow.isComplete, isFalse);
+    expect(workflow.nextRunnableStage, AnalysisStage.coaching);
+    expect(workflow.readyRunIds.keys, AnalysisStage.engineStages);
+
+    final packet = (await stages.artifact(deep.run.id))!;
+    expect(packet.artifact?.json['stage'], 'deep_evaluation');
+    expect(
+      (packet.artifact?.json['engine'] as Map).keys,
+      contains('pass1_nodes'),
+      reason: 'stage 3 writes engine flat',
+    );
+    expect(
+      await analysis.analysis(game.id),
+      isNull,
+      reason: 'no document before the coach',
+    );
+    expect((await usage.usage()).dailyUsed, 0, reason: 'the engine is free');
+
+    // The coach.
+    final coach = await stages.runCoaching(
+      game.id,
+      language: 'de',
+      persona: 'calm',
+    ) as AnalysisStageAccepted;
+    expect(coach.stage, AnalysisStage.coaching);
+    workflow = await until(AnalysisStage.coaching);
+    expect(workflow.isComplete, isTrue);
+    expect(workflow.coachReady, isTrue);
+    expect(workflow.nextRunnableStage, isNull);
+    final run = workflow.stageOf(AnalysisStage.coaching)!.run!;
+    expect(run.persona, 'calm');
+    expect(run.language, 'de');
+    expect(run.hasArtifact, isTrue);
+
+    final document = (await analysis.analysis(game.id))!;
+    final parsed = document.parsed as AnalysisSupported;
+    expect(parsed.document.language, 'de');
+    expect(parsed.document.plyCount, 80);
+    expect((await games.get(game.id))?.hasAnalysis, isTrue);
+    expect((await usage.usage()).dailyUsed, 1);
+
+    // Feedback on a staged document works like on any other.
+    expect(
+      await analysis.submitFeedback(
+        commentId: parsed.document.comments.first.id,
+        rating: CommentRating.up,
+      ),
+      CommentRating.up,
+    );
+  });
+
+  test('the staged chain refuses: a failing stage, a rate limit, and stale '
+      'moves', () async {
+    final stages = StageApi(executor);
+    await LegalApi(executor).recordAiConsent(version: 1);
+    final game = await importGame('client-1');
+
+    server.backend.applyScenario('rate_limited', const {
+      'retryAfterSeconds': 12,
+    });
+    final limited = await stages.runBaseEvaluation(game.id);
+    expect(limited, isA<AnalysisRateLimited>());
+    expect(
+      (limited as AnalysisRateLimited).retryAfter,
+      const Duration(seconds: 60),
+      reason:
+          'the union does not carry retryAfterSeconds until BE-22, so the '
+          'app waits a minute',
+    );
+
+    server.backend.applyScenario('default', const {});
+    server.backend.applyScenario('stage_fails', const {
+      'stage': 'BASE_EVALUATION',
+    });
+    expect(
+      await stages.runBaseEvaluation(game.id),
+      isA<AnalysisStageAccepted>(),
+    );
+    AnalysisWorkflow workflow;
+    do {
+      workflow = (await stages.workflow(game.id))!;
+    } while (workflow.stateOf(AnalysisStage.baseEvaluation).isActive);
+    expect(workflow.failedStage, AnalysisStage.baseEvaluation);
+    expect(
+      workflow.stageOf(AnalysisStage.baseEvaluation)?.run?.failureCode,
+      'stage_input_missing',
+    );
+    expect(
+      workflow.stageOf(AnalysisStage.baseEvaluation)?.runnable,
+      isTrue,
+      reason: 'a failed stage can be run again',
+    );
+
+    // The seeded analysed game has a finished pipeline that goes stale when
+    // its moves change.
+    server.backend.applyScenario('stale', const {});
+    final stale = (await stages.workflow('game-1'))!;
+    expect(
+      stale.stages.map((s) => s.state),
+      everyElement(AnalysisStageState.stale),
+    );
+    expect(stale.isComplete, isFalse);
+    expect(stale.readyRunIds, isEmpty);
+    expect(stale.nextRunnableStage, AnalysisStage.baseEvaluation);
   });
 
   test('the fourth analysis of the day reaches the limit', () async {
