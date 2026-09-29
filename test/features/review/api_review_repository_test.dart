@@ -179,7 +179,7 @@ void main() {
 
     // And without a connection the header is simply empty.
     await db.gamesCacheDao.remove(alice, 'game-1');
-    await db.analysisCacheDao.put(
+    await db.analysisCacheDao.putCoach(
       alice,
       'game-1',
       schemaVersion: 1,

@@ -157,7 +157,7 @@ void main() {
   test('remove takes the analysis and the jobs of the game along', () async {
     await dao.upsertPage(alice, [game('g1'), game('g2')]);
     for (final id in ['g1', 'g2']) {
-      await db.analysisCacheDao.put(
+      await db.analysisCacheDao.putCoach(
         alice,
         id,
         schemaVersion: 1,
@@ -186,7 +186,7 @@ void main() {
   test('removeStale drops what a full refresh did not see', () async {
     await dao.upsertPage(alice, [game('kept'), game('gone')]);
     await dao.upsertPage(bob, [game('bobs')]);
-    await db.analysisCacheDao.put(
+    await db.analysisCacheDao.putCoach(
       alice,
       'gone',
       schemaVersion: 1,

@@ -364,7 +364,7 @@ class JobTracker {
       try {
         final analysis = await _api.analysis(job.gameId);
         if (analysis != null && !_disposed) {
-          await _db.analysisCacheDao.put(
+          await _db.analysisCacheDao.putCoach(
             owner,
             job.gameId,
             schemaVersion: analysis.schemaVersion,

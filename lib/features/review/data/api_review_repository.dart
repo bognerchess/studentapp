@@ -68,7 +68,7 @@ class ApiReviewRepository implements ReviewRepository {
       try {
         final fetched = await _api.analysis(gameId);
         if (fetched != null) {
-          await _db.analysisCacheDao.put(
+          await _db.analysisCacheDao.putCoach(
             owner,
             gameId,
             schemaVersion: fetched.schemaVersion,

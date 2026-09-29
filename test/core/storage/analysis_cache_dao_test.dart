@@ -26,7 +26,7 @@ void main() {
     String payload, {
     int minor = 0,
   }) {
-    return dao.put(
+    return dao.putCoach(
       owner,
       gameId,
       schemaVersion: 1,
@@ -35,7 +35,7 @@ void main() {
     );
   }
 
-  test('put stores the document and get reads it back', () async {
+  test('putCoach stores the document and get reads it back', () async {
     await put(alice, 'g1', '{"schema_version":1}', minor: 2);
 
     final cached = (await dao.get(alice, 'g1'))!;
@@ -46,10 +46,10 @@ void main() {
     expect(await dao.get(alice, 'other'), isNull);
   });
 
-  test('put replaces the document of the same game', () async {
+  test('putCoach replaces the document of the same game', () async {
     await put(alice, 'g1', 'old');
     clock.advance(const Duration(hours: 1));
-    await dao.put(
+    await dao.putCoach(
       alice,
       'g1',
       schemaVersion: 2,
@@ -81,6 +81,104 @@ void main() {
     expect(await dao.get(alice, 'g1'), isNull);
   });
 
+  Future<bool> putEngine(
+    String owner,
+    String gameId,
+    String payload, {
+    String stage = 'BASE_EVALUATION',
+    String runIds = '{"BASE_EVALUATION":"run-be"}',
+  }) {
+    return dao.putEngine(
+      owner,
+      gameId,
+      schemaVersion: 1,
+      schemaMinor: 0,
+      payload: payload,
+      stage: stage,
+      stageRunIds: runIds,
+    );
+  }
+
+  group('source', () {
+    test('a coach document says so and carries no stage', () async {
+      await put(alice, 'g1', 'coached');
+
+      final cached = (await dao.get(alice, 'g1'))!;
+      expect(cached.source, AnalysisSource.coach);
+      expect(cached.stage, isNull);
+      expect(cached.stageRunIds, isNull);
+    });
+
+    test('an engine assembly carries its stage and its run ids', () async {
+      expect(await putEngine(alice, 'g1', 'assembled'), isTrue);
+
+      final cached = (await dao.get(alice, 'g1'))!;
+      expect(cached.source, AnalysisSource.engine);
+      expect(cached.stage, 'BASE_EVALUATION');
+      expect(cached.stageRunIds, '{"BASE_EVALUATION":"run-be"}');
+      expect(cached.payload, 'assembled');
+    });
+
+    test('an engine assembly replaces an older one', () async {
+      await putEngine(alice, 'g1', 'stage 1');
+      clock.advance(const Duration(minutes: 2));
+
+      expect(
+        await putEngine(
+          alice,
+          'g1',
+          'stage 3',
+          stage: 'DEEP_EVALUATION',
+          runIds: '{"DEEP_EVALUATION":"run-de"}',
+        ),
+        isTrue,
+      );
+      final cached = (await dao.get(alice, 'g1'))!;
+      expect(cached.payload, 'stage 3');
+      expect(cached.stage, 'DEEP_EVALUATION');
+      expect(cached.fetchedAt.isAtSameMomentAs(clock()), isTrue);
+    });
+
+    test('an engine assembly never writes over a coach document', () async {
+      await put(alice, 'g1', 'coached');
+
+      expect(await putEngine(alice, 'g1', 'assembled'), isFalse);
+      final cached = (await dao.get(alice, 'g1'))!;
+      expect(cached.payload, 'coached');
+      expect(cached.source, AnalysisSource.coach);
+    });
+
+    test('a coach document does write over an engine assembly', () async {
+      await putEngine(alice, 'g1', 'assembled');
+      await put(alice, 'g1', 'coached');
+
+      final cached = (await dao.get(alice, 'g1'))!;
+      expect(cached.payload, 'coached');
+      expect(cached.source, AnalysisSource.coach);
+      // The stage columns of the row it replaced are gone with it.
+      expect(cached.stage, isNull);
+      expect(cached.stageRunIds, isNull);
+    });
+
+    test(
+      'clearCoach drops a coach row so the engine one can come back',
+      () async {
+        await put(alice, 'g1', 'coached');
+
+        expect(await dao.clearCoach(alice, 'g1'), isTrue);
+        expect(await dao.get(alice, 'g1'), isNull);
+        expect(await putEngine(alice, 'g1', 'assembled'), isTrue);
+      },
+    );
+
+    test('clearCoach leaves an engine assembly alone', () async {
+      await putEngine(alice, 'g1', 'assembled');
+
+      expect(await dao.clearCoach(alice, 'g1'), isFalse);
+      expect((await dao.get(alice, 'g1'))!.payload, 'assembled');
+    });
+  });
+
   test('owner scoping', () async {
     await put(bob, 'g1', 'bobs');
 
@@ -89,6 +187,9 @@ void main() {
     expect(await dao.remove(alice, 'g1'), isFalse);
     await put(alice, 'g1', 'stolen');
     expect(await dao.get(alice, 'g1'), isNull);
+    expect((await dao.get(bob, 'g1'))!.payload, 'bobs');
+    expect(await putEngine(alice, 'g1', 'stolen'), isFalse);
+    expect(await dao.clearCoach(alice, 'g1'), isFalse);
     expect((await dao.get(bob, 'g1'))!.payload, 'bobs');
   });
 }

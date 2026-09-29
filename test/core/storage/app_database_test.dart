@@ -29,7 +29,7 @@ void main() {
         updatedAt: clock(),
       ),
     ]);
-    await db.analysisCacheDao.put(
+    await db.analysisCacheDao.putCoach(
       owner,
       'game-$owner',
       schemaVersion: 1,
@@ -41,6 +41,11 @@ void main() {
       jobId: 'job-$owner',
       gameId: 'game-$owner',
       state: JobState.queued,
+    );
+    await db.pendingWorkflowsDao.upsert(
+      owner,
+      gameId: 'game-$owner',
+      targetStage: 'DEEP_EVALUATION',
     );
     await db.eventOutboxDao.enqueue(
       deviceId: 'd',
@@ -61,12 +66,13 @@ void main() {
     return counts;
   }
 
-  test('has the seven tables', () {
+  test('has the eight tables', () {
     expect(db.allTables.map((t) => t.actualTableName), {
       'drafts',
       'cached_games',
       'cached_analyses',
       'pending_jobs',
+      'pending_workflows',
       'event_outbox',
       'feedback_outbox',
       'kv',
@@ -106,6 +112,7 @@ void main() {
     expect(await db.gamesCacheDao.watchGames(alice).first, isEmpty);
     expect(await db.analysisCacheDao.get(alice, 'game-$alice'), isNull);
     expect(await db.pendingJobsDao.getActive(alice), isEmpty);
+    expect(await db.pendingWorkflowsDao.getActive(alice), isEmpty);
     expect(await db.feedbackOutboxDao.takeBatch(alice, 10), isEmpty);
     expect(await db.kvDao.get('ai_consent_seen', ownerSub: alice), isNull);
     expect((await db.eventOutboxDao.takeBatch(10)).map((e) => e.ownerSub), [
@@ -117,6 +124,7 @@ void main() {
     expect(await db.gamesCacheDao.watchGames(bob).first, hasLength(1));
     expect(await db.analysisCacheDao.get(bob, 'game-$bob'), isNotNull);
     expect(await db.pendingJobsDao.getActive(bob), hasLength(1));
+    expect(await db.pendingWorkflowsDao.getActive(bob), hasLength(1));
     expect(await db.feedbackOutboxDao.takeBatch(bob, 10), hasLength(1));
     expect(await db.kvDao.get('ai_consent_seen', ownerSub: bob), '1');
     expect(await db.kvDao.get('install_marker'), '1');

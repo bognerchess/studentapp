@@ -174,3 +174,26 @@ to carry that kind through without mistaking it for a recommendation.
 The `!` glyph on a positive moment needs a comment, so it stays absent until
 the coach has run. That is a gap the staged flow cannot close on the engine
 stages alone.
+
+**B4.** Schema 2, and the first real migration this app has: three columns on
+`cached_analyses` and the new `pending_workflows` table. `docs/storage.md` now
+uses it as the worked example instead of an invented one, and says the two
+things it teaches — a new column needs `withDefault` both to be legal on a
+table with rows and to make an old row keep its meaning, and an index a new
+table declares has to be created next to `createTable`.
+
+`AnalysisCacheDao.put` became `putCoach`, so the plan's split is also a rename
+at the five call sites that had it. `putEngine` returns whether it wrote:
+the guarded upsert is silent about what it did, and the two things it refuses
+to touch look the same from outside — a coach document, and a row of another
+owner. It reads the row back inside the transaction to tell the caller.
+
+`pending_workflows` keeps one row per game, not per run, and its `target_stage`
+is the *wire* name of `AnalysisStage` rather than the enum: the storage layer
+does not know types from `lib/core/api/models/`, and a `textEnum` there would
+have put the pipeline's shape into the schema.
+
+`migration_test.dart` gained a group that inserts a version-1 row through
+`schema.rawDatabase`, migrates, and checks what the row now means — that it
+reads as a coach document and that an engine assembly still cannot write over
+it. The generated `from 1 to 2` case only compares the shape of the schema.

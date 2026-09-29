@@ -1414,6 +1414,36 @@ class $CachedAnalysesTable extends CachedAnalyses
     requiredDuringInsert: true,
   );
   @override
+  late final GeneratedColumnWithTypeConverter<AnalysisSource, String> source =
+      GeneratedColumn<String>(
+        'source',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('coach'),
+      ).withConverter<AnalysisSource>($CachedAnalysesTable.$convertersource);
+  static const VerificationMeta _stageMeta = const VerificationMeta('stage');
+  @override
+  late final GeneratedColumn<String> stage = GeneratedColumn<String>(
+    'stage',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _stageRunIdsMeta = const VerificationMeta(
+    'stageRunIds',
+  );
+  @override
+  late final GeneratedColumn<String> stageRunIds = GeneratedColumn<String>(
+    'stage_run_ids',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
   List<GeneratedColumn> get $columns => [
     gameId,
     ownerSub,
@@ -1421,6 +1451,9 @@ class $CachedAnalysesTable extends CachedAnalyses
     schemaMinor,
     payload,
     fetchedAt,
+    source,
+    stage,
+    stageRunIds,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1488,6 +1521,21 @@ class $CachedAnalysesTable extends CachedAnalyses
     } else if (isInserting) {
       context.missing(_fetchedAtMeta);
     }
+    if (data.containsKey('stage')) {
+      context.handle(
+        _stageMeta,
+        stage.isAcceptableOrUnknown(data['stage']!, _stageMeta),
+      );
+    }
+    if (data.containsKey('stage_run_ids')) {
+      context.handle(
+        _stageRunIdsMeta,
+        stageRunIds.isAcceptableOrUnknown(
+          data['stage_run_ids']!,
+          _stageRunIdsMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1521,6 +1569,20 @@ class $CachedAnalysesTable extends CachedAnalyses
         DriftSqlType.dateTime,
         data['${effectivePrefix}fetched_at'],
       )!,
+      source: $CachedAnalysesTable.$convertersource.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}source'],
+        )!,
+      ),
+      stage: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}stage'],
+      ),
+      stageRunIds: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}stage_run_ids'],
+      ),
     );
   }
 
@@ -1528,6 +1590,9 @@ class $CachedAnalysesTable extends CachedAnalyses
   $CachedAnalysesTable createAlias(String alias) {
     return $CachedAnalysesTable(attachedDatabase, alias);
   }
+
+  static JsonTypeConverter2<AnalysisSource, String, String> $convertersource =
+      const EnumNameConverter<AnalysisSource>(AnalysisSource.values);
 }
 
 class CachedAnalysis extends DataClass implements Insertable<CachedAnalysis> {
@@ -1539,6 +1604,20 @@ class CachedAnalysis extends DataClass implements Insertable<CachedAnalysis> {
   /// The raw JSON document. Parsing and version checks belong to the reader.
   final String payload;
   final DateTime fetchedAt;
+
+  /// Rows written before schema 2 are the server's documents, so the default
+  /// is the one that makes an old row mean what it always meant.
+  final AnalysisSource source;
+
+  /// The furthest stage the payload was built from, as the wire name of
+  /// `AnalysisStage`; null on a coach document, where the stage is implied.
+  final String? stage;
+
+  /// Which stage run each part of an engine assembly came from, as a JSON
+  /// object of stage name to run id. This is what stops the tracker from
+  /// fetching an artifact it has already read: an id that is still in here
+  /// has been stored. Null or `{}` on a coach document.
+  final String? stageRunIds;
   const CachedAnalysis({
     required this.gameId,
     required this.ownerSub,
@@ -1546,6 +1625,9 @@ class CachedAnalysis extends DataClass implements Insertable<CachedAnalysis> {
     required this.schemaMinor,
     required this.payload,
     required this.fetchedAt,
+    required this.source,
+    this.stage,
+    this.stageRunIds,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1556,6 +1638,17 @@ class CachedAnalysis extends DataClass implements Insertable<CachedAnalysis> {
     map['schema_minor'] = Variable<int>(schemaMinor);
     map['payload'] = Variable<String>(payload);
     map['fetched_at'] = Variable<DateTime>(fetchedAt);
+    {
+      map['source'] = Variable<String>(
+        $CachedAnalysesTable.$convertersource.toSql(source),
+      );
+    }
+    if (!nullToAbsent || stage != null) {
+      map['stage'] = Variable<String>(stage);
+    }
+    if (!nullToAbsent || stageRunIds != null) {
+      map['stage_run_ids'] = Variable<String>(stageRunIds);
+    }
     return map;
   }
 
@@ -1567,6 +1660,13 @@ class CachedAnalysis extends DataClass implements Insertable<CachedAnalysis> {
       schemaMinor: Value(schemaMinor),
       payload: Value(payload),
       fetchedAt: Value(fetchedAt),
+      source: Value(source),
+      stage: stage == null && nullToAbsent
+          ? const Value.absent()
+          : Value(stage),
+      stageRunIds: stageRunIds == null && nullToAbsent
+          ? const Value.absent()
+          : Value(stageRunIds),
     );
   }
 
@@ -1582,6 +1682,11 @@ class CachedAnalysis extends DataClass implements Insertable<CachedAnalysis> {
       schemaMinor: serializer.fromJson<int>(json['schemaMinor']),
       payload: serializer.fromJson<String>(json['payload']),
       fetchedAt: serializer.fromJson<DateTime>(json['fetchedAt']),
+      source: $CachedAnalysesTable.$convertersource.fromJson(
+        serializer.fromJson<String>(json['source']),
+      ),
+      stage: serializer.fromJson<String?>(json['stage']),
+      stageRunIds: serializer.fromJson<String?>(json['stageRunIds']),
     );
   }
   @override
@@ -1594,6 +1699,11 @@ class CachedAnalysis extends DataClass implements Insertable<CachedAnalysis> {
       'schemaMinor': serializer.toJson<int>(schemaMinor),
       'payload': serializer.toJson<String>(payload),
       'fetchedAt': serializer.toJson<DateTime>(fetchedAt),
+      'source': serializer.toJson<String>(
+        $CachedAnalysesTable.$convertersource.toJson(source),
+      ),
+      'stage': serializer.toJson<String?>(stage),
+      'stageRunIds': serializer.toJson<String?>(stageRunIds),
     };
   }
 
@@ -1604,6 +1714,9 @@ class CachedAnalysis extends DataClass implements Insertable<CachedAnalysis> {
     int? schemaMinor,
     String? payload,
     DateTime? fetchedAt,
+    AnalysisSource? source,
+    Value<String?> stage = const Value.absent(),
+    Value<String?> stageRunIds = const Value.absent(),
   }) => CachedAnalysis(
     gameId: gameId ?? this.gameId,
     ownerSub: ownerSub ?? this.ownerSub,
@@ -1611,6 +1724,9 @@ class CachedAnalysis extends DataClass implements Insertable<CachedAnalysis> {
     schemaMinor: schemaMinor ?? this.schemaMinor,
     payload: payload ?? this.payload,
     fetchedAt: fetchedAt ?? this.fetchedAt,
+    source: source ?? this.source,
+    stage: stage.present ? stage.value : this.stage,
+    stageRunIds: stageRunIds.present ? stageRunIds.value : this.stageRunIds,
   );
   CachedAnalysis copyWithCompanion(CachedAnalysesCompanion data) {
     return CachedAnalysis(
@@ -1624,6 +1740,11 @@ class CachedAnalysis extends DataClass implements Insertable<CachedAnalysis> {
           : this.schemaMinor,
       payload: data.payload.present ? data.payload.value : this.payload,
       fetchedAt: data.fetchedAt.present ? data.fetchedAt.value : this.fetchedAt,
+      source: data.source.present ? data.source.value : this.source,
+      stage: data.stage.present ? data.stage.value : this.stage,
+      stageRunIds: data.stageRunIds.present
+          ? data.stageRunIds.value
+          : this.stageRunIds,
     );
   }
 
@@ -1635,7 +1756,10 @@ class CachedAnalysis extends DataClass implements Insertable<CachedAnalysis> {
           ..write('schemaVersion: $schemaVersion, ')
           ..write('schemaMinor: $schemaMinor, ')
           ..write('payload: $payload, ')
-          ..write('fetchedAt: $fetchedAt')
+          ..write('fetchedAt: $fetchedAt, ')
+          ..write('source: $source, ')
+          ..write('stage: $stage, ')
+          ..write('stageRunIds: $stageRunIds')
           ..write(')'))
         .toString();
   }
@@ -1648,6 +1772,9 @@ class CachedAnalysis extends DataClass implements Insertable<CachedAnalysis> {
     schemaMinor,
     payload,
     fetchedAt,
+    source,
+    stage,
+    stageRunIds,
   );
   @override
   bool operator ==(Object other) =>
@@ -1658,7 +1785,10 @@ class CachedAnalysis extends DataClass implements Insertable<CachedAnalysis> {
           other.schemaVersion == this.schemaVersion &&
           other.schemaMinor == this.schemaMinor &&
           other.payload == this.payload &&
-          other.fetchedAt == this.fetchedAt);
+          other.fetchedAt == this.fetchedAt &&
+          other.source == this.source &&
+          other.stage == this.stage &&
+          other.stageRunIds == this.stageRunIds);
 }
 
 class CachedAnalysesCompanion extends UpdateCompanion<CachedAnalysis> {
@@ -1668,6 +1798,9 @@ class CachedAnalysesCompanion extends UpdateCompanion<CachedAnalysis> {
   final Value<int> schemaMinor;
   final Value<String> payload;
   final Value<DateTime> fetchedAt;
+  final Value<AnalysisSource> source;
+  final Value<String?> stage;
+  final Value<String?> stageRunIds;
   final Value<int> rowid;
   const CachedAnalysesCompanion({
     this.gameId = const Value.absent(),
@@ -1676,6 +1809,9 @@ class CachedAnalysesCompanion extends UpdateCompanion<CachedAnalysis> {
     this.schemaMinor = const Value.absent(),
     this.payload = const Value.absent(),
     this.fetchedAt = const Value.absent(),
+    this.source = const Value.absent(),
+    this.stage = const Value.absent(),
+    this.stageRunIds = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   CachedAnalysesCompanion.insert({
@@ -1685,6 +1821,9 @@ class CachedAnalysesCompanion extends UpdateCompanion<CachedAnalysis> {
     required int schemaMinor,
     required String payload,
     required DateTime fetchedAt,
+    this.source = const Value.absent(),
+    this.stage = const Value.absent(),
+    this.stageRunIds = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : gameId = Value(gameId),
        ownerSub = Value(ownerSub),
@@ -1699,6 +1838,9 @@ class CachedAnalysesCompanion extends UpdateCompanion<CachedAnalysis> {
     Expression<int>? schemaMinor,
     Expression<String>? payload,
     Expression<DateTime>? fetchedAt,
+    Expression<String>? source,
+    Expression<String>? stage,
+    Expression<String>? stageRunIds,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1708,6 +1850,9 @@ class CachedAnalysesCompanion extends UpdateCompanion<CachedAnalysis> {
       if (schemaMinor != null) 'schema_minor': schemaMinor,
       if (payload != null) 'payload': payload,
       if (fetchedAt != null) 'fetched_at': fetchedAt,
+      if (source != null) 'source': source,
+      if (stage != null) 'stage': stage,
+      if (stageRunIds != null) 'stage_run_ids': stageRunIds,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1719,6 +1864,9 @@ class CachedAnalysesCompanion extends UpdateCompanion<CachedAnalysis> {
     Value<int>? schemaMinor,
     Value<String>? payload,
     Value<DateTime>? fetchedAt,
+    Value<AnalysisSource>? source,
+    Value<String?>? stage,
+    Value<String?>? stageRunIds,
     Value<int>? rowid,
   }) {
     return CachedAnalysesCompanion(
@@ -1728,6 +1876,9 @@ class CachedAnalysesCompanion extends UpdateCompanion<CachedAnalysis> {
       schemaMinor: schemaMinor ?? this.schemaMinor,
       payload: payload ?? this.payload,
       fetchedAt: fetchedAt ?? this.fetchedAt,
+      source: source ?? this.source,
+      stage: stage ?? this.stage,
+      stageRunIds: stageRunIds ?? this.stageRunIds,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1753,6 +1904,17 @@ class CachedAnalysesCompanion extends UpdateCompanion<CachedAnalysis> {
     if (fetchedAt.present) {
       map['fetched_at'] = Variable<DateTime>(fetchedAt.value);
     }
+    if (source.present) {
+      map['source'] = Variable<String>(
+        $CachedAnalysesTable.$convertersource.toSql(source.value),
+      );
+    }
+    if (stage.present) {
+      map['stage'] = Variable<String>(stage.value);
+    }
+    if (stageRunIds.present) {
+      map['stage_run_ids'] = Variable<String>(stageRunIds.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1768,6 +1930,9 @@ class CachedAnalysesCompanion extends UpdateCompanion<CachedAnalysis> {
           ..write('schemaMinor: $schemaMinor, ')
           ..write('payload: $payload, ')
           ..write('fetchedAt: $fetchedAt, ')
+          ..write('source: $source, ')
+          ..write('stage: $stage, ')
+          ..write('stageRunIds: $stageRunIds, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2187,6 +2352,446 @@ class PendingJobsCompanion extends UpdateCompanion<PendingJob> {
           ..write('jobId: $jobId, ')
           ..write('gameId: $gameId, ')
           ..write('ownerSub: $ownerSub, ')
+          ..write('state: $state, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('lastPolledAt: $lastPolledAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PendingWorkflowsTable extends PendingWorkflows
+    with TableInfo<$PendingWorkflowsTable, PendingWorkflow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PendingWorkflowsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _gameIdMeta = const VerificationMeta('gameId');
+  @override
+  late final GeneratedColumn<String> gameId = GeneratedColumn<String>(
+    'game_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerSubMeta = const VerificationMeta(
+    'ownerSub',
+  );
+  @override
+  late final GeneratedColumn<String> ownerSub = GeneratedColumn<String>(
+    'owner_sub',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _targetStageMeta = const VerificationMeta(
+    'targetStage',
+  );
+  @override
+  late final GeneratedColumn<String> targetStage = GeneratedColumn<String>(
+    'target_stage',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<WorkflowState, String> state =
+      GeneratedColumn<String>(
+        'state',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<WorkflowState>($PendingWorkflowsTable.$converterstate);
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastPolledAtMeta = const VerificationMeta(
+    'lastPolledAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastPolledAt = GeneratedColumn<DateTime>(
+    'last_polled_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    gameId,
+    ownerSub,
+    targetStage,
+    state,
+    createdAt,
+    lastPolledAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'pending_workflows';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PendingWorkflow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('game_id')) {
+      context.handle(
+        _gameIdMeta,
+        gameId.isAcceptableOrUnknown(data['game_id']!, _gameIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_gameIdMeta);
+    }
+    if (data.containsKey('owner_sub')) {
+      context.handle(
+        _ownerSubMeta,
+        ownerSub.isAcceptableOrUnknown(data['owner_sub']!, _ownerSubMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerSubMeta);
+    }
+    if (data.containsKey('target_stage')) {
+      context.handle(
+        _targetStageMeta,
+        targetStage.isAcceptableOrUnknown(
+          data['target_stage']!,
+          _targetStageMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_targetStageMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('last_polled_at')) {
+      context.handle(
+        _lastPolledAtMeta,
+        lastPolledAt.isAcceptableOrUnknown(
+          data['last_polled_at']!,
+          _lastPolledAtMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {gameId};
+  @override
+  PendingWorkflow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PendingWorkflow(
+      gameId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}game_id'],
+      )!,
+      ownerSub: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_sub'],
+      )!,
+      targetStage: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}target_stage'],
+      )!,
+      state: $PendingWorkflowsTable.$converterstate.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}state'],
+        )!,
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      lastPolledAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_polled_at'],
+      ),
+    );
+  }
+
+  @override
+  $PendingWorkflowsTable createAlias(String alias) {
+    return $PendingWorkflowsTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<WorkflowState, String, String> $converterstate =
+      const EnumNameConverter<WorkflowState>(WorkflowState.values);
+}
+
+class PendingWorkflow extends DataClass implements Insertable<PendingWorkflow> {
+  final String gameId;
+  final String ownerSub;
+
+  /// How far the chain should run. The three engine stages are free, so this
+  /// is normally the deep evaluation; a coach request sets it to coaching.
+  /// The wire name of `AnalysisStage`, because the storage layer does not
+  /// know that enum (it lives in `lib/core/api/models/`).
+  final String targetStage;
+  final WorkflowState state;
+  final DateTime createdAt;
+  final DateTime? lastPolledAt;
+  const PendingWorkflow({
+    required this.gameId,
+    required this.ownerSub,
+    required this.targetStage,
+    required this.state,
+    required this.createdAt,
+    this.lastPolledAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['game_id'] = Variable<String>(gameId);
+    map['owner_sub'] = Variable<String>(ownerSub);
+    map['target_stage'] = Variable<String>(targetStage);
+    {
+      map['state'] = Variable<String>(
+        $PendingWorkflowsTable.$converterstate.toSql(state),
+      );
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || lastPolledAt != null) {
+      map['last_polled_at'] = Variable<DateTime>(lastPolledAt);
+    }
+    return map;
+  }
+
+  PendingWorkflowsCompanion toCompanion(bool nullToAbsent) {
+    return PendingWorkflowsCompanion(
+      gameId: Value(gameId),
+      ownerSub: Value(ownerSub),
+      targetStage: Value(targetStage),
+      state: Value(state),
+      createdAt: Value(createdAt),
+      lastPolledAt: lastPolledAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastPolledAt),
+    );
+  }
+
+  factory PendingWorkflow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PendingWorkflow(
+      gameId: serializer.fromJson<String>(json['gameId']),
+      ownerSub: serializer.fromJson<String>(json['ownerSub']),
+      targetStage: serializer.fromJson<String>(json['targetStage']),
+      state: $PendingWorkflowsTable.$converterstate.fromJson(
+        serializer.fromJson<String>(json['state']),
+      ),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      lastPolledAt: serializer.fromJson<DateTime?>(json['lastPolledAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'gameId': serializer.toJson<String>(gameId),
+      'ownerSub': serializer.toJson<String>(ownerSub),
+      'targetStage': serializer.toJson<String>(targetStage),
+      'state': serializer.toJson<String>(
+        $PendingWorkflowsTable.$converterstate.toJson(state),
+      ),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'lastPolledAt': serializer.toJson<DateTime?>(lastPolledAt),
+    };
+  }
+
+  PendingWorkflow copyWith({
+    String? gameId,
+    String? ownerSub,
+    String? targetStage,
+    WorkflowState? state,
+    DateTime? createdAt,
+    Value<DateTime?> lastPolledAt = const Value.absent(),
+  }) => PendingWorkflow(
+    gameId: gameId ?? this.gameId,
+    ownerSub: ownerSub ?? this.ownerSub,
+    targetStage: targetStage ?? this.targetStage,
+    state: state ?? this.state,
+    createdAt: createdAt ?? this.createdAt,
+    lastPolledAt: lastPolledAt.present ? lastPolledAt.value : this.lastPolledAt,
+  );
+  PendingWorkflow copyWithCompanion(PendingWorkflowsCompanion data) {
+    return PendingWorkflow(
+      gameId: data.gameId.present ? data.gameId.value : this.gameId,
+      ownerSub: data.ownerSub.present ? data.ownerSub.value : this.ownerSub,
+      targetStage: data.targetStage.present
+          ? data.targetStage.value
+          : this.targetStage,
+      state: data.state.present ? data.state.value : this.state,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      lastPolledAt: data.lastPolledAt.present
+          ? data.lastPolledAt.value
+          : this.lastPolledAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PendingWorkflow(')
+          ..write('gameId: $gameId, ')
+          ..write('ownerSub: $ownerSub, ')
+          ..write('targetStage: $targetStage, ')
+          ..write('state: $state, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('lastPolledAt: $lastPolledAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    gameId,
+    ownerSub,
+    targetStage,
+    state,
+    createdAt,
+    lastPolledAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PendingWorkflow &&
+          other.gameId == this.gameId &&
+          other.ownerSub == this.ownerSub &&
+          other.targetStage == this.targetStage &&
+          other.state == this.state &&
+          other.createdAt == this.createdAt &&
+          other.lastPolledAt == this.lastPolledAt);
+}
+
+class PendingWorkflowsCompanion extends UpdateCompanion<PendingWorkflow> {
+  final Value<String> gameId;
+  final Value<String> ownerSub;
+  final Value<String> targetStage;
+  final Value<WorkflowState> state;
+  final Value<DateTime> createdAt;
+  final Value<DateTime?> lastPolledAt;
+  final Value<int> rowid;
+  const PendingWorkflowsCompanion({
+    this.gameId = const Value.absent(),
+    this.ownerSub = const Value.absent(),
+    this.targetStage = const Value.absent(),
+    this.state = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.lastPolledAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PendingWorkflowsCompanion.insert({
+    required String gameId,
+    required String ownerSub,
+    required String targetStage,
+    required WorkflowState state,
+    required DateTime createdAt,
+    this.lastPolledAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : gameId = Value(gameId),
+       ownerSub = Value(ownerSub),
+       targetStage = Value(targetStage),
+       state = Value(state),
+       createdAt = Value(createdAt);
+  static Insertable<PendingWorkflow> custom({
+    Expression<String>? gameId,
+    Expression<String>? ownerSub,
+    Expression<String>? targetStage,
+    Expression<String>? state,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? lastPolledAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (gameId != null) 'game_id': gameId,
+      if (ownerSub != null) 'owner_sub': ownerSub,
+      if (targetStage != null) 'target_stage': targetStage,
+      if (state != null) 'state': state,
+      if (createdAt != null) 'created_at': createdAt,
+      if (lastPolledAt != null) 'last_polled_at': lastPolledAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PendingWorkflowsCompanion copyWith({
+    Value<String>? gameId,
+    Value<String>? ownerSub,
+    Value<String>? targetStage,
+    Value<WorkflowState>? state,
+    Value<DateTime>? createdAt,
+    Value<DateTime?>? lastPolledAt,
+    Value<int>? rowid,
+  }) {
+    return PendingWorkflowsCompanion(
+      gameId: gameId ?? this.gameId,
+      ownerSub: ownerSub ?? this.ownerSub,
+      targetStage: targetStage ?? this.targetStage,
+      state: state ?? this.state,
+      createdAt: createdAt ?? this.createdAt,
+      lastPolledAt: lastPolledAt ?? this.lastPolledAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (gameId.present) {
+      map['game_id'] = Variable<String>(gameId.value);
+    }
+    if (ownerSub.present) {
+      map['owner_sub'] = Variable<String>(ownerSub.value);
+    }
+    if (targetStage.present) {
+      map['target_stage'] = Variable<String>(targetStage.value);
+    }
+    if (state.present) {
+      map['state'] = Variable<String>(
+        $PendingWorkflowsTable.$converterstate.toSql(state.value),
+      );
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (lastPolledAt.present) {
+      map['last_polled_at'] = Variable<DateTime>(lastPolledAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PendingWorkflowsCompanion(')
+          ..write('gameId: $gameId, ')
+          ..write('ownerSub: $ownerSub, ')
+          ..write('targetStage: $targetStage, ')
           ..write('state: $state, ')
           ..write('createdAt: $createdAt, ')
           ..write('lastPolledAt: $lastPolledAt, ')
@@ -3314,6 +3919,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $CachedGamesTable cachedGames = $CachedGamesTable(this);
   late final $CachedAnalysesTable cachedAnalyses = $CachedAnalysesTable(this);
   late final $PendingJobsTable pendingJobs = $PendingJobsTable(this);
+  late final $PendingWorkflowsTable pendingWorkflows = $PendingWorkflowsTable(
+    this,
+  );
   late final $EventOutboxTable eventOutbox = $EventOutboxTable(this);
   late final $FeedbackOutboxTable feedbackOutbox = $FeedbackOutboxTable(this);
   late final $KvTable kv = $KvTable(this);
@@ -3329,12 +3937,19 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'pending_jobs_owner_state',
     'CREATE INDEX pending_jobs_owner_state ON pending_jobs (owner_sub, state)',
   );
+  late final Index pendingWorkflowsOwnerState = Index(
+    'pending_workflows_owner_state',
+    'CREATE INDEX pending_workflows_owner_state ON pending_workflows (owner_sub, state)',
+  );
   late final DraftsDao draftsDao = DraftsDao(this as AppDatabase);
   late final GamesCacheDao gamesCacheDao = GamesCacheDao(this as AppDatabase);
   late final AnalysisCacheDao analysisCacheDao = AnalysisCacheDao(
     this as AppDatabase,
   );
   late final PendingJobsDao pendingJobsDao = PendingJobsDao(
+    this as AppDatabase,
+  );
+  late final PendingWorkflowsDao pendingWorkflowsDao = PendingWorkflowsDao(
     this as AppDatabase,
   );
   late final EventOutboxDao eventOutboxDao = EventOutboxDao(
@@ -3353,12 +3968,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     cachedGames,
     cachedAnalyses,
     pendingJobs,
+    pendingWorkflows,
     eventOutbox,
     feedbackOutbox,
     kv,
     draftsOwnerStateUpdated,
     cachedGamesOwnerPlayed,
     pendingJobsOwnerState,
+    pendingWorkflowsOwnerState,
   ];
 }
 
@@ -4008,6 +4625,9 @@ typedef $$CachedAnalysesTableCreateCompanionBuilder =
       required int schemaMinor,
       required String payload,
       required DateTime fetchedAt,
+      Value<AnalysisSource> source,
+      Value<String?> stage,
+      Value<String?> stageRunIds,
       Value<int> rowid,
     });
 typedef $$CachedAnalysesTableUpdateCompanionBuilder =
@@ -4018,6 +4638,9 @@ typedef $$CachedAnalysesTableUpdateCompanionBuilder =
       Value<int> schemaMinor,
       Value<String> payload,
       Value<DateTime> fetchedAt,
+      Value<AnalysisSource> source,
+      Value<String?> stage,
+      Value<String?> stageRunIds,
       Value<int> rowid,
     });
 
@@ -4057,6 +4680,22 @@ class $$CachedAnalysesTableFilterComposer
 
   ColumnFilters<DateTime> get fetchedAt => $composableBuilder(
     column: $table.fetchedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<AnalysisSource, AnalysisSource, String>
+  get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<String> get stage => $composableBuilder(
+    column: $table.stage,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get stageRunIds => $composableBuilder(
+    column: $table.stageRunIds,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -4099,6 +4738,21 @@ class $$CachedAnalysesTableOrderingComposer
     column: $table.fetchedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get stage => $composableBuilder(
+    column: $table.stage,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get stageRunIds => $composableBuilder(
+    column: $table.stageRunIds,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$CachedAnalysesTableAnnotationComposer
@@ -4131,6 +4785,17 @@ class $$CachedAnalysesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get fetchedAt =>
       $composableBuilder(column: $table.fetchedAt, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<AnalysisSource, String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<String> get stage =>
+      $composableBuilder(column: $table.stage, builder: (column) => column);
+
+  GeneratedColumn<String> get stageRunIds => $composableBuilder(
+    column: $table.stageRunIds,
+    builder: (column) => column,
+  );
 }
 
 class $$CachedAnalysesTableTableManager
@@ -4172,6 +4837,9 @@ class $$CachedAnalysesTableTableManager
                 Value<int> schemaMinor = const Value.absent(),
                 Value<String> payload = const Value.absent(),
                 Value<DateTime> fetchedAt = const Value.absent(),
+                Value<AnalysisSource> source = const Value.absent(),
+                Value<String?> stage = const Value.absent(),
+                Value<String?> stageRunIds = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CachedAnalysesCompanion(
                 gameId: gameId,
@@ -4180,6 +4848,9 @@ class $$CachedAnalysesTableTableManager
                 schemaMinor: schemaMinor,
                 payload: payload,
                 fetchedAt: fetchedAt,
+                source: source,
+                stage: stage,
+                stageRunIds: stageRunIds,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -4190,6 +4861,9 @@ class $$CachedAnalysesTableTableManager
                 required int schemaMinor,
                 required String payload,
                 required DateTime fetchedAt,
+                Value<AnalysisSource> source = const Value.absent(),
+                Value<String?> stage = const Value.absent(),
+                Value<String?> stageRunIds = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CachedAnalysesCompanion.insert(
                 gameId: gameId,
@@ -4198,6 +4872,9 @@ class $$CachedAnalysesTableTableManager
                 schemaMinor: schemaMinor,
                 payload: payload,
                 fetchedAt: fetchedAt,
+                source: source,
+                stage: stage,
+                stageRunIds: stageRunIds,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -4463,6 +5140,245 @@ typedef $$PendingJobsTableProcessedTableManager =
         BaseReferences<_$AppDatabase, $PendingJobsTable, PendingJob>,
       ),
       PendingJob,
+      PrefetchHooks Function()
+    >;
+typedef $$PendingWorkflowsTableCreateCompanionBuilder =
+    PendingWorkflowsCompanion Function({
+      required String gameId,
+      required String ownerSub,
+      required String targetStage,
+      required WorkflowState state,
+      required DateTime createdAt,
+      Value<DateTime?> lastPolledAt,
+      Value<int> rowid,
+    });
+typedef $$PendingWorkflowsTableUpdateCompanionBuilder =
+    PendingWorkflowsCompanion Function({
+      Value<String> gameId,
+      Value<String> ownerSub,
+      Value<String> targetStage,
+      Value<WorkflowState> state,
+      Value<DateTime> createdAt,
+      Value<DateTime?> lastPolledAt,
+      Value<int> rowid,
+    });
+
+class $$PendingWorkflowsTableFilterComposer
+    extends Composer<_$AppDatabase, $PendingWorkflowsTable> {
+  $$PendingWorkflowsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get gameId => $composableBuilder(
+    column: $table.gameId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ownerSub => $composableBuilder(
+    column: $table.ownerSub,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get targetStage => $composableBuilder(
+    column: $table.targetStage,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<WorkflowState, WorkflowState, String>
+  get state => $composableBuilder(
+    column: $table.state,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastPolledAt => $composableBuilder(
+    column: $table.lastPolledAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PendingWorkflowsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PendingWorkflowsTable> {
+  $$PendingWorkflowsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get gameId => $composableBuilder(
+    column: $table.gameId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ownerSub => $composableBuilder(
+    column: $table.ownerSub,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get targetStage => $composableBuilder(
+    column: $table.targetStage,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get state => $composableBuilder(
+    column: $table.state,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastPolledAt => $composableBuilder(
+    column: $table.lastPolledAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PendingWorkflowsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PendingWorkflowsTable> {
+  $$PendingWorkflowsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get gameId =>
+      $composableBuilder(column: $table.gameId, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerSub =>
+      $composableBuilder(column: $table.ownerSub, builder: (column) => column);
+
+  GeneratedColumn<String> get targetStage => $composableBuilder(
+    column: $table.targetStage,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<WorkflowState, String> get state =>
+      $composableBuilder(column: $table.state, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastPolledAt => $composableBuilder(
+    column: $table.lastPolledAt,
+    builder: (column) => column,
+  );
+}
+
+class $$PendingWorkflowsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PendingWorkflowsTable,
+          PendingWorkflow,
+          $$PendingWorkflowsTableFilterComposer,
+          $$PendingWorkflowsTableOrderingComposer,
+          $$PendingWorkflowsTableAnnotationComposer,
+          $$PendingWorkflowsTableCreateCompanionBuilder,
+          $$PendingWorkflowsTableUpdateCompanionBuilder,
+          (
+            PendingWorkflow,
+            BaseReferences<
+              _$AppDatabase,
+              $PendingWorkflowsTable,
+              PendingWorkflow
+            >,
+          ),
+          PendingWorkflow,
+          PrefetchHooks Function()
+        > {
+  $$PendingWorkflowsTableTableManager(
+    _$AppDatabase db,
+    $PendingWorkflowsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PendingWorkflowsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PendingWorkflowsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PendingWorkflowsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> gameId = const Value.absent(),
+                Value<String> ownerSub = const Value.absent(),
+                Value<String> targetStage = const Value.absent(),
+                Value<WorkflowState> state = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime?> lastPolledAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PendingWorkflowsCompanion(
+                gameId: gameId,
+                ownerSub: ownerSub,
+                targetStage: targetStage,
+                state: state,
+                createdAt: createdAt,
+                lastPolledAt: lastPolledAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String gameId,
+                required String ownerSub,
+                required String targetStage,
+                required WorkflowState state,
+                required DateTime createdAt,
+                Value<DateTime?> lastPolledAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PendingWorkflowsCompanion.insert(
+                gameId: gameId,
+                ownerSub: ownerSub,
+                targetStage: targetStage,
+                state: state,
+                createdAt: createdAt,
+                lastPolledAt: lastPolledAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$PendingWorkflowsTable, PendingWorkflow>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $PendingWorkflowsTable,
+                    PendingWorkflow
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PendingWorkflowsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PendingWorkflowsTable,
+      PendingWorkflow,
+      $$PendingWorkflowsTableFilterComposer,
+      $$PendingWorkflowsTableOrderingComposer,
+      $$PendingWorkflowsTableAnnotationComposer,
+      $$PendingWorkflowsTableCreateCompanionBuilder,
+      $$PendingWorkflowsTableUpdateCompanionBuilder,
+      (
+        PendingWorkflow,
+        BaseReferences<_$AppDatabase, $PendingWorkflowsTable, PendingWorkflow>,
+      ),
+      PendingWorkflow,
       PrefetchHooks Function()
     >;
 typedef $$EventOutboxTableCreateCompanionBuilder =
@@ -5095,6 +6011,8 @@ class $AppDatabaseManager {
       $$CachedAnalysesTableTableManager(_db, _db.cachedAnalyses);
   $$PendingJobsTableTableManager get pendingJobs =>
       $$PendingJobsTableTableManager(_db, _db.pendingJobs);
+  $$PendingWorkflowsTableTableManager get pendingWorkflows =>
+      $$PendingWorkflowsTableTableManager(_db, _db.pendingWorkflows);
   $$EventOutboxTableTableManager get eventOutbox =>
       $$EventOutboxTableTableManager(_db, _db.eventOutbox);
   $$FeedbackOutboxTableTableManager get feedbackOutbox =>

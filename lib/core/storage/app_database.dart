@@ -14,6 +14,8 @@ import 'daos/feedback_outbox_dao.dart';
 import 'daos/games_cache_dao.dart';
 import 'daos/kv_dao.dart';
 import 'daos/pending_jobs_dao.dart';
+import 'daos/pending_workflows_dao.dart';
+import 'generated/schema_versions.dart';
 import 'tables/cached_analyses.dart';
 import 'tables/cached_games.dart';
 import 'tables/drafts.dart';
@@ -21,6 +23,7 @@ import 'tables/event_outbox.dart';
 import 'tables/feedback_outbox.dart';
 import 'tables/kv.dart';
 import 'tables/pending_jobs.dart';
+import 'tables/pending_workflows.dart';
 
 export 'converters.dart';
 export 'daos/analysis_cache_dao.dart';
@@ -30,6 +33,7 @@ export 'daos/feedback_outbox_dao.dart';
 export 'daos/games_cache_dao.dart';
 export 'daos/kv_dao.dart';
 export 'daos/pending_jobs_dao.dart';
+export 'daos/pending_workflows_dao.dart';
 export 'tables/cached_analyses.dart';
 export 'tables/cached_games.dart';
 export 'tables/drafts.dart';
@@ -37,6 +41,7 @@ export 'tables/event_outbox.dart';
 export 'tables/feedback_outbox.dart';
 export 'tables/kv.dart';
 export 'tables/pending_jobs.dart';
+export 'tables/pending_workflows.dart';
 
 part 'app_database.g.dart';
 
@@ -59,6 +64,7 @@ typedef Clock = DateTime Function();
     CachedGames,
     CachedAnalyses,
     PendingJobs,
+    PendingWorkflows,
     EventOutbox,
     FeedbackOutbox,
     Kv,
@@ -68,6 +74,7 @@ typedef Clock = DateTime Function();
     GamesCacheDao,
     AnalysisCacheDao,
     PendingJobsDao,
+    PendingWorkflowsDao,
     EventOutboxDao,
     FeedbackOutboxDao,
     KvDao,
@@ -99,16 +106,30 @@ class AppDatabase extends _$AppDatabase {
 
   /// Bump together with a new dump in `drift_schemas/`; see docs/storage.md.
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) => m.createAll(),
-    // Version 1 is the first one, so there is nothing to upgrade from yet.
-    // docs/storage.md describes how to add the first step.
-    onUpgrade: (m, from, to) async {
-      throw StateError('No migration from schema version $from to $to');
-    },
+    onUpgrade: stepByStep(
+      // WP-60: the staged analysis pipeline. `cached_analyses` learns where
+      // its document came from, and the poller watches games instead of jobs.
+      //
+      // `schema` is the snapshot of version 2, not the live tables: this step
+      // has to still mean the same when version 5 exists.
+      from1To2: (m, schema) async {
+        // Every row that exists reads as a coach document, which is what it
+        // is: version 1 had no other kind.
+        await m.addColumn(schema.cachedAnalyses, schema.cachedAnalyses.source);
+        await m.addColumn(schema.cachedAnalyses, schema.cachedAnalyses.stage);
+        await m.addColumn(
+          schema.cachedAnalyses,
+          schema.cachedAnalyses.stageRunIds,
+        );
+        await m.createTable(schema.pendingWorkflows);
+        await m.createIndex(schema.pendingWorkflowsOwnerState);
+      },
+    ),
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
     },
@@ -133,6 +154,9 @@ class AppDatabase extends _$AppDatabase {
       )..where((t) => t.ownerSub.equals(ownerSub))).go();
       await (delete(
         pendingJobs,
+      )..where((t) => t.ownerSub.equals(ownerSub))).go();
+      await (delete(
+        pendingWorkflows,
       )..where((t) => t.ownerSub.equals(ownerSub))).go();
       await (delete(
         eventOutbox,

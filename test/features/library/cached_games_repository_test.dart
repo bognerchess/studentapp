@@ -91,7 +91,7 @@ void main() {
 
   test('removeStale drops what a complete refresh did not see', () async {
     await games.fetchPage(alice, fetchedAt: games.now());
-    await db.analysisCacheDao.put(
+    await db.analysisCacheDao.putCoach(
       alice,
       'game-1',
       schemaVersion: 1,
@@ -142,7 +142,7 @@ void main() {
 
   test('delete: server first, then cache, analysis and jobs', () async {
     await games.fetchPage(alice, fetchedAt: games.now());
-    await db.analysisCacheDao.put(
+    await db.analysisCacheDao.putCoach(
       alice,
       'game-1',
       schemaVersion: 1,
