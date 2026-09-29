@@ -416,3 +416,31 @@ that check cannot reach the server — but the analysis is no longer held for it
 because the free stages need no consent. A consent that is genuinely missing is
 now collected on the way to the coach, where it belongs. Worth a product look:
 the consent prompt in the save flow is early by one step.
+
+**What B12 still has to delete, and where it is referenced.**
+
+| Symbol | Hand-written files that still name it |
+| --- | --- |
+| `AnalysisApi.request` / `.job` / `.activeJobs`, the `RequestGameAnalysis`, `AnalysisJob` and `MyActiveAnalysisJobs` operations | `lib/core/api/analysis_api.dart` (`AnalysisApi.analysis` and `submitFeedback` stay) |
+| `AnalysisAccepted`, `JobInfo`, `jobOf` | `lib/core/api/models/analysis_models.dart`, `lib/core/api/mappers/game_mapper.dart`, `lib/core/api/games_api.dart`; the sealed-outcome switches in `workflow_tracker.dart`, `game_detail_controller.dart`, `analysis_request_flow.dart` and `submit_queue.dart` each carry one unreachable case for it |
+| `JobStatus` | keep it: `StageRun`, `StageRunSummary` and `stageRunOf` use it. The plan's note applies — move it to `stage_models.dart` |
+| `JobTracker`, `job_tracker.dart`, `job_tracker_providers.dart` (`jobTrackerProvider`, `trackedJobsProvider`, `newestJob`, `jobTrackerUiMountedProvider`, `JobTrackerUiMounted`) | `analysis_notices.dart` (its second listener and the second mounted provider), `library_controller.dart` (`newestJob`, `trackedJobsProvider`), `pump_app.dart` (`jobPolling`, `_NeverMounted`, `_AlwaysMounted`) |
+| `GameSummary.latestJob`, `LibraryGameRow.job`, `statusOfGame`'s `job`, `gameSummaryWith`'s `latestJob`, `GameSummaryCodec.jobToJson` / `jobFromJson` and the `job` key | `game_models.dart`, `game_mapper.dart`, `game_summary_codec.dart`, `library_models.dart`, `library_controller.dart`, `cached_games_repository.dart` |
+| `GamesRepository.applyJob` and its implementation | `games_repository.dart`, `cached_games_repository.dart`, `job_tracker.dart` |
+| `pending_jobs` (`tables/pending_jobs.dart`, `daos/pending_jobs_dao.dart`) | `job_tracker.dart` only; the table is already dropped by the 1→2 migration |
+| `JobFields` / `latestAnalysisJob` in `graphql/operations/fragments.graphql` | `game_mapper.dart` |
+| Tests of the old path | `job_tracker_test.dart`, `pending_jobs_dao_test.dart`, `analysis_notices_test.dart` (its job half), `repositories_fixture_test.dart` and `repositories_mock_server_test.dart` (the `latestJob` assertions), the `newestJob` group of `library_domain_test.dart` |
+
+A version-1 cached game row still decodes its `job` key, so `jobFromJson` has
+to survive B12 or the migration note has to say that those rows lose it. Either
+is fine; the badge no longer depends on it.
+
+**What B13 still owes.** No analytics event was added: `analysis_requested` now
+fires from `startFreeChain` (source `game_detail`) and from `askCoach` (source
+`game_detail_coach`), and `analysis_limit_hit` still fires on the coach
+refusal only — the plan's `analysis_stage_started` / `_ready` / `_failed` and
+`coach_requested` are not there yet, and neither is the `docs/analytics-events.md`
+row for the new `source` values. `docs/storage.md` does not yet mention that
+`cached_analyses.stage_run_ids` also holds the coaching run on a coach row.
+`analysisReadyListenerProvider` is still the no-op it always was: nothing in
+`app.dart` overrides it, so no push refreshes either tracker.
