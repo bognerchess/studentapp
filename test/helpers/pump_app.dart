@@ -165,6 +165,12 @@ Future<void> pumpApp(
   addTearDown(tester.view.reset);
   addTearDown(tester.platformDispatcher.clearAllTestValues);
 
+  // A provider the caller brings its own override for is left alone; two
+  // overrides of the same provider in one scope is an assertion, not a
+  // last-one-wins.
+  bool overridden(Object provider) =>
+      overrides.any((o) => identical(o.origin, provider));
+
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
@@ -181,10 +187,12 @@ Future<void> pumpApp(
           firstRunConsentPromptEnabledProvider.overrideWithValue(false),
         // The pollers would leave a pending timer in every test.
         if (!jobPolling) ...[
-          jobTrackerUiMountedProvider.overrideWith(_NeverMounted.new),
-          workflowTrackerUiMountedProvider.overrideWith(
-            _NeverMountedWorkflows.new,
-          ),
+          if (!overridden(jobTrackerUiMountedProvider))
+            jobTrackerUiMountedProvider.overrideWith(_NeverMounted.new),
+          if (!overridden(workflowTrackerUiMountedProvider))
+            workflowTrackerUiMountedProvider.overrideWith(
+              _NeverMountedWorkflows.new,
+            ),
         ],
         ...overrides,
       ],

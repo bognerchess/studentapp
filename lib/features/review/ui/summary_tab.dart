@@ -11,6 +11,7 @@ import 'package:dartchess/dartchess.dart' show Side;
 import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../domain/review_repository.dart' show AnalysisSource;
 import 'review_colors.dart';
 import 'review_ids.dart';
 import 'review_l10n.dart';
@@ -21,10 +22,15 @@ class SummaryTab extends StatelessWidget {
   const SummaryTab({
     super.key,
     required this.document,
+    required this.source,
     required this.onEvidence,
   });
 
   final AnalysisDocument document;
+
+  /// An engine assembly has no lessons yet, which is a different thing from a
+  /// coach who found nothing to say.
+  final AnalysisSource source;
 
   /// A tap on an evidence chip, with its ply.
   final ValueChanged<int> onEvidence;
@@ -55,7 +61,9 @@ class SummaryTab extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           if (lessons.isEmpty)
             Text(
-              l10n.reviewLessonsEmpty,
+              source == AnalysisSource.engine
+                  ? l10n.reviewSummaryNoCoach
+                  : l10n.reviewLessonsEmpty,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: scheme.onSurfaceVariant,
               ),

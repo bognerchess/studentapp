@@ -1970,4 +1970,36 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get analysisNoticeStale =>
       'Your moves changed, so the analysis stopped.';
+
+  @override
+  String get reviewStageRunning => 'The analysis is running…';
+
+  @override
+  String get reviewStageLookingForKeyPositions =>
+      'Engine analysis ready. Looking for key positions…';
+
+  @override
+  String get reviewStageDeepRunning =>
+      'Key positions marked. Deep analysis running…';
+
+  @override
+  String get reviewStageDeepReady => 'Deep analysis ready.';
+
+  @override
+  String get reviewStageCoachWriting => 'Your coach is writing…';
+
+  @override
+  String get reviewStageFailed => 'This step failed.';
+
+  @override
+  String get reviewStageStale => 'Your moves changed since this analysis.';
+
+  @override
+  String get reviewAskCoach => 'Ask the coach';
+
+  @override
+  String get reviewStageRetry => 'Try again';
+
+  @override
+  String get reviewSummaryNoCoach => 'The coach has not written yet.';
 }

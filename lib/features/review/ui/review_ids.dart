@@ -22,6 +22,13 @@ abstract final class ReviewIds {
   static const String graph = 'review-eval-graph';
   static const String updateBanner = 'review-update-banner';
 
+  /// The line above the tabs that says where the pipeline stands.
+  static const String stageBanner = 'review-stage-banner';
+
+  /// Its action: start the coaching stage, or run the failed step again.
+  static const String stageAskCoach = 'review-stage-ask-coach';
+  static const String stageRetry = 'review-stage-retry';
+
   static const String tabCoach = 'review-tab-coach';
   static const String tabMoves = 'review-tab-moves';
   static const String tabSummary = 'review-tab-summary';

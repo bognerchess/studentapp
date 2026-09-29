@@ -14,6 +14,9 @@ import 'package:bogner_chess/core/l10n/board_labels.dart';
 import 'package:bogner_chess/core/l10n/l10n.dart';
 import 'package:bogner_chess/core/ui/theme.dart';
 import 'package:bogner_chess/core/ui/widgets/error_retry.dart';
+import 'package:bogner_chess/features/analysis_status/domain/workflow_tracker_providers.dart';
+import 'package:bogner_chess/features/game_detail/game_detail.dart';
+import 'package:bogner_chess/features/usage/usage.dart';
 import 'package:dartchess/dartchess.dart' show Side;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -49,14 +52,22 @@ class ReviewScreen extends ConsumerWidget {
     final data = ref.watch(reviewDataProvider(gameId));
     void retry() => ref.invalidate(reviewDataProvider(gameId));
 
-    return switch (data) {
-      AsyncData(:final value) when value.result is! AnalysisInvalid =>
-        _ReviewBody(gameId: gameId),
-      AsyncData() => _Frame(
+    // A document that is being reloaded — a stage landed, so there is more to
+    // show — keeps the screen up. Only a load with nothing to show at all
+    // falls back to the skeleton, or the reader would watch it flash three
+    // times while the pipeline runs.
+    final loaded = data is AsyncError<ReviewData> ? null : data.value;
+    return switch (loaded) {
+      final value? when value.result is! AnalysisInvalid => _ReviewBody(
+        gameId: gameId,
+      ),
+      final _? => _Frame(
         child: ErrorRetry(message: l10n.reviewInvalidMessage, onRetry: retry),
       ),
-      AsyncError() => _Frame(child: ErrorRetry(onRetry: retry)),
-      _ => const _Frame(child: _Skeleton()),
+      null => switch (data) {
+        AsyncError() => _Frame(child: ErrorRetry(onRetry: retry)),
+        _ => const _Frame(child: _Skeleton()),
+      },
     };
   }
 }
@@ -163,9 +174,42 @@ class _ReviewBodyState extends ConsumerState<_ReviewBody> {
     unawaited(precacheBoardTheme(_boardTheme).catchError((Object _) {}));
   }
 
+  /// The coaching stage is started where it is explained: `game_detail` owns
+  /// the quota, e-mail and consent sheets, and reaches them through its
+  /// feature barrel.
+  void _askCoach() {
+    final controller = ref.read(
+      gameDetailControllerProvider(widget.gameId).notifier,
+    );
+    unawaited(runCoachRequest(context, controller));
+  }
+
+  /// A failed step runs again: the free chain, which the server resumes at
+  /// whatever stage it stopped on.
+  void _retryStage() {
+    final controller = ref.read(
+      gameDetailControllerProvider(widget.gameId).notifier,
+    );
+    unawaited(runFreeChain(context, controller));
+  }
+
+  /// The ready run ids as one comparable string; null when no pipeline of
+  /// this game is being watched.
+  static String? _readyRunIds(AnalysisWorkflow? workflow) {
+    if (workflow == null) return null;
+    final parts = [
+      for (final MapEntry(:key, :value) in workflow.readyRunIds.entries)
+        '${key.name}:$value',
+    ]..sort();
+    return parts.join(',');
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    // Keeps the game screen's controller alive for as long as this screen is
+    // up, so that a coach request started from here survives its own await.
+    ref.listen(gameDetailControllerProvider(widget.gameId), (_, _) {});
     final provider = reviewControllerProvider(widget.gameId);
     final state = ref.watch(provider);
     final controller = ref.read(provider.notifier);
@@ -179,6 +223,23 @@ class _ReviewBodyState extends ConsumerState<_ReviewBody> {
           ..showSnackBar(SnackBar(content: Text(l10n.reviewFeedbackFailed)));
       }
     });
+
+    // A stage that landed is a document with more in it. The run ids are
+    // compared as one string, because two equal maps are not `==` and the
+    // tracker hands over a new map on every poll.
+    ref.listen(
+      trackedWorkflowsProvider.select(
+        (workflows) => _readyRunIds(workflows[widget.gameId]),
+      ),
+      (previous, next) {
+        if (previous != null && previous != next) {
+          ref.invalidate(reviewDataProvider(widget.gameId));
+        }
+      },
+    );
+
+    final workflow = ref.watch(trackedWorkflowsProvider)[widget.gameId];
+    final stage = _StageBannerState.of(workflow, controller.data.source);
 
     final board = document != null
         ? ReviewBoard.of(document, state)
@@ -205,6 +266,7 @@ class _ReviewBodyState extends ConsumerState<_ReviewBody> {
                 (document == null ? 0 : EvalGraph.defaultHeight + 8) +
                 _ControlBar.height +
                 (document == null ? 72 : _TabSelector.height) +
+                (stage == null ? 0 : _StageBanner.heightOf(stage, textScale)) +
                 4;
             final boardSize = _boardSize(constraints, fixed: fixed);
             return Column(
@@ -247,6 +309,14 @@ class _ReviewBodyState extends ConsumerState<_ReviewBody> {
                         ),
                         const SizedBox(height: AppSpacing.sm),
                       ],
+                      if (stage != null && document != null) ...[
+                        _StageBanner(
+                          state: stage,
+                          onAskCoach: _askCoach,
+                          onRetry: _retryStage,
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                      ],
                       if (document != null)
                         _TabSelector(
                           selected: state.tab,
@@ -261,9 +331,13 @@ class _ReviewBodyState extends ConsumerState<_ReviewBody> {
                 Expanded(
                   child: _FadingEdge(
                     child: switch ((document, state.tab)) {
-                      (_?, ReviewTab.coach) => CoachTab(gameId: widget.gameId),
+                      (_?, ReviewTab.coach) => CoachTab(
+                        gameId: widget.gameId,
+                        onAskCoach: _askCoach,
+                      ),
                       (final document?, ReviewTab.summary) => SummaryTab(
                         document: document,
+                        source: controller.data.source,
                         onEvidence: controller.showEvidence,
                       ),
                       _ => MovesTab(
@@ -853,6 +927,171 @@ class _FadingEdgeState extends State<_FadingEdge> {
 }
 
 /// The analysis is of a newer major version: board and moves still work.
+/// What the stage banner says, and what it offers.
+enum _StageBannerState {
+  running,
+  lookingForKeyPositions,
+  deepRunning,
+  deepReady,
+  coachWriting,
+  failed,
+  stale;
+
+  /// Null when there is no pipeline to report: nothing is being watched, or
+  /// everything is stored.
+  static _StageBannerState? of(AnalysisWorkflow? workflow, AnalysisSource _) {
+    if (workflow == null) {
+      return null;
+    }
+    for (final stage in AnalysisStage.pipeline) {
+      if (workflow.stateOf(stage) == AnalysisStageState.stale) return stale;
+    }
+    if (workflow.failedStage != null) {
+      return failed;
+    }
+    return switch (workflow.activeStage) {
+      AnalysisStage.coaching => coachWriting,
+      AnalysisStage.deepEvaluation => deepRunning,
+      AnalysisStage.baseClassification => lookingForKeyPositions,
+      AnalysisStage.baseEvaluation => running,
+      // Nothing is moving: either the coach has written, which needs no
+      // banner, or the engine is done and the coach is one tap away.
+      _ =>
+        workflow.coachReady
+            ? null
+            : workflow.engineReady
+            ? deepReady
+            : null,
+    };
+  }
+
+  /// The quota line belongs under the one state that can spend it.
+  bool get showsUsage => this == deepReady;
+}
+
+/// One line above the tabs: where the pipeline of this game stands, and the
+/// one thing to do about it.
+///
+/// Mutually exclusive with [_UpdateBanner], which only shows when there is no
+/// document at all.
+class _StageBanner extends StatelessWidget {
+  const _StageBanner({
+    required this.state,
+    required this.onAskCoach,
+    required this.onRetry,
+  });
+
+  final _StageBannerState state;
+  final VoidCallback onAskCoach;
+  final VoidCallback onRetry;
+
+  /// What the board layout has to leave for it. Scaled like the status line,
+  /// and capped, so a huge text setting shrinks the board only so far.
+  static double heightOf(_StageBannerState state, double textScale) {
+    final scale = textScale.clamp(1.0, 2.0);
+    return (34 + (state.showsUsage ? 18 : 0)) * scale + AppSpacing.sm;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final colors = AppColors.of(context);
+    final (text, icon, color) = switch (state) {
+      _StageBannerState.running => (
+        l10n.reviewStageRunning,
+        Icons.hourglass_top,
+        theme.colorScheme.onSurfaceVariant,
+      ),
+      _StageBannerState.lookingForKeyPositions => (
+        l10n.reviewStageLookingForKeyPositions,
+        Icons.hourglass_top,
+        theme.colorScheme.onSurfaceVariant,
+      ),
+      _StageBannerState.deepRunning => (
+        l10n.reviewStageDeepRunning,
+        Icons.hourglass_top,
+        theme.colorScheme.onSurfaceVariant,
+      ),
+      _StageBannerState.deepReady => (
+        l10n.reviewStageDeepReady,
+        Icons.check_circle_outline,
+        theme.colorScheme.onSurfaceVariant,
+      ),
+      _StageBannerState.coachWriting => (
+        l10n.reviewStageCoachWriting,
+        Icons.edit_outlined,
+        theme.colorScheme.onSurfaceVariant,
+      ),
+      _StageBannerState.failed => (
+        l10n.reviewStageFailed,
+        Icons.error_outline,
+        theme.colorScheme.error,
+      ),
+      _StageBannerState.stale => (
+        l10n.reviewStageStale,
+        Icons.history,
+        colors.warning,
+      ),
+    };
+    final action = switch (state) {
+      _StageBannerState.deepReady => (
+        ReviewIds.stageAskCoach,
+        l10n.reviewAskCoach,
+        onAskCoach,
+      ),
+      _StageBannerState.failed => (
+        ReviewIds.stageRetry,
+        l10n.reviewStageRetry,
+        onRetry,
+      ),
+      _ => null,
+    };
+    return Semantics(
+      container: true,
+      identifier: ReviewIds.stageBanner,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: color),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  text,
+                  style: theme.textTheme.bodySmall?.copyWith(color: color),
+                ),
+              ),
+              if (action case (final id, final label, final onTap)) ...[
+                const SizedBox(width: AppSpacing.sm),
+                ReviewIdentified(
+                  identifier: id,
+                  label: label,
+                  onTap: onTap,
+                  child: TextButton(
+                    onPressed: onTap,
+                    style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                      ),
+                      minimumSize: const Size(48, 28),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(label),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          if (state.showsUsage) const UsageSummary(textAlign: TextAlign.start),
+        ],
+      ),
+    );
+  }
+}
+
 class _UpdateBanner extends StatelessWidget {
   const _UpdateBanner();
 

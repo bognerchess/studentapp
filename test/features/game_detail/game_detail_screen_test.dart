@@ -5,14 +5,11 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:bogner_chess/core/api/generated/operations/stages.graphql.dart';
-import 'package:bogner_chess/core/api/mappers/stage_mapper.dart';
 import 'package:bogner_chess/core/auth/auth_state.dart';
 import 'package:bogner_chess/core/chess/board_thumbnail.dart';
 import 'package:bogner_chess/core/storage/app_database.dart';
 import 'package:bogner_chess/core/storage/storage_providers.dart';
 import 'package:bogner_chess/core/ui/widgets/error_retry.dart';
-import 'package:bogner_chess/features/analysis_status/domain/workflow_tracker_providers.dart';
 import 'package:bogner_chess/features/game_detail/ui/game_detail_ids.dart';
 import 'package:bogner_chess/features/game_detail/ui/game_detail_screen.dart';
 import 'package:bogner_chess/features/library/ui/library_row_tile.dart';
@@ -25,6 +22,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../helpers/fixture_link.dart';
 import '../../helpers/pump_app.dart';
 import '../../helpers/pump_screen.dart';
+import '../../helpers/workflow_fixtures.dart';
 
 const owner = kFakeAuthSub;
 
@@ -64,37 +62,6 @@ void acceptCoaching(FixtureLink api) {
     return body;
   });
 }
-
-/// One of the `GameAnalysisWorkflow` fixtures as the domain model, so that a
-/// test can put the screen into any pipeline state without a poller.
-/// [patch] changes the stage list first.
-AnalysisWorkflow workflowFixture(
-  FixtureLink api,
-  String scenario, {
-  void Function(List<Map<String, dynamic>> stages)? patch,
-}) {
-  final workflow =
-      api.store.data('GameAnalysisWorkflow', scenario)['gameAnalysisWorkflow']
-          as Map<String, dynamic>;
-  patch?.call((workflow['stages'] as List).cast<Map<String, dynamic>>());
-  return workflowOf(Fragment$WorkflowFields.fromJson(workflow));
-}
-
-/// What `trackedWorkflowsProvider` holds for the length of a test.
-class FixedWorkflows extends TrackedWorkflowsNotifier {
-  FixedWorkflows(this._value);
-
-  final Map<String, AnalysisWorkflow> _value;
-
-  @override
-  Map<String, AnalysisWorkflow> build() => _value;
-}
-
-/// Puts [workflow] under [gameId], the way the tracker would after a poll.
-Override tracking(String gameId, AnalysisWorkflow workflow) =>
-    trackedWorkflowsProvider.overrideWith(
-      () => FixedWorkflows({gameId: workflow}),
-    );
 
 /// The `GameById` answer for [gameId]: its row of the list fixture plus the
 /// moves of the detail fixture. [patch] changes the game before it goes out.
@@ -196,7 +163,9 @@ void main() {
       tester,
       gameId: gameId,
       locale: locale,
-      more: [tracking(gameId, workflowFixture(api, scenario, patch: patch))],
+      more: [
+        tracking(gameId, workflowFixture(api.store, scenario, patch: patch)),
+      ],
     );
   }
 
@@ -511,7 +480,7 @@ void main() {
       await openGame(
         tester,
         more: [
-          tracking(freshGame, workflowFixture(api, 'stage_failed')),
+          tracking(freshGame, workflowFixture(api.store, 'stage_failed')),
           ...pollingOverrides(),
         ],
       );
@@ -863,7 +832,10 @@ void main() {
             screen: kIphoneSe,
             // The tallest card: four stage rows, the coach hint and the quota.
             more: [
-              tracking(analysedGame, workflowFixture(api, 'engine_ready')),
+              tracking(
+                analysedGame,
+                workflowFixture(api.store, 'engine_ready'),
+              ),
             ],
           );
           expect(tester.takeException(), isNull);

@@ -3125,6 +3125,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your moves changed, so the analysis stopped.'**
   String get analysisNoticeStale;
+
+  /// Review banner while the first engine stage is still running.
+  ///
+  /// In en, this message translates to:
+  /// **'The analysis is running…'**
+  String get reviewStageRunning;
+
+  /// Review banner while the classification stage runs.
+  ///
+  /// In en, this message translates to:
+  /// **'Engine analysis ready. Looking for key positions…'**
+  String get reviewStageLookingForKeyPositions;
+
+  /// Review banner while the deep evaluation runs.
+  ///
+  /// In en, this message translates to:
+  /// **'Key positions marked. Deep analysis running…'**
+  String get reviewStageDeepRunning;
+
+  /// Review banner when the engine is done and the coach has not been asked.
+  ///
+  /// In en, this message translates to:
+  /// **'Deep analysis ready.'**
+  String get reviewStageDeepReady;
+
+  /// Review banner while the coaching stage runs.
+  ///
+  /// In en, this message translates to:
+  /// **'Your coach is writing…'**
+  String get reviewStageCoachWriting;
+
+  /// Review banner when a stage of the pipeline failed.
+  ///
+  /// In en, this message translates to:
+  /// **'This step failed.'**
+  String get reviewStageFailed;
+
+  /// Review banner when the analysis was made for earlier moves.
+  ///
+  /// In en, this message translates to:
+  /// **'Your moves changed since this analysis.'**
+  String get reviewStageStale;
+
+  /// Action of the review banner and of the coach tab: starts the metered coaching stage.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask the coach'**
+  String get reviewAskCoach;
+
+  /// Action of the review banner when a stage failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get reviewStageRetry;
+
+  /// Summary tab of an engine-only analysis, where there are no lessons yet.
+  ///
+  /// In en, this message translates to:
+  /// **'The coach has not written yet.'**
+  String get reviewSummaryNoCoach;
 }
 
 class _AppLocalizationsDelegate

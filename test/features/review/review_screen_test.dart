@@ -14,10 +14,13 @@ import 'package:bogner_chess/features/review/ui/eval_graph.dart';
 import 'package:bogner_chess/features/review/ui/moves_tab.dart';
 import 'package:bogner_chess/features/review/ui/review_ids.dart';
 import 'package:bogner_chess/features/review/ui/summary_tab.dart';
+import 'package:bogner_chess/features/usage/usage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../helpers/board_tester.dart';
+import '../../helpers/fixture_link.dart';
+import '../../helpers/pump_app.dart';
 import 'pump_review.dart';
 
 BoardView _board(WidgetTester tester) =>
@@ -651,6 +654,241 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Mate in 3 for White'), findsOneWidget);
       expect(find.text('??  Blunder'), findsOneWidget);
+    });
+  });
+
+  group('the stage banner', () {
+    /// The forty-move game with no coach text at all: what an engine
+    /// assembly looks like.
+    void withoutCoach(Map<String, dynamic> json) {
+      json['comments'] = <Object?>[];
+      (json['summary'] as Map<String, dynamic>)['lessons'] = <Object?>[];
+      for (final node in (json['nodes'] as List).cast<Map<String, dynamic>>()) {
+        node['comment_ids'] = <Object?>[];
+      }
+    }
+
+    String bannerText(WidgetTester tester) => tester
+        .widgetList<Text>(
+          find.descendant(
+            of: tester.reviewControl(ReviewIds.stageBanner),
+            matching: find.byType(Text),
+          ),
+        )
+        .first
+        .data!;
+
+    testWidgets('the classification is looking for key positions', (
+      tester,
+    ) async {
+      await pumpReview(
+        tester,
+        patch: withoutCoach,
+        source: AnalysisSource.engine,
+        workflow: workflowFixture(FixtureStore(), 'running'),
+      );
+      expect(
+        bannerText(tester),
+        'Engine analysis ready. Looking for key positions\u2026',
+      );
+    });
+
+    testWidgets('the deep analysis is running', (tester) async {
+      await pumpReview(
+        tester,
+        patch: withoutCoach,
+        source: AnalysisSource.engine,
+        workflow: workflowFixture(
+          FixtureStore(),
+          'running',
+          patch: (stages) {
+            stages[1]['state'] = 'READY';
+            stages[2]['state'] = 'RUNNING';
+          },
+        ),
+      );
+      expect(
+        bannerText(tester),
+        'Key positions marked. Deep analysis running\u2026',
+      );
+    });
+
+    testWidgets('the engine is done: the coach is one tap away', (
+      tester,
+    ) async {
+      final api = FixtureLink();
+      await pumpReview(
+        tester,
+        patch: withoutCoach,
+        source: AnalysisSource.engine,
+        workflow: workflowFixture(api.store, 'engine_ready'),
+        api: api,
+      );
+      expect(bannerText(tester), 'Deep analysis ready.');
+      expect(
+        tester.reviewControl(UsageSummary.semanticsId),
+        findsWidgets,
+        reason: 'the quota belongs next to the one step that spends it',
+      );
+
+      await tester.tapReview(ReviewIds.stageAskCoach);
+      final input =
+          api.requestsOf('RunCoaching').single.variables['input'] as Map;
+      expect(input['chessGameId'], kReviewGameId);
+    });
+
+    testWidgets('the coach is writing', (tester) async {
+      await pumpReview(
+        tester,
+        patch: withoutCoach,
+        source: AnalysisSource.engine,
+        workflow: workflowFixture(
+          FixtureStore(),
+          'engine_ready',
+          patch: (stages) => stages[3]['state'] = 'RUNNING',
+        ),
+      );
+      expect(bannerText(tester), 'Your coach is writing\u2026');
+    });
+
+    testWidgets('a failed step, with the way to run it again', (tester) async {
+      final api = FixtureLink();
+      await pumpReview(
+        tester,
+        patch: withoutCoach,
+        source: AnalysisSource.engine,
+        workflow: workflowFixture(api.store, 'stage_failed'),
+        api: api,
+        overrides: pollingOverrides(),
+      );
+      expect(bannerText(tester), 'This step failed.');
+
+      api.use('GameAnalysisWorkflow', 'stage_failed');
+      await tester.tapReview(ReviewIds.stageRetry);
+      expect(api.requestsOf('RunDeepEvaluation'), hasLength(1));
+    });
+
+    testWidgets('the moves changed under the analysis', (tester) async {
+      await pumpReview(
+        tester,
+        workflow: workflowFixture(FixtureStore(), 'stale'),
+      );
+      expect(bannerText(tester), 'Your moves changed since this analysis.');
+    });
+
+    testWidgets('a finished pipeline says nothing', (tester) async {
+      await pumpReview(
+        tester,
+        workflow: workflowFixture(FixtureStore(), 'all_ready'),
+      );
+      expect(tester.reviewControl(ReviewIds.stageBanner), findsNothing);
+    });
+
+    testWidgets('a game nothing is watching says nothing', (tester) async {
+      await pumpReview(tester);
+      expect(tester.reviewControl(ReviewIds.stageBanner), findsNothing);
+      expect(tester.reviewControl(ReviewIds.updateBanner), findsNothing);
+    });
+
+    testWidgets('a stage that lands makes the screen load again', (
+      tester,
+    ) async {
+      final harness = await pumpReview(
+        tester,
+        patch: withoutCoach,
+        source: AnalysisSource.engine,
+        workflow: workflowFixture(FixtureStore(), 'running'),
+      );
+      expect(harness.repository.loads, hasLength(1));
+
+      // The tracker reports the classification stored, with a run id.
+      workflowsOf(containerOf(tester)).report(
+        kReviewGameId,
+        workflowFixture(
+          FixtureStore(),
+          'running',
+          patch: (stages) => stages[1]['state'] = 'READY',
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(harness.repository.loads, hasLength(2));
+      // And the document stayed up rather than flashing the skeleton.
+      expect(find.byType(BoardView), findsOneWidget);
+    });
+  });
+
+  group('an engine-only analysis', () {
+    void withoutCoach(Map<String, dynamic> json) {
+      json['comments'] = <Object?>[];
+      (json['summary'] as Map<String, dynamic>)['lessons'] = <Object?>[];
+      for (final node in (json['nodes'] as List).cast<Map<String, dynamic>>()) {
+        node['comment_ids'] = <Object?>[];
+      }
+    }
+
+    testWidgets('opens on the moves, not on an empty coach', (tester) async {
+      await pumpReview(
+        tester,
+        patch: withoutCoach,
+        source: AnalysisSource.engine,
+      );
+      expect(tester.reviewState.tab, ReviewTab.moves);
+      expect(find.byType(MovesTab), findsOneWidget);
+      // The eval graph is stage 1's, and it is there.
+      expect(find.byType(EvalGraph), findsOneWidget);
+    });
+
+    testWidgets('the coach tab ends with "Ask the coach"', (tester) async {
+      final api = FixtureLink();
+      await pumpReview(
+        tester,
+        patch: withoutCoach,
+        source: AnalysisSource.engine,
+        api: api,
+      );
+      // Past the last key moment: where the coach tab would otherwise offer
+      // the lessons, and there are none.
+      await tester.tapReview(ReviewIds.last);
+      await tester.tapReview(ReviewIds.tabCoach);
+      expect(find.byType(CoachTab), findsOneWidget);
+      expect(find.text('See your lessons'), findsNothing);
+      expect(find.text('Ask the coach'), findsWidgets);
+
+      await tester.tapReview(ReviewIds.stageAskCoach);
+      expect(api.requestsOf('RunCoaching'), hasLength(1));
+    });
+
+    testWidgets('the summary says the coach has not written', (tester) async {
+      await pumpReview(
+        tester,
+        patch: withoutCoach,
+        source: AnalysisSource.engine,
+      );
+      await tester.tapReview(ReviewIds.tabSummary);
+      expect(find.byType(SummaryTab), findsOneWidget);
+      expect(find.text('The coach has not written yet.'), findsOneWidget);
+      expect(find.text('There are no lessons for this game.'), findsNothing);
+    });
+
+    testWidgets('a coach who found nothing still reads as the coach', (
+      tester,
+    ) async {
+      await pumpReview(tester, patch: withoutCoach);
+      await tester.tapReview(ReviewIds.tabSummary);
+      expect(find.text('There are no lessons for this game.'), findsOneWidget);
+    });
+
+    testWidgets('German', (tester) async {
+      await pumpReview(
+        tester,
+        patch: withoutCoach,
+        source: AnalysisSource.engine,
+        workflow: workflowFixture(FixtureStore(), 'engine_ready'),
+        locale: const Locale('de'),
+      );
+      expect(find.text('Tiefenanalyse fertig.'), findsOneWidget);
+      expect(find.text('Coach fragen'), findsWidgets);
     });
   });
 }

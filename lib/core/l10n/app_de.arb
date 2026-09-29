@@ -503,5 +503,15 @@
   "analysisNoticeEngineReady": "Die Engine-Analyse deiner Partie ist bereit.",
   "analysisNoticeEngineReadyOpponent": "Deine Partie gegen {name} wurde von der Engine analysiert.",
   "analysisNoticeStageFailed": "Ein Schritt der Analyse ist fehlgeschlagen.",
-  "analysisNoticeStale": "Deine Züge haben sich geändert, darum wurde die Analyse gestoppt."
+  "analysisNoticeStale": "Deine Züge haben sich geändert, darum wurde die Analyse gestoppt.",
+  "reviewStageRunning": "Die Analyse läuft…",
+  "reviewStageLookingForKeyPositions": "Engine-Analyse fertig. Wir suchen die Schlüsselstellungen…",
+  "reviewStageDeepRunning": "Schlüsselstellungen markiert. Die Tiefenanalyse läuft…",
+  "reviewStageDeepReady": "Tiefenanalyse fertig.",
+  "reviewStageCoachWriting": "Dein Coach schreibt…",
+  "reviewStageFailed": "Dieser Schritt ist fehlgeschlagen.",
+  "reviewStageStale": "Deine Züge haben sich seit dieser Analyse geändert.",
+  "reviewAskCoach": "Coach fragen",
+  "reviewStageRetry": "Noch einmal versuchen",
+  "reviewSummaryNoCoach": "Der Coach hat noch nichts geschrieben."
 }

@@ -336,3 +336,34 @@ three the plan names: the deep evaluation is ready, the coach is ready (the
 same text the job path uses), and a step failed or the moves changed. Stages 1
 and 2 say nothing — the card and the review banner fill in where the user is
 already looking, and four snack bars per game would be four interruptions.
+
+**B8.** The review screen carries a one-line stage banner above the tabs, and
+knows whether what it is showing is the coach's document or an engine
+assembly. `ref.listen` on the workflow's ready run ids reloads the data when a
+stage lands, so a screen left open fills in.
+
+Three things worth knowing.
+
+The banner's "Ask the coach" is the *same* flow as the game screen's, reached
+through a new `lib/features/game_detail/game_detail.dart` barrel — the pattern
+`usage.dart` already sets, because the layer check forbids importing another
+feature's `ui/` directly. One place explains a quota refusal, an unconfirmed
+address and a missing consent; duplicating those sheets into the review feature
+would have been the alternative. The screen keeps the game controller alive
+with a `ref.listen` that ignores its value, which costs one `GameById` request
+per review open.
+
+A reload no longer flashes the skeleton. `ReviewScreen` used to match
+`AsyncData` only, so every invalidation replaced the screen with the loading
+shape; it now keeps a document that is being refreshed. What it does *not*
+keep is the reading position: `ReviewController.build` watches the data, so a
+stage that lands resets the ply and the tab. That is at most three times per
+game and only while the pipeline runs, so it is left as it is — worth
+revisiting if it ever annoys somebody.
+
+The opening tab follows the source. An engine assembly with no comments opens
+on Moves, because the coach tab would be one engine fact per move and nothing
+else; its terminal button becomes "Ask the coach" instead of "See your
+lessons", and the summary tab says "The coach has not written yet." rather than
+"There are no lessons for this game." — a coach who found nothing to say is a
+different thing from a coach who has not run.

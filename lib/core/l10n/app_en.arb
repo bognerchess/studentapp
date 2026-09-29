@@ -2545,5 +2545,45 @@
   "analysisNoticeStale": "Your moves changed, so the analysis stopped.",
   "@analysisNoticeStale": {
     "description": "Snack bar when the pipeline was computed for moves that have since changed."
+  },
+  "reviewStageRunning": "The analysis is running…",
+  "@reviewStageRunning": {
+    "description": "Review banner while the first engine stage is still running."
+  },
+  "reviewStageLookingForKeyPositions": "Engine analysis ready. Looking for key positions…",
+  "@reviewStageLookingForKeyPositions": {
+    "description": "Review banner while the classification stage runs."
+  },
+  "reviewStageDeepRunning": "Key positions marked. Deep analysis running…",
+  "@reviewStageDeepRunning": {
+    "description": "Review banner while the deep evaluation runs."
+  },
+  "reviewStageDeepReady": "Deep analysis ready.",
+  "@reviewStageDeepReady": {
+    "description": "Review banner when the engine is done and the coach has not been asked."
+  },
+  "reviewStageCoachWriting": "Your coach is writing…",
+  "@reviewStageCoachWriting": {
+    "description": "Review banner while the coaching stage runs."
+  },
+  "reviewStageFailed": "This step failed.",
+  "@reviewStageFailed": {
+    "description": "Review banner when a stage of the pipeline failed."
+  },
+  "reviewStageStale": "Your moves changed since this analysis.",
+  "@reviewStageStale": {
+    "description": "Review banner when the analysis was made for earlier moves."
+  },
+  "reviewAskCoach": "Ask the coach",
+  "@reviewAskCoach": {
+    "description": "Action of the review banner and of the coach tab: starts the metered coaching stage."
+  },
+  "reviewStageRetry": "Try again",
+  "@reviewStageRetry": {
+    "description": "Action of the review banner when a stage failed."
+  },
+  "reviewSummaryNoCoach": "The coach has not written yet.",
+  "@reviewSummaryNoCoach": {
+    "description": "Summary tab of an engine-only analysis, where there are no lessons yet."
   }
 }
