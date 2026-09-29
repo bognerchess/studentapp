@@ -17,11 +17,11 @@ Usage: dart run tool/mock_server/main.dart [options]
                       phone on the same network can reach it. Run the app with
                       --dart-define=API_URL=http://<this mac>:5299/graphql
   --fixtures <dir>    the test/fixtures directory (default: found from the working directory)
-  --job-polls <n>     polls a job or a stage run stays RUNNING before it is
-                      DONE (default 2; QUEUED for 1 poll before). A poll of a
-                      stage run is a GameAnalysisWorkflow query.
-  --job-seconds <n>   finish a job or a stage run after n seconds instead of
-                      counting polls
+  --job-polls <n>     polls a stage run stays RUNNING before it is DONE
+                      (default 2; QUEUED for 1 poll before). A poll is a
+                      GameAnalysisWorkflow query.
+  --job-seconds <n>   finish a stage run after n seconds instead of counting
+                      polls
   --daily-limit <n>   coach requests per day before AnalysisLimitReachedError
                       (default 3; only the coaching stage is metered)
   --empty             start without the seeded games
@@ -31,9 +31,12 @@ Usage: dart run tool/mock_server/main.dart [options]
 
 Scenarios:  curl -X POST localhost:5299/__scenario -d '{"name": "limit_reached"}'
   default | reset | limit_reached | consent_required | consent_accepted |
-  email_not_verified | unauthenticated_once | slow [delayMs] | job_fails |
+  email_not_verified | unauthenticated_once | slow [delayMs] |
   stage_fails [stage] | rate_limited [retryAfterSeconds] | stale |
   deletion_blocked | fixture (operation, scenario)
+
+  The four stages run in this order: BASE_EVALUATION, BASE_CLASSIFICATION,
+  DEEP_EVALUATION (all three free) and COACHING (metered).
 
   stage_fails    every run of that stage fails; the stage defaults to
                  BASE_EVALUATION, e.g. {"name": "stage_fails",

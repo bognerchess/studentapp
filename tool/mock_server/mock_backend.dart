@@ -16,7 +16,6 @@ const List<String> kScenarioNames = [
   'email_not_verified',
   'unauthenticated_once',
   'slow',
-  'job_fails',
   'stage_fails',
   'rate_limited',
   'stale',
@@ -39,11 +38,9 @@ class MockOptions {
     DateTime Function()? now,
   }) : now = now ?? _utcNow;
 
-  /// A run answers QUEUED to this many polls, then RUNNING to [runningPolls]
-  /// polls, then it is finished. A poll is an `AnalysisJob`, a
-  /// `MyActiveAnalysisJobs` or a `GameAnalysisWorkflow` query. Ignored when
-  /// [jobDuration] is set. The same counts drive a whole-game job and a
-  /// stage run.
+  /// A stage run answers QUEUED to this many polls, then RUNNING to
+  /// [runningPolls] polls, then it is finished. A poll is a
+  /// `GameAnalysisWorkflow` query. Ignored when [jobDuration] is set.
   final int queuedPolls;
   final int runningPolls;
 
@@ -67,21 +64,23 @@ class MockOptions {
   static DateTime _utcNow() => DateTime.now().toUtc();
 }
 
-/// What a whole-game job and one stage run have in common: something the
-/// worker is on, which answers a few polls with QUEUED, a few with RUNNING,
-/// and is then over. `_peekStatus`, `_poll` and `_finish` drive both, so the
-/// staged pipeline ages exactly like the job it replaces.
-sealed class _Run {
-  _Run({
+/// One run of one pipeline stage: something the worker is on, which answers a
+/// few polls with QUEUED, a few with RUNNING, and is then over. [stage] is the
+/// wire name of `EngineStage`.
+class _StageRun {
+  _StageRun({
     required this.id,
     required this.gameId,
+    required this.stage,
     required this.requestedAt,
     required this.fails,
-    required this.language,
+    this.language,
+    this.persona,
   });
 
   final String id;
   final String gameId;
+  final String stage;
   final DateTime requestedAt;
   final bool fails;
 
@@ -97,33 +96,6 @@ sealed class _Run {
   DateTime? finishedAt;
 
   bool get isActive => terminalStatus == null;
-}
-
-/// One whole-game analysis job. B12 removes it with the operations that read
-/// it.
-class _Job extends _Run {
-  _Job({
-    required super.id,
-    required super.gameId,
-    required super.requestedAt,
-    required super.fails,
-    required super.language,
-  });
-}
-
-/// One run of one pipeline stage. [stage] is the wire name of `EngineStage`.
-class _StageRun extends _Run {
-  _StageRun({
-    required super.id,
-    required super.gameId,
-    required this.stage,
-    required super.requestedAt,
-    required super.fails,
-    super.language,
-    this.persona,
-  });
-
-  final String stage;
 
   /// Coach character of a coaching run; null on the engine stages.
   final String? persona;
@@ -224,7 +196,6 @@ class MockBackend {
   static const String stageFailureMessage = 'stage failed';
 
   final List<Map<String, dynamic>> _games = [];
-  final Map<String, _Job> _jobs = {};
   final Map<String, _Workflow> _workflows = {};
   final Map<String, _Analysis> _analyses = {};
   final Map<String, Map<String, dynamic>> _feedback = {};
@@ -247,7 +218,6 @@ class MockBackend {
   bool emailNotVerified = false;
   bool unauthenticatedOnce = false;
   bool slow = false;
-  bool jobFails = false;
   bool rateLimited = false;
   bool deletionBlocked = false;
   Duration? _slowDelay;
@@ -272,7 +242,6 @@ class MockBackend {
   void reset() {
     _clearFlags();
     _games.clear();
-    _jobs.clear();
     _workflows.clear();
     _analyses.clear();
     _feedback.clear();
@@ -292,7 +261,6 @@ class MockBackend {
     emailNotVerified = false;
     unauthenticatedOnce = false;
     slow = false;
-    jobFails = false;
     rateLimited = false;
     deletionBlocked = false;
     failingStage = null;
@@ -310,32 +278,11 @@ class MockBackend {
         in (connection['nodes'] as List).cast<Map<String, dynamic>>()) {
       final game = Map<String, dynamic>.of(node);
       final id = game['id'] as String;
-      final job = game.remove('latestAnalysisJob') as Map<String, dynamic>?;
       final analysed = game.remove('hasAnalysis') == true;
       game['rawPgn'] = analysed
           ? _pgnOfDocument(game, document)
           : _pgnOf(game, '1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Bg5 Be7');
       _games.add(game);
-      if (job != null) {
-        final status = job['status'] as String;
-        final seeded = _Job(
-          id: job['id'] as String,
-          gameId: id,
-          requestedAt: DateTime.parse(job['requestedAt'] as String).toUtc(),
-          fails: false,
-          language: 'en',
-        );
-        if (status == 'RUNNING') {
-          seeded.polls = options.queuedPolls + 1;
-        }
-        if (status == 'DONE' || status == 'FAILED') {
-          seeded
-            ..terminalStatus = status
-            ..finishedAt = DateTime.tryParse(job['finishedAt'] as String? ?? '')
-                ?.toUtc();
-        }
-        _jobs[seeded.id] = seeded;
-      }
       if (analysed) {
         final analysis = _Analysis(
           id: 'analysis-$id',
@@ -399,8 +346,6 @@ class MockBackend {
         slow = true;
         final millis = body['delayMs'];
         _slowDelay = millis is int ? Duration(milliseconds: millis) : null;
-      case 'job_fails':
-        jobFails = true;
       case 'stage_fails':
         final stage = body['stage'];
         if (stage != null && !stages.contains(stage)) {
@@ -444,7 +389,6 @@ class MockBackend {
   /// A summary for `GET /__state`.
   Map<String, dynamic> describe() => {
     'games': _games.length,
-    'jobs': {for (final job in _jobs.values) job.id: _peekStatus(job)},
     'workflows': {
       for (final workflow in _workflows.values)
         workflow.gameId: {
@@ -462,7 +406,6 @@ class MockBackend {
       'email_not_verified': emailNotVerified,
       'unauthenticated_once': unauthenticatedOnce,
       'slow': slow,
-      'job_fails': jobFails,
       'stage_fails': failingStage,
       'rate_limited': rateLimited,
       'deletion_blocked': deletionBlocked,
@@ -511,9 +454,6 @@ class MockBackend {
     'GameById': _gameById,
     'ImportMobileGame': _importMobileGame,
     'DeleteChessGame': _deleteChessGame,
-    'RequestGameAnalysis': _requestGameAnalysis,
-    'AnalysisJob': _analysisJob,
-    'MyActiveAnalysisJobs': _myActiveAnalysisJobs,
     'EngineStageRun': _engineStageRun,
     'RunBaseEvaluation': (args) =>
         _runStage('RunBaseEvaluation', 'BASE_EVALUATION', args),
@@ -597,7 +537,7 @@ class MockBackend {
 
   /// The status of [run] without moving it on. A run that goes by the clock
   /// may be over by now, which is why even a peek can finish one.
-  String _peekStatus(_Run run) {
+  String _peekStatus(_StageRun run) {
     final terminal = run.terminalStatus;
     if (terminal != null) {
       return terminal;
@@ -621,14 +561,14 @@ class MockBackend {
     return _finish(run);
   }
 
-  String _poll(_Run run) {
+  String _poll(_StageRun run) {
     if (run.isActive) {
       run.polls++;
     }
     return _peekStatus(run);
   }
 
-  String _finish(_Run run) {
+  String _finish(_StageRun run) {
     final status = run.fails ? 'FAILED' : 'DONE';
     run
       ..terminalStatus = status
@@ -637,18 +577,13 @@ class MockBackend {
     if (run.fails) {
       return status;
     }
-    switch (run) {
-      case _Job():
-        _analyses[run.gameId] = _freshAnalysis(run);
-      case _StageRun():
-        _completeStage(run);
-    }
+    _completeStage(run);
     return status;
   }
 
   /// The forty-move document with ids of its own, so that feedback on one
   /// analysis never shows up on another.
-  _Analysis _freshAnalysis(_Run run) {
+  _Analysis _freshAnalysis(_StageRun run) {
     final original = fixtures.json(analysisFixture)! as Map<String, dynamic>;
     final number = run.id.hashCode
         .toUnsigned(32)
@@ -676,47 +611,6 @@ class MockBackend {
     for (final comment in document['comments'] as List? ?? const <Object?>[])
       if (comment is Map && comment['id'] is String) comment['id'] as String,
   };
-
-  Map<String, dynamic> _jobJson(_Job job, {bool poll = false}) {
-    final status = poll ? _poll(job) : _peekStatus(job);
-    final ahead = _jobs.values
-        .where(
-          (other) =>
-              other != job &&
-              other.terminalStatus == null &&
-              other.requestedAt.isBefore(job.requestedAt) &&
-              _peekStatus(other) == 'QUEUED',
-        )
-        .length;
-    return {
-      'id': job.id,
-      'chessGameId': job.gameId,
-      'status': status,
-      'stage': status == 'RUNNING'
-          ? (job.polls > options.queuedPolls + 1 ? 'coach' : 'engine')
-          : null,
-      'queuePosition': status == 'QUEUED' ? ahead : null,
-      'requestedAt': _iso(job.requestedAt),
-      'finishedAt': job.finishedAt == null ? null : _iso(job.finishedAt!),
-      'failureCode': status == 'FAILED' ? 'engine_timeout' : null,
-    };
-  }
-
-  _Job? _latestJobOf(String gameId) {
-    _Job? latest;
-    for (final job in _jobs.values) {
-      if (job.gameId == gameId &&
-          (latest == null || !job.requestedAt.isBefore(latest.requestedAt))) {
-        latest = job;
-      }
-    }
-    return latest;
-  }
-
-  List<_Job> get _activeJobs => [
-    for (final job in _jobs.values)
-      if (job.isActive) job,
-  ]..sort((a, b) => a.requestedAt.compareTo(b.requestedAt));
 
   // ------------------------------------------------------------- pipeline
 
@@ -932,14 +826,12 @@ class MockBackend {
     }
   }
 
-  /// Active coaching runs and active whole-game jobs together: both occupy a
-  /// worker, so both count against the queue cap.
-  int get _activeModelRuns =>
-      _activeJobs.length +
-      _workflows.values
-          .expand((workflow) => workflow.runs)
-          .where((run) => run.stage == 'COACHING' && run.isActive)
-          .length;
+  /// The coaching runs that are queued or running. Each one occupies a
+  /// worker, so each one counts against the queue cap.
+  int get _activeModelRuns => _workflows.values
+      .expand((workflow) => workflow.runs)
+      .where((run) => run.stage == 'COACHING' && run.isActive)
+      .length;
 
   /// Looks at the newest coaching run of [gameId], which is what finishes one
   /// that goes by the clock and so writes its document.
@@ -965,17 +857,14 @@ class MockBackend {
     bool detail = false,
   }) {
     final id = game['id'] as String;
-    final job = _latestJobOf(id);
-    // Peek first: a job or a coaching run that finishes by the clock creates
-    // its analysis here.
-    final jobJson = job == null ? null : _jobJson(job);
+    // Peek first: a coaching run that finishes by the clock writes its
+    // document here.
     _peekCoaching(id);
     return {
       for (final MapEntry(:key, :value) in game.entries)
         if (detail || key != 'rawPgn') key: value,
       if (detail) ...{'startingFen': null, 'site': null, 'round': null},
       'hasAnalysis': _analyses.containsKey(id),
-      'latestAnalysisJob': jobJson,
     };
   }
 
@@ -1176,7 +1065,6 @@ class MockBackend {
       return _notFound('DeleteChessGame');
     }
     _games.remove(game);
-    _jobs.removeWhere((_, job) => job.gameId == id);
     _workflows.remove(id);
     final analysis = _analyses.remove(id);
     _feedback.removeWhere(
@@ -1191,84 +1079,6 @@ class MockBackend {
   }
 
   // ------------------------------------------------------------- analysis
-
-  Map<String, dynamic> _requestGameAnalysis(Map<String, dynamic> input) {
-    const operation = 'RequestGameAnalysis';
-    final gameId = input['chessGameId'];
-    final language = (input['language'] as String? ?? 'en').toLowerCase();
-    if (!coachLanguages.contains(language)) {
-      return _inputInvalid(operation, 'Language');
-    }
-    if (_gameWithId(gameId) == null) {
-      return _notFound(operation);
-    }
-    if (emailNotVerified) {
-      return _errorOf(operation, 'email_not_verified');
-    }
-    if (_consents['AI_CONSENT']?.acceptedVersion != legalVersion) {
-      return _errorOf(operation, 'ai_consent_required', {
-        'requiredVersion': legalVersion,
-      });
-    }
-    for (final job in _activeJobs) {
-      // Looking at a job that goes by the clock may finish it.
-      _peekStatus(job);
-      // Asking twice is not an error: the job that is under way is the answer.
-      if (job.gameId == gameId && job.terminalStatus == null) {
-        return {
-          'requestGameAnalysis': {'analysisJob': _jobJson(job), 'errors': null},
-        };
-      }
-    }
-    if (_activeJobs.length >= options.maxQueuedJobs) {
-      return _errorOf(operation, 'queue_full', {
-        'maxQueuedJobs': options.maxQueuedJobs,
-      });
-    }
-    if (_dailyUsed >= options.dailyLimit) {
-      return _errorOf(operation, 'limit_reached', {
-        'window': 'DAY',
-        'limit': options.dailyLimit,
-        'used': _dailyUsed,
-        'resetAt': _iso(_dailyResetAt),
-      });
-    }
-    if (_monthlyUsed >= options.monthlyLimit) {
-      return _errorOf(operation, 'limit_reached_month', {
-        'limit': options.monthlyLimit,
-        'used': _monthlyUsed,
-        'resetAt': _iso(_monthlyResetAt),
-      });
-    }
-    final job = _Job(
-      id: _newId('job'),
-      gameId: gameId as String,
-      requestedAt: options.now(),
-      fails: jobFails,
-      language: language,
-    );
-    _jobs[job.id] = job;
-    _dailyUsed++;
-    _monthlyUsed++;
-    return {
-      'requestGameAnalysis': {'analysisJob': _jobJson(job), 'errors': null},
-    };
-  }
-
-  Map<String, dynamic> _analysisJob(Map<String, dynamic> args) {
-    final job = _jobs[args['id']];
-    return {'analysisJob': job == null ? null : _jobJson(job, poll: true)};
-  }
-
-  Map<String, dynamic> _myActiveAnalysisJobs(Map<String, dynamic> args) {
-    final polled = [for (final job in _activeJobs) _jobJson(job, poll: true)];
-    return {
-      'myActiveAnalysisJobs': [
-        for (final job in polled)
-          if (job['status'] == 'QUEUED' || job['status'] == 'RUNNING') job,
-      ],
-    };
-  }
 
   // -------------------------------------------------------- staged analysis
 
@@ -1401,12 +1211,8 @@ class MockBackend {
 
   Map<String, dynamic> _gameAnalysis(Map<String, dynamic> args) {
     final gameId = args['gameId'];
-    // A job or a coaching run that finishes by the clock has to be looked at
-    // to finish.
-    final job = gameId is String ? _latestJobOf(gameId) : null;
-    if (job != null) {
-      _peekStatus(job);
-    }
+    // A coaching run that finishes by the clock has to be looked at before it
+    // writes its document.
     if (gameId is String) {
       _peekCoaching(gameId);
     }
@@ -1469,13 +1275,13 @@ class MockBackend {
       'monthlyLimit': options.monthlyLimit,
       'monthlyUsed': _monthlyUsed,
       'monthlyResetAt': _iso(_monthlyResetAt),
-      // Whole-game jobs only, as on the server: a coaching stage run does
-      // occupy a worker and counts against the queue cap, but it is not an
-      // `analysis_job` row and this number does not see it.
-      'queuedJobs': _activeJobs.where((job) {
-        final status = _peekStatus(job);
-        return status == 'QUEUED' || status == 'RUNNING';
-      }).length,
+      // The coaching runs that are queued or running, which is what the
+      // queue cap here counts. The real server counts `analysis_job` rows
+      // only, so on the staged path it reports 0 (a known gap, recorded in
+      // WP-60 and in BE-22's handoff). The mock reports the number it
+      // actually enforces: a session that sees "0 queued" and then an
+      // AnalysisQueueFullError would look like a bug in the app.
+      'queuedJobs': _activeModelRuns,
       'maxQueuedJobs': options.maxQueuedJobs,
     },
   };
@@ -1651,7 +1457,6 @@ class MockBackend {
     // The account is gone. The mock goes on as a fresh, empty account, so
     // that a simulator session can continue without a restart.
     _games.clear();
-    _jobs.clear();
     _workflows.clear();
     _analyses.clear();
     _feedback.clear();

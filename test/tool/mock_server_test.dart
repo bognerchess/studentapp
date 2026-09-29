@@ -335,7 +335,6 @@ void main() {
       expect(game['playedDate'], '2026-09-18');
       expect(game['result'], 'WHITE_WINS');
       expect(game['hasAnalysis'], isFalse);
-      expect(game['latestAnalysisJob'], isNull);
     });
 
     test('import errors', () async {
@@ -381,281 +380,6 @@ void main() {
         'input': {'chessGameId': id},
       });
       expect(errorOf(again)['__typename'], 'BusinessError');
-    });
-  });
-
-  group('analysis', () {
-    Future<Map<String, dynamic>> request(
-      String gameId, {
-      String language = 'en',
-    }) => data('RequestGameAnalysis', {
-      'input': {'chessGameId': gameId, 'language': language},
-    });
-
-    Future<Map<String, dynamic>> accepted(String gameId) async {
-      final payload = (await request(gameId))['requestGameAnalysis'] as Map;
-      expect(payload['errors'], isNull);
-      return payload['analysisJob'] as Map<String, dynamic>;
-    }
-
-    Future<String> statusOf(String jobId) async =>
-        ((await data('AnalysisJob', {'id': jobId}))['analysisJob']
-                as Map)['status']
-            as String;
-
-    test('AI consent is required until it is recorded', () async {
-      final id = await importGame('c-1');
-      final refused = errorOf(await request(id));
-      expect(refused['__typename'], 'AiConsentRequiredError');
-      expect(refused['requiredVersion'], 1);
-      expect(
-        ((await data('MyAiConsent'))['myAiConsent'] as Map)['required'],
-        isTrue,
-      );
-
-      final wrong = await data('RecordAiConsent', {
-        'input': {'version': 7},
-      });
-      expect(errorOf(wrong)['propertyName'], 'Version');
-
-      final recorded = await data('RecordAiConsent', {
-        'input': {'version': 1},
-      });
-      expect(
-        ((recorded['recordAiConsent'] as Map)['aiConsentStatus']
-            as Map)['required'],
-        isFalse,
-      );
-      await accepted(id);
-
-      await scenario({'name': 'consent_required'});
-      final other = await importGame('c-2');
-      expect(
-        errorOf(await request(other))['__typename'],
-        'AiConsentRequiredError',
-      );
-    });
-
-    test('a job goes QUEUED, RUNNING, DONE across polls; then the analysis '
-        'is there', () async {
-      await scenario({'name': 'consent_accepted'});
-      final id = await importGame('c-1');
-      final job = await accepted(id);
-      expect(job['status'], 'QUEUED');
-      expect(job['queuePosition'], 0);
-
-      expect(
-        (await data('GameAnalysis', {'gameId': id}))['gameAnalysis'],
-        isNull,
-      );
-      expect(
-        [for (var i = 0; i < 4; i++) await statusOf(job['id'] as String)],
-        ['QUEUED', 'RUNNING', 'RUNNING', 'DONE'],
-      );
-
-      final game =
-          (await data('GameById', {'id': id}))['myChessGameById'] as Map;
-      expect(game['hasAnalysis'], isTrue);
-      expect((game['latestAnalysisJob'] as Map)['status'], 'DONE');
-      final analysis =
-          (await data('GameAnalysis', {'gameId': id}))['gameAnalysis'] as Map;
-      expect(analysis['schemaVersion'], 1);
-      expect(((analysis['document'] as Map)['nodes'] as List), hasLength(80));
-    });
-
-    test('asking again while a job is under way returns that job', () async {
-      await scenario({'name': 'consent_accepted'});
-      final id = await importGame('c-1');
-      final first = await accepted(id);
-      final second = await accepted(id);
-      expect(second['id'], first['id']);
-      final usage = (await data('MyAnalysisUsage'))['myAnalysisUsage'] as Map;
-      expect(usage['dailyUsed'], 1);
-    });
-
-    test('active jobs are polled together and disappear when done', () async {
-      await scenario({'name': 'consent_accepted'});
-      final job = await accepted(await importGame('c-1'));
-      Future<List<Object?>> active() async => [
-        for (final j
-            in (await data('MyActiveAnalysisJobs'))['myActiveAnalysisJobs']
-                as List)
-          if ((j as Map)['id'] == job['id']) j['status'],
-      ];
-      expect(await active(), ['QUEUED']);
-      expect(await active(), ['RUNNING']);
-      expect(await active(), ['RUNNING']);
-      expect(await active(), isEmpty);
-      expect(await statusOf(job['id'] as String), 'DONE');
-    });
-
-    test('jobs can go by the clock instead', () async {
-      await server.close();
-      await start(
-        MockOptions(now: () => now, jobDuration: const Duration(seconds: 30)),
-      );
-      await scenario({'name': 'consent_accepted'});
-      final job = await accepted(await importGame('c-1'));
-      final jobId = job['id'] as String;
-      expect(await statusOf(jobId), 'QUEUED');
-      now = now.add(const Duration(seconds: 11));
-      expect(await statusOf(jobId), 'RUNNING');
-      now = now.add(const Duration(seconds: 20));
-      expect(await statusOf(jobId), 'DONE');
-    });
-
-    test(
-      'usage counts up and the fourth analysis of the day is refused',
-      () async {
-        await server.close();
-        await start(
-          MockOptions(now: () => now, queuedPolls: 0, runningPolls: 0),
-        );
-        await scenario({'name': 'consent_accepted'});
-        for (var i = 1; i <= 3; i++) {
-          final job = await accepted(await importGame('c-$i'));
-          expect(await statusOf(job['id'] as String), 'DONE');
-          final usage =
-              (await data('MyAnalysisUsage'))['myAnalysisUsage'] as Map;
-          expect(usage['dailyUsed'], i);
-          expect(usage['dailyLimit'], 3);
-        }
-        final refused = errorOf(await request(await importGame('c-4')));
-        expect(refused['__typename'], 'AnalysisLimitReachedError');
-        expect(refused['window'], 'DAY');
-        expect(refused['limit'], 3);
-        expect(refused['used'], 3);
-        expect(refused['resetAt'], '2026-09-20T00:00:00.000Z');
-      },
-    );
-
-    test('scenario limit_reached refuses right away', () async {
-      await scenario({'name': 'consent_accepted'});
-      await scenario({'name': 'limit_reached'});
-      final refused = errorOf(await request(await importGame('c-1')));
-      expect(refused['__typename'], 'AnalysisLimitReachedError');
-    });
-
-    test('the queue is full after two active jobs', () async {
-      await server.close();
-      await start(MockOptions(now: () => now, seed: false));
-      await scenario({'name': 'consent_accepted'});
-      await accepted(await importGame('c-1'));
-      final second = await accepted(await importGame('c-2'));
-      expect(
-        second['queuePosition'],
-        0,
-        reason: 'same instant: nobody is ahead',
-      );
-      final refused = errorOf(await request(await importGame('c-3')));
-      expect(refused['__typename'], 'AnalysisQueueFullError');
-      expect(refused['maxQueuedJobs'], 2);
-    });
-
-    test('email_not_verified, job_fails, a language the coach does not speak, '
-        'a game that does not exist', () async {
-      await scenario({'name': 'consent_accepted'});
-      final id = await importGame('c-1');
-      expect(
-        errorOf(await request(id, language: 'fr'))['propertyName'],
-        'Language',
-      );
-      expect(errorOf(await request('nope'))['__typename'], 'BusinessError');
-
-      await scenario({'name': 'email_not_verified'});
-      expect(errorOf(await request(id))['__typename'], 'EmailNotVerifiedError');
-
-      await scenario({'name': 'default'});
-      await scenario({'name': 'job_fails'});
-      final job = await accepted(id);
-      for (var i = 0; i < 3; i++) {
-        await statusOf(job['id'] as String);
-      }
-      final failed =
-          (await data('AnalysisJob', {'id': job['id']}))['analysisJob'] as Map;
-      expect(failed['status'], 'FAILED');
-      expect(failed['failureCode'], 'engine_timeout');
-      expect(
-        (await data('GameAnalysis', {'gameId': id}))['gameAnalysis'],
-        isNull,
-      );
-    });
-
-    test('every analysis has comment ids of its own, and feedback is '
-        'remembered per comment', () async {
-      await server.close();
-      await start(MockOptions(now: () => now, queuedPolls: 0, runningPolls: 0));
-      await scenario({'name': 'consent_accepted'});
-
-      Future<Map<String, dynamic>> analysed(String clientGameId) async {
-        final id = await importGame(clientGameId);
-        final job = await accepted(id);
-        await statusOf(job['id'] as String);
-        return (await data('GameAnalysis', {'gameId': id}))['gameAnalysis']
-            as Map<String, dynamic>;
-      }
-
-      Set<String> commentIds(Map<String, dynamic> analysis) => {
-        for (final c in (analysis['document'] as Map)['comments'] as List)
-          (c as Map)['id'] as String,
-      };
-
-      final first = await analysed('c-1');
-      final second = await analysed('c-2');
-      final seeded =
-          (await data('GameAnalysis', {'gameId': 'game-1'}))['gameAnalysis']
-              as Map<String, dynamic>;
-      expect(commentIds(first), hasLength(8));
-      expect(commentIds(first).intersection(commentIds(second)), isEmpty);
-      expect(commentIds(first).intersection(commentIds(seeded)), isEmpty);
-      // The references inside the document moved along.
-      final referenced = {
-        for (final node in (first['document'] as Map)['nodes'] as List)
-          ...((node as Map)['comment_ids'] as List? ?? const <Object?>[])
-              .cast<String>(),
-      };
-      expect(referenced, commentIds(first));
-
-      final commentId = commentIds(first).first;
-      final up = await data('SubmitCoachCommentFeedback', {
-        'input': {'commentId': commentId, 'rating': 'UP'},
-      });
-      expect(
-        ((up['submitCoachCommentFeedback'] as Map)['coachCommentFeedback']
-            as Map)['rating'],
-        'UP',
-      );
-      final gameId = first['chessGameId'];
-      var feedback =
-          ((await data('GameAnalysis', {'gameId': gameId}))['gameAnalysis']
-                  as Map)['commentFeedback']
-              as List;
-      expect(feedback.single, containsPair('commentId', commentId));
-      expect(
-        ((await data('GameAnalysis', {
-              'gameId': second['chessGameId'],
-            }))['gameAnalysis']
-            as Map)['commentFeedback'],
-        isEmpty,
-      );
-
-      final cleared = await data('SubmitCoachCommentFeedback', {
-        'input': {'commentId': commentId, 'rating': null},
-      });
-      expect(
-        (cleared['submitCoachCommentFeedback'] as Map)['coachCommentFeedback'],
-        isNull,
-      );
-      feedback =
-          ((await data('GameAnalysis', {'gameId': gameId}))['gameAnalysis']
-                  as Map)['commentFeedback']
-              as List;
-      expect(feedback, isEmpty);
-
-      final unknown = await data('SubmitCoachCommentFeedback', {
-        'input': {'commentId': 'nope', 'rating': 'UP'},
-      });
-      expect(errorOf(unknown)['message'], 'web_api_errors.comment_not_found');
     });
   });
 
@@ -901,8 +625,8 @@ void main() {
       expect((wrapped['llm'] as Map).keys, contains('tokens_in'));
     });
 
-    test('the coaching stage keeps every gate of the whole-game '
-        'request', () async {
+    test('the coaching stage keeps every gate: the language, the game, the '
+        'consent, the address and the quota', () async {
       final id = await importGame('c-1');
       await engineChain(id);
 
@@ -1077,6 +801,114 @@ void main() {
       expect(statesOf(await workflowOf(id))['BASE_EVALUATION'], 'READY');
     });
 
+    test('the coach is metered: the fourth document of the day is '
+        'refused', () async {
+      await server.close();
+      await start(MockOptions(now: () => now, queuedPolls: 0, runningPolls: 0));
+      await scenario({'name': 'consent_accepted'});
+      for (var i = 1; i <= 3; i++) {
+        final id = await importGame('c-$i');
+        await engineChain(id);
+        await finishStage('RunCoaching', 'COACHING', id);
+        final usage = (await data('MyAnalysisUsage'))['myAnalysisUsage'] as Map;
+        expect(usage['dailyUsed'], i);
+        expect(usage['dailyLimit'], 3);
+        expect(usage['queuedJobs'], 0, reason: 'the run is over');
+      }
+      final fourth = await importGame('c-4');
+      await engineChain(fourth);
+      final refused =
+          ((await runStage('RunCoaching', fourth))['errors'] as List).single
+              as Map;
+      expect(refused['__typename'], 'AnalysisLimitReachedError');
+      expect(refused['window'], 'DAY');
+      expect(refused['limit'], 3);
+      expect(refused['used'], 3);
+      expect(refused['resetAt'], '2026-09-20T00:00:00.000Z');
+      expect(
+        statesOf(await workflowOf(fourth))['COACHING'],
+        'NOT_RUN',
+        reason: 'a refused command starts no run',
+      );
+    });
+
+    test('every coached game has comment ids of its own, and feedback is '
+        'remembered per comment', () async {
+      await server.close();
+      await start(MockOptions(now: () => now, queuedPolls: 0, runningPolls: 0));
+      await scenario({'name': 'consent_accepted'});
+
+      Future<Map<String, dynamic>> coached(String clientGameId) async {
+        final id = await importGame(clientGameId);
+        await engineChain(id);
+        await finishStage('RunCoaching', 'COACHING', id);
+        return (await data('GameAnalysis', {'gameId': id}))['gameAnalysis']
+            as Map<String, dynamic>;
+      }
+
+      Set<String> commentIds(Map<String, dynamic> analysis) => {
+        for (final c in (analysis['document'] as Map)['comments'] as List)
+          (c as Map)['id'] as String,
+      };
+
+      final first = await coached('c-1');
+      final second = await coached('c-2');
+      final seeded =
+          (await data('GameAnalysis', {'gameId': 'game-1'}))['gameAnalysis']
+              as Map<String, dynamic>;
+      expect(commentIds(first), hasLength(8));
+      expect(commentIds(first).intersection(commentIds(second)), isEmpty);
+      expect(commentIds(first).intersection(commentIds(seeded)), isEmpty);
+      // The references inside the document moved along.
+      final referenced = {
+        for (final node in (first['document'] as Map)['nodes'] as List)
+          ...((node as Map)['comment_ids'] as List? ?? const <Object?>[])
+              .cast<String>(),
+      };
+      expect(referenced, commentIds(first));
+
+      final commentId = commentIds(first).first;
+      final up = await data('SubmitCoachCommentFeedback', {
+        'input': {'commentId': commentId, 'rating': 'UP'},
+      });
+      expect(
+        ((up['submitCoachCommentFeedback'] as Map)['coachCommentFeedback']
+            as Map)['rating'],
+        'UP',
+      );
+      final gameId = first['chessGameId'];
+      var feedback =
+          ((await data('GameAnalysis', {'gameId': gameId}))['gameAnalysis']
+                  as Map)['commentFeedback']
+              as List;
+      expect(feedback.single, containsPair('commentId', commentId));
+      expect(
+        ((await data('GameAnalysis', {
+              'gameId': second['chessGameId'],
+            }))['gameAnalysis']
+            as Map)['commentFeedback'],
+        isEmpty,
+      );
+
+      final cleared = await data('SubmitCoachCommentFeedback', {
+        'input': {'commentId': commentId, 'rating': null},
+      });
+      expect(
+        (cleared['submitCoachCommentFeedback'] as Map)['coachCommentFeedback'],
+        isNull,
+      );
+      feedback =
+          ((await data('GameAnalysis', {'gameId': gameId}))['gameAnalysis']
+                  as Map)['commentFeedback']
+              as List;
+      expect(feedback, isEmpty);
+
+      final unknown = await data('SubmitCoachCommentFeedback', {
+        'input': {'commentId': 'nope', 'rating': 'UP'},
+      });
+      expect(errorOf(unknown)['message'], 'web_api_errors.comment_not_found');
+    });
+
     test('GET /__state lists the workflows, and reset forgets them', () async {
       final id = await importGame('c-1');
       await finishStage('RunBaseEvaluation', 'BASE_EVALUATION', id);
@@ -1189,6 +1021,32 @@ void main() {
         );
       },
     );
+
+    test('the AI consent is recorded once and is then no longer '
+        'required', () async {
+      expect(
+        ((await data('MyAiConsent'))['myAiConsent'] as Map)['required'],
+        isTrue,
+      );
+      final wrong = await data('RecordAiConsent', {
+        'input': {'version': 7},
+      });
+      expect(errorOf(wrong)['propertyName'], 'Version');
+
+      final recorded = await data('RecordAiConsent', {
+        'input': {'version': 1},
+      });
+      expect(
+        ((recorded['recordAiConsent'] as Map)['aiConsentStatus']
+            as Map)['required'],
+        isFalse,
+      );
+      await scenario({'name': 'consent_required'});
+      expect(
+        ((await data('MyAiConsent'))['myAiConsent'] as Map)['required'],
+        isTrue,
+      );
+    });
 
     test('devices', () async {
       final registered = await data('RegisterMobileDevice', {
