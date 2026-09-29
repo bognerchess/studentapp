@@ -20,12 +20,20 @@ class AnalysisCacheDao extends DatabaseAccessor<AppDatabase>
   /// wins: over an engine assembly, and over an older coach document. A
   /// document cached for another owner is left alone (see
   /// [GamesCacheDao.upsertPage]).
+  ///
+  /// [stageRunIds] is the same JSON object [putEngine] writes, holding the
+  /// coaching run this document was fetched for. It is what tells a later
+  /// reader that the coach has written *again* since — the document itself
+  /// carries no run id, and `gameAnalysis` always serves the newest. Null
+  /// when the caller does not know the run, which is the case on the
+  /// whole-game path.
   Future<void> putCoach(
     String ownerSub,
     String gameId, {
     required int schemaVersion,
     required int schemaMinor,
     required String payload,
+    String? stageRunIds,
     DateTime? fetchedAt,
   }) {
     final row = CachedAnalysesCompanion.insert(
@@ -37,7 +45,7 @@ class AnalysisCacheDao extends DatabaseAccessor<AppDatabase>
       fetchedAt: fetchedAt ?? attachedDatabase.now(),
       source: const Value(AnalysisSource.coach),
       stage: const Value(null),
-      stageRunIds: const Value(null),
+      stageRunIds: Value(stageRunIds),
     );
     return into(cachedAnalyses).insert(
       row,

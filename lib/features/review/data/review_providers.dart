@@ -8,6 +8,7 @@ import 'package:bogner_chess/core/analytics/analytics.dart';
 import 'package:bogner_chess/core/api/api_providers.dart';
 import 'package:bogner_chess/core/app_foreground.dart';
 import 'package:bogner_chess/core/storage/storage_providers.dart';
+import 'package:bogner_chess/features/analysis_status/domain/workflow_tracker_providers.dart';
 import 'package:bogner_chess/features/library/domain/games_repository.dart';
 import 'package:bogner_chess/features/library/domain/owner.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,9 +25,14 @@ import 'outbox_feedback_sink.dart';
 final reviewRepositoryProvider = Provider<ReviewRepository>((ref) {
   final repository = ApiReviewRepository(
     analysisApi: ref.watch(analysisApiProvider),
+    stageApi: ref.watch(stageApiProvider),
     games: ref.watch(gamesRepositoryProvider),
     db: ref.watch(appDatabaseProvider),
     owner: () => ref.read(currentOwnerProvider),
+    // Read, not watched: a new workflow must not rebuild the repository (that
+    // would restart every load). The screen listens on the workflow itself
+    // and asks for the data again.
+    trackedWorkflow: (gameId) => ref.read(trackedWorkflowsProvider)[gameId],
   );
   return _TrackedReviewRepository(repository, ref);
 });

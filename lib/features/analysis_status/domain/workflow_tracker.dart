@@ -632,10 +632,15 @@ class WorkflowTracker {
   ) async {
     switch (workflow.stateOf(AnalysisStage.coaching)) {
       case AnalysisStageState.ready:
+        final runId = workflow.readyRunIds[AnalysisStage.coaching];
         final stored = await _db.analysisCacheDao.get(owner, gameId);
         if (_disposed || owner != _owner) return;
-        if (stored != null && stored.source == AnalysisSource.coach) {
-          return; // Already fetched.
+        if (stored != null &&
+            stored.source == AnalysisSource.coach &&
+            (runId == null ||
+                _runIdsOf(stored)[AnalysisStage.coaching] == runId)) {
+          // Already fetched, and the coach has not written again since.
+          return;
         }
         try {
           final analysis = await _analysisApi.analysis(gameId);
@@ -646,6 +651,9 @@ class WorkflowTracker {
             schemaVersion: analysis.schemaVersion,
             schemaMinor: analysis.schemaMinor,
             payload: analysis.rawJson,
+            stageRunIds: runId == null
+                ? null
+                : jsonEncode(_wireIds({AnalysisStage.coaching: runId})),
           );
           await _games.applyAnalysis(owner, gameId, hasAnalysis: true);
         } on ApiError catch (e) {

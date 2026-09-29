@@ -267,3 +267,27 @@ reads both and needed no change. `web_api_errors.pgn_invalid` comes as an
 `InputValidationError` on `chessGameId` and stays a plain failure: the user
 cannot fix a stage by retrying a game with no moves, and the submit path
 already refuses those.
+
+**B6.** The review repository's order of preference is coach document, engine
+assembly, `gameAnalysis`, nothing; `source` travels to the screen on
+`ReviewData` so the tabs can say where the text is.
+
+The plan's "run-id staleness rule" needed a place to keep the coach's run id,
+because the document itself carries none and `gameAnalysis` always serves the
+newest. `cached_analyses.stage_run_ids` was already there and nullable, so a
+coach row now holds `{"COACHING": "<run id>"}` — no schema change, and the
+tracker records the same thing. A coach row *without* a recorded run (the
+whole-game path writes those) is never refetched: it is already the best kind
+of document, and there is nothing to compare.
+
+The tracker had a matching hole. `_followCoaching` returned early on any
+stored coach row, so a second coaching run would never have been picked up;
+it now compares the run id as well.
+
+Two things the repository deliberately does not do. It **never fetches an
+artifact** — those are hundreds of kilobytes and the tracker owns them — so a
+device with no stored assembly and an unfinished coaching stage shows
+"not available", exactly as before. And it asks for the workflow only when the
+answer could change what happens next: with nothing cached the document is
+fetched either way, so that cold open costs one query, not two. A workflow
+query that fails is "nothing known", so the screen still opens offline.

@@ -1613,10 +1613,12 @@ class CachedAnalysis extends DataClass implements Insertable<CachedAnalysis> {
   /// `AnalysisStage`; null on a coach document, where the stage is implied.
   final String? stage;
 
-  /// Which stage run each part of an engine assembly came from, as a JSON
-  /// object of stage name to run id. This is what stops the tracker from
-  /// fetching an artifact it has already read: an id that is still in here
-  /// has been stored. Null or `{}` on a coach document.
+  /// Which stage run each part of the payload came from, as a JSON object of
+  /// stage name to run id. This is what stops the tracker from fetching an
+  /// artifact it has already read: an id that is still in here has been
+  /// stored. On a coach document it holds the coaching run, which is how a
+  /// reader notices that the coach has written again. Null on a row written
+  /// by the whole-game path, which has no runs.
   final String? stageRunIds;
   const CachedAnalysis({
     required this.gameId,
