@@ -1,7 +1,7 @@
 {
   "schema": "bognerchess.game-analysis",
   "schema_version": 1,
-  "schema_minor": 1,
+  "schema_minor": 5,
   "analysis_id": "e88b7591-31db-4e32-98dc-b35f94c662cd",
   "generated_at": "2026-09-19T09:12:41Z",
   "language": "en",
@@ -25,7 +25,10 @@
     "model": "gpt-4.1",
     "prompt_set": "mobile-coach",
     "prompt_version": "1.0.0+3fa9c1d2",
-    "pipeline_version": "1.0.0"
+    "pipeline_version": "1.0.0",
+    "persona": "house",
+    "persona_version": "1.0.0+3df12287",
+    "persona_display_name": "Bogner Chess Coach"
   },
   "game": {
     "start_fen": null,

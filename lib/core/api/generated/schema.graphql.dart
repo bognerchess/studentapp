@@ -921,6 +921,377 @@ class Input$RequestGameAnalysisInput {
   }
 }
 
+class Input$RunBaseClassificationInput {
+  factory Input$RunBaseClassificationInput({
+    required String chessGameId,
+    int? maxMoments,
+    String? optionsJson,
+  }) => Input$RunBaseClassificationInput._({
+    r'chessGameId': chessGameId,
+    if (maxMoments != null) r'maxMoments': maxMoments,
+    if (optionsJson != null) r'optionsJson': optionsJson,
+  });
+
+  Input$RunBaseClassificationInput._(this._$data);
+
+  factory Input$RunBaseClassificationInput.fromJson(Map<String, dynamic> data) {
+    final result$data = <String, dynamic>{};
+    final l$chessGameId = data['chessGameId'];
+    result$data['chessGameId'] = (l$chessGameId as String);
+    if (data.containsKey('maxMoments')) {
+      final l$maxMoments = data['maxMoments'];
+      result$data['maxMoments'] = (l$maxMoments as int?);
+    }
+    if (data.containsKey('optionsJson')) {
+      final l$optionsJson = data['optionsJson'];
+      result$data['optionsJson'] = (l$optionsJson as String?);
+    }
+    return Input$RunBaseClassificationInput._(result$data);
+  }
+
+  Map<String, dynamic> _$data;
+
+  String get chessGameId => (_$data['chessGameId'] as String);
+
+  int? get maxMoments => (_$data['maxMoments'] as int?);
+
+  String? get optionsJson => (_$data['optionsJson'] as String?);
+
+  Map<String, dynamic> toJson() {
+    final result$data = <String, dynamic>{};
+    final l$chessGameId = chessGameId;
+    result$data['chessGameId'] = l$chessGameId;
+    if (_$data.containsKey('maxMoments')) {
+      final l$maxMoments = maxMoments;
+      result$data['maxMoments'] = l$maxMoments;
+    }
+    if (_$data.containsKey('optionsJson')) {
+      final l$optionsJson = optionsJson;
+      result$data['optionsJson'] = l$optionsJson;
+    }
+    return result$data;
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! Input$RunBaseClassificationInput ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$chessGameId = chessGameId;
+    final lOther$chessGameId = other.chessGameId;
+    if (l$chessGameId != lOther$chessGameId) {
+      return false;
+    }
+    final l$maxMoments = maxMoments;
+    final lOther$maxMoments = other.maxMoments;
+    if (_$data.containsKey('maxMoments') !=
+        other._$data.containsKey('maxMoments')) {
+      return false;
+    }
+    if (l$maxMoments != lOther$maxMoments) {
+      return false;
+    }
+    final l$optionsJson = optionsJson;
+    final lOther$optionsJson = other.optionsJson;
+    if (_$data.containsKey('optionsJson') !=
+        other._$data.containsKey('optionsJson')) {
+      return false;
+    }
+    if (l$optionsJson != lOther$optionsJson) {
+      return false;
+    }
+    return true;
+  }
+
+  @override
+  int get hashCode {
+    final l$chessGameId = chessGameId;
+    final l$maxMoments = maxMoments;
+    final l$optionsJson = optionsJson;
+    return Object.hashAll([
+      l$chessGameId,
+      _$data.containsKey('maxMoments') ? l$maxMoments : const {},
+      _$data.containsKey('optionsJson') ? l$optionsJson : const {},
+    ]);
+  }
+}
+
+class Input$RunBaseEvaluationInput {
+  factory Input$RunBaseEvaluationInput({
+    required String chessGameId,
+    String? optionsJson,
+  }) => Input$RunBaseEvaluationInput._({
+    r'chessGameId': chessGameId,
+    if (optionsJson != null) r'optionsJson': optionsJson,
+  });
+
+  Input$RunBaseEvaluationInput._(this._$data);
+
+  factory Input$RunBaseEvaluationInput.fromJson(Map<String, dynamic> data) {
+    final result$data = <String, dynamic>{};
+    final l$chessGameId = data['chessGameId'];
+    result$data['chessGameId'] = (l$chessGameId as String);
+    if (data.containsKey('optionsJson')) {
+      final l$optionsJson = data['optionsJson'];
+      result$data['optionsJson'] = (l$optionsJson as String?);
+    }
+    return Input$RunBaseEvaluationInput._(result$data);
+  }
+
+  Map<String, dynamic> _$data;
+
+  String get chessGameId => (_$data['chessGameId'] as String);
+
+  String? get optionsJson => (_$data['optionsJson'] as String?);
+
+  Map<String, dynamic> toJson() {
+    final result$data = <String, dynamic>{};
+    final l$chessGameId = chessGameId;
+    result$data['chessGameId'] = l$chessGameId;
+    if (_$data.containsKey('optionsJson')) {
+      final l$optionsJson = optionsJson;
+      result$data['optionsJson'] = l$optionsJson;
+    }
+    return result$data;
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! Input$RunBaseEvaluationInput ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$chessGameId = chessGameId;
+    final lOther$chessGameId = other.chessGameId;
+    if (l$chessGameId != lOther$chessGameId) {
+      return false;
+    }
+    final l$optionsJson = optionsJson;
+    final lOther$optionsJson = other.optionsJson;
+    if (_$data.containsKey('optionsJson') !=
+        other._$data.containsKey('optionsJson')) {
+      return false;
+    }
+    if (l$optionsJson != lOther$optionsJson) {
+      return false;
+    }
+    return true;
+  }
+
+  @override
+  int get hashCode {
+    final l$chessGameId = chessGameId;
+    final l$optionsJson = optionsJson;
+    return Object.hashAll([
+      l$chessGameId,
+      _$data.containsKey('optionsJson') ? l$optionsJson : const {},
+    ]);
+  }
+}
+
+class Input$RunCoachingInput {
+  factory Input$RunCoachingInput({
+    required String chessGameId,
+    String? persona,
+    String? language,
+    String? optionsJson,
+  }) => Input$RunCoachingInput._({
+    r'chessGameId': chessGameId,
+    if (persona != null) r'persona': persona,
+    if (language != null) r'language': language,
+    if (optionsJson != null) r'optionsJson': optionsJson,
+  });
+
+  Input$RunCoachingInput._(this._$data);
+
+  factory Input$RunCoachingInput.fromJson(Map<String, dynamic> data) {
+    final result$data = <String, dynamic>{};
+    final l$chessGameId = data['chessGameId'];
+    result$data['chessGameId'] = (l$chessGameId as String);
+    if (data.containsKey('persona')) {
+      final l$persona = data['persona'];
+      result$data['persona'] = (l$persona as String?);
+    }
+    if (data.containsKey('language')) {
+      final l$language = data['language'];
+      result$data['language'] = (l$language as String);
+    }
+    if (data.containsKey('optionsJson')) {
+      final l$optionsJson = data['optionsJson'];
+      result$data['optionsJson'] = (l$optionsJson as String?);
+    }
+    return Input$RunCoachingInput._(result$data);
+  }
+
+  Map<String, dynamic> _$data;
+
+  String get chessGameId => (_$data['chessGameId'] as String);
+
+  String? get persona => (_$data['persona'] as String?);
+
+  String? get language => (_$data['language'] as String?);
+
+  String? get optionsJson => (_$data['optionsJson'] as String?);
+
+  Map<String, dynamic> toJson() {
+    final result$data = <String, dynamic>{};
+    final l$chessGameId = chessGameId;
+    result$data['chessGameId'] = l$chessGameId;
+    if (_$data.containsKey('persona')) {
+      final l$persona = persona;
+      result$data['persona'] = l$persona;
+    }
+    if (_$data.containsKey('language')) {
+      final l$language = language;
+      result$data['language'] = (l$language as String);
+    }
+    if (_$data.containsKey('optionsJson')) {
+      final l$optionsJson = optionsJson;
+      result$data['optionsJson'] = l$optionsJson;
+    }
+    return result$data;
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! Input$RunCoachingInput || runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$chessGameId = chessGameId;
+    final lOther$chessGameId = other.chessGameId;
+    if (l$chessGameId != lOther$chessGameId) {
+      return false;
+    }
+    final l$persona = persona;
+    final lOther$persona = other.persona;
+    if (_$data.containsKey('persona') != other._$data.containsKey('persona')) {
+      return false;
+    }
+    if (l$persona != lOther$persona) {
+      return false;
+    }
+    final l$language = language;
+    final lOther$language = other.language;
+    if (_$data.containsKey('language') !=
+        other._$data.containsKey('language')) {
+      return false;
+    }
+    if (l$language != lOther$language) {
+      return false;
+    }
+    final l$optionsJson = optionsJson;
+    final lOther$optionsJson = other.optionsJson;
+    if (_$data.containsKey('optionsJson') !=
+        other._$data.containsKey('optionsJson')) {
+      return false;
+    }
+    if (l$optionsJson != lOther$optionsJson) {
+      return false;
+    }
+    return true;
+  }
+
+  @override
+  int get hashCode {
+    final l$chessGameId = chessGameId;
+    final l$persona = persona;
+    final l$language = language;
+    final l$optionsJson = optionsJson;
+    return Object.hashAll([
+      l$chessGameId,
+      _$data.containsKey('persona') ? l$persona : const {},
+      _$data.containsKey('language') ? l$language : const {},
+      _$data.containsKey('optionsJson') ? l$optionsJson : const {},
+    ]);
+  }
+}
+
+class Input$RunDeepEvaluationInput {
+  factory Input$RunDeepEvaluationInput({
+    required String chessGameId,
+    String? optionsJson,
+  }) => Input$RunDeepEvaluationInput._({
+    r'chessGameId': chessGameId,
+    if (optionsJson != null) r'optionsJson': optionsJson,
+  });
+
+  Input$RunDeepEvaluationInput._(this._$data);
+
+  factory Input$RunDeepEvaluationInput.fromJson(Map<String, dynamic> data) {
+    final result$data = <String, dynamic>{};
+    final l$chessGameId = data['chessGameId'];
+    result$data['chessGameId'] = (l$chessGameId as String);
+    if (data.containsKey('optionsJson')) {
+      final l$optionsJson = data['optionsJson'];
+      result$data['optionsJson'] = (l$optionsJson as String?);
+    }
+    return Input$RunDeepEvaluationInput._(result$data);
+  }
+
+  Map<String, dynamic> _$data;
+
+  String get chessGameId => (_$data['chessGameId'] as String);
+
+  String? get optionsJson => (_$data['optionsJson'] as String?);
+
+  Map<String, dynamic> toJson() {
+    final result$data = <String, dynamic>{};
+    final l$chessGameId = chessGameId;
+    result$data['chessGameId'] = l$chessGameId;
+    if (_$data.containsKey('optionsJson')) {
+      final l$optionsJson = optionsJson;
+      result$data['optionsJson'] = l$optionsJson;
+    }
+    return result$data;
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! Input$RunDeepEvaluationInput ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$chessGameId = chessGameId;
+    final lOther$chessGameId = other.chessGameId;
+    if (l$chessGameId != lOther$chessGameId) {
+      return false;
+    }
+    final l$optionsJson = optionsJson;
+    final lOther$optionsJson = other.optionsJson;
+    if (_$data.containsKey('optionsJson') !=
+        other._$data.containsKey('optionsJson')) {
+      return false;
+    }
+    if (l$optionsJson != lOther$optionsJson) {
+      return false;
+    }
+    return true;
+  }
+
+  @override
+  int get hashCode {
+    final l$chessGameId = chessGameId;
+    final l$optionsJson = optionsJson;
+    return Object.hashAll([
+      l$chessGameId,
+      _$data.containsKey('optionsJson') ? l$optionsJson : const {},
+    ]);
+  }
+}
+
 class Input$SubmitCoachCommentFeedbackInput {
   factory Input$SubmitCoachCommentFeedbackInput({
     required String commentId,
@@ -1256,6 +1627,59 @@ Enum$AnalysisJobStatus fromJson$Enum$AnalysisJobStatus(String value) {
   }
 }
 
+enum Enum$AnalysisStageState {
+  NOT_RUN,
+  QUEUED,
+  RUNNING,
+  READY,
+  STALE,
+  FAILED,
+  $unknown;
+
+  factory Enum$AnalysisStageState.fromJson(String value) =>
+      fromJson$Enum$AnalysisStageState(value);
+
+  String toJson() => toJson$Enum$AnalysisStageState(this);
+}
+
+String toJson$Enum$AnalysisStageState(Enum$AnalysisStageState e) {
+  switch (e) {
+    case Enum$AnalysisStageState.NOT_RUN:
+      return r'NOT_RUN';
+    case Enum$AnalysisStageState.QUEUED:
+      return r'QUEUED';
+    case Enum$AnalysisStageState.RUNNING:
+      return r'RUNNING';
+    case Enum$AnalysisStageState.READY:
+      return r'READY';
+    case Enum$AnalysisStageState.STALE:
+      return r'STALE';
+    case Enum$AnalysisStageState.FAILED:
+      return r'FAILED';
+    case Enum$AnalysisStageState.$unknown:
+      return r'$unknown';
+  }
+}
+
+Enum$AnalysisStageState fromJson$Enum$AnalysisStageState(String value) {
+  switch (value) {
+    case r'NOT_RUN':
+      return Enum$AnalysisStageState.NOT_RUN;
+    case r'QUEUED':
+      return Enum$AnalysisStageState.QUEUED;
+    case r'RUNNING':
+      return Enum$AnalysisStageState.RUNNING;
+    case r'READY':
+      return Enum$AnalysisStageState.READY;
+    case r'STALE':
+      return Enum$AnalysisStageState.STALE;
+    case r'FAILED':
+      return Enum$AnalysisStageState.FAILED;
+    default:
+      return Enum$AnalysisStageState.$unknown;
+  }
+}
+
 enum Enum$ApnsEnvironment {
   SANDBOX,
   PRODUCTION,
@@ -1474,6 +1898,49 @@ Enum$CommentRating fromJson$Enum$CommentRating(String value) {
       return Enum$CommentRating.DOWN;
     default:
       return Enum$CommentRating.$unknown;
+  }
+}
+
+enum Enum$EngineStage {
+  BASE_EVALUATION,
+  BASE_CLASSIFICATION,
+  DEEP_EVALUATION,
+  COACHING,
+  $unknown;
+
+  factory Enum$EngineStage.fromJson(String value) =>
+      fromJson$Enum$EngineStage(value);
+
+  String toJson() => toJson$Enum$EngineStage(this);
+}
+
+String toJson$Enum$EngineStage(Enum$EngineStage e) {
+  switch (e) {
+    case Enum$EngineStage.BASE_EVALUATION:
+      return r'BASE_EVALUATION';
+    case Enum$EngineStage.BASE_CLASSIFICATION:
+      return r'BASE_CLASSIFICATION';
+    case Enum$EngineStage.DEEP_EVALUATION:
+      return r'DEEP_EVALUATION';
+    case Enum$EngineStage.COACHING:
+      return r'COACHING';
+    case Enum$EngineStage.$unknown:
+      return r'$unknown';
+  }
+}
+
+Enum$EngineStage fromJson$Enum$EngineStage(String value) {
+  switch (value) {
+    case r'BASE_EVALUATION':
+      return Enum$EngineStage.BASE_EVALUATION;
+    case r'BASE_CLASSIFICATION':
+      return Enum$EngineStage.BASE_CLASSIFICATION;
+    case r'DEEP_EVALUATION':
+      return Enum$EngineStage.DEEP_EVALUATION;
+    case r'COACHING':
+      return Enum$EngineStage.COACHING;
+    default:
+      return Enum$EngineStage.$unknown;
   }
 }
 
@@ -1825,6 +2292,31 @@ const possibleTypesMap = <String, Set<String>>{
     'RateLimitedError',
     'EmailNotVerifiedError',
     'AiConsentRequiredError',
+    'BusinessError',
+    'InputValidationError',
+    'TechnicalError',
+  },
+  'RunBaseClassificationError': {
+    'BusinessError',
+    'InputValidationError',
+    'TechnicalError',
+  },
+  'RunBaseEvaluationError': {
+    'BusinessError',
+    'InputValidationError',
+    'TechnicalError',
+  },
+  'RunCoachingError': {
+    'AnalysisLimitReachedError',
+    'AnalysisQueueFullError',
+    'RateLimitedError',
+    'EmailNotVerifiedError',
+    'AiConsentRequiredError',
+    'BusinessError',
+    'InputValidationError',
+    'TechnicalError',
+  },
+  'RunDeepEvaluationError': {
     'BusinessError',
     'InputValidationError',
     'TechnicalError',

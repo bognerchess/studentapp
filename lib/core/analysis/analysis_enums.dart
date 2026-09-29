@@ -41,6 +41,11 @@ enum VariationKind {
   /// Another good option for the player. Starts at the node's `fenBefore`.
   alternative('alternative'),
 
+  /// What players of the same strength tend to play here: the first move
+  /// comes from the human model, the rest of the line is the engine's.
+  /// Informational, not a recommendation. Starts at the node's `fenBefore`.
+  peerLine('peer_line'),
+
   /// A kind this build does not know. Render it as a plain line from its
   /// `startFen`.
   unknown(null);

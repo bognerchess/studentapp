@@ -23,7 +23,9 @@ Color lineColor(BuildContext context, VariationKind kind) {
     VariationKind.refutation => colors.blunder,
     VariationKind.alternative =>
       light ? const Color(0xFF1E5FB8) : const Color(0xFFA8C8FF),
-    VariationKind.unknown => colors.neutral,
+    // A peer line says what players of this strength do, not what to play,
+    // so it is muted: it must not read as a recommendation.
+    VariationKind.peerLine || VariationKind.unknown => colors.neutral,
   };
 }
 

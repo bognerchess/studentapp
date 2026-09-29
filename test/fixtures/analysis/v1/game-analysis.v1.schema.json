@@ -21,7 +21,9 @@
     "summary"
   ],
   "properties": {
-    "schema": { "const": "bognerchess.game-analysis" },
+    "schema": {
+      "const": "bognerchess.game-analysis"
+    },
     "schema_version": {
       "const": 1,
       "description": "Major version. Bumped on breaking changes only."
@@ -44,26 +46,44 @@
     "language": {
       "type": "string",
       "minLength": 2,
-      "x-known-values": ["en"],
+      "x-known-values": [
+        "en"
+      ],
       "description": "Language of all coach texts (BCP 47 primary subtag)."
     },
-    "perspective": { "$ref": "#/$defs/perspective" },
-    "engine": { "$ref": "#/$defs/engine" },
-    "coach": { "$ref": "#/$defs/coach" },
-    "game": { "$ref": "#/$defs/game" },
-    "accuracy": { "$ref": "#/$defs/accuracy" },
+    "perspective": {
+      "$ref": "#/$defs/perspective"
+    },
+    "engine": {
+      "$ref": "#/$defs/engine"
+    },
+    "coach": {
+      "$ref": "#/$defs/coach"
+    },
+    "game": {
+      "$ref": "#/$defs/game"
+    },
+    "accuracy": {
+      "$ref": "#/$defs/accuracy"
+    },
     "nodes": {
       "type": "array",
       "minItems": 1,
-      "items": { "$ref": "#/$defs/node" },
+      "items": {
+        "$ref": "#/$defs/node"
+      },
       "description": "One node per played ply, in order. nodes[i].ply == i + 1 and nodes.length == game.ply_count."
     },
     "comments": {
       "type": "array",
-      "items": { "$ref": "#/$defs/comment" },
+      "items": {
+        "$ref": "#/$defs/comment"
+      },
       "description": "Coach comments, ordered by ply. May be empty."
     },
-    "summary": { "$ref": "#/$defs/summary" }
+    "summary": {
+      "$ref": "#/$defs/summary"
+    }
   },
   "additionalProperties": true,
   "$defs": {
@@ -101,49 +121,99 @@
       "type": "object",
       "description": "Engine evaluation from WHITE's point of view. Exactly one of cp (centipawns) or mate (moves to mate; positive = White mates, negative = Black mates). mate = 0 appears only as eval_after of a checkmating move: the side to move in fen_after is checkmated, the mover has won.",
       "properties": {
-        "cp": { "type": "integer" },
-        "mate": { "type": "integer" }
+        "cp": {
+          "type": "integer"
+        },
+        "mate": {
+          "type": "integer"
+        }
       },
       "oneOf": [
-        { "required": ["cp"], "not": { "required": ["mate"] } },
-        { "required": ["mate"], "not": { "required": ["cp"] } }
+        {
+          "required": [
+            "cp"
+          ],
+          "not": {
+            "required": [
+              "mate"
+            ]
+          }
+        },
+        {
+          "required": [
+            "mate"
+          ],
+          "not": {
+            "required": [
+              "cp"
+            ]
+          }
+        }
       ],
       "additionalProperties": true
     },
     "model_ref": {
       "type": "object",
       "description": "The model that wrote a text. Fallback texts carry provider \"template\".",
-      "required": ["provider", "id"],
+      "required": [
+        "provider",
+        "id"
+      ],
       "properties": {
         "provider": {
           "type": "string",
           "minLength": 1,
-          "x-known-values": ["azure", "openrouter", "fake", "template"]
+          "x-known-values": [
+            "azure",
+            "openrouter",
+            "fake",
+            "template"
+          ]
         },
-        "id": { "type": "string", "minLength": 1 }
+        "id": {
+          "type": "string",
+          "minLength": 1
+        }
       },
       "additionalProperties": true
     },
     "verification": {
       "type": "object",
-      "required": ["status", "checks_version"],
+      "required": [
+        "status",
+        "checks_version"
+      ],
       "properties": {
         "status": {
           "type": "string",
           "minLength": 1,
-          "x-known-values": ["passed", "regenerated", "fallback"],
+          "x-known-values": [
+            "passed",
+            "regenerated",
+            "fallback"
+          ],
           "description": "passed: first generation passed the gate. regenerated: second generation passed. fallback: deterministic template text."
         },
-        "checks_version": { "type": "integer", "minimum": 1 }
+        "checks_version": {
+          "type": "integer",
+          "minimum": 1
+        }
       },
       "additionalProperties": true
     },
     "perspective": {
       "type": "object",
-      "required": ["color", "rating_band"],
+      "required": [
+        "color",
+        "rating_band"
+      ],
       "properties": {
         "color": {
-          "enum": ["white", "black", "both"],
+          "enum": [
+            "white",
+            "black",
+            "both"
+          ],
           "description": "Whose moves are coached. both = third-party game."
         },
         "rating_band": {
@@ -165,26 +235,58 @@
     },
     "engine_pass": {
       "type": "object",
-      "required": ["nodes"],
+      "required": [
+        "nodes"
+      ],
       "properties": {
-        "nodes": { "type": "integer", "minimum": 1 },
-        "multipv": { "type": "integer", "minimum": 1 }
+        "nodes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "multipv": {
+          "type": "integer",
+          "minimum": 1
+        }
       },
       "additionalProperties": true
     },
     "engine": {
       "type": "object",
-      "required": ["name", "pass1", "pass2", "human_model"],
+      "required": [
+        "name",
+        "pass1",
+        "pass2",
+        "human_model"
+      ],
       "properties": {
-        "name": { "type": "string", "minLength": 1 },
-        "pass1": { "$ref": "#/$defs/engine_pass" },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pass1": {
+          "$ref": "#/$defs/engine_pass"
+        },
         "pass2": {
-          "allOf": [{ "$ref": "#/$defs/engine_pass" }, { "required": ["multipv"] }]
+          "allOf": [
+            {
+              "$ref": "#/$defs/engine_pass"
+            },
+            {
+              "required": [
+                "multipv"
+              ]
+            }
+          ]
         },
         "human_model": {
           "type": "string",
           "minLength": 1,
-          "x-known-values": ["maia3-5m", "maia3-23m", "maia3-79m", "unavailable"],
+          "x-known-values": [
+            "maia3-5m",
+            "maia3-23m",
+            "maia3-79m",
+            "unavailable"
+          ],
           "description": "unavailable: the pipeline degraded to eval-only selection; no node carries a human object."
         }
       },
@@ -192,17 +294,55 @@
     },
     "coach": {
       "type": "object",
-      "required": ["provider", "model", "prompt_set", "prompt_version", "pipeline_version"],
+      "required": [
+        "provider",
+        "model",
+        "prompt_set",
+        "prompt_version",
+        "pipeline_version"
+      ],
       "properties": {
         "provider": {
           "type": "string",
           "minLength": 1,
-          "x-known-values": ["azure", "openrouter", "fake"]
+          "x-known-values": [
+            "azure",
+            "openrouter",
+            "fake"
+          ]
         },
-        "model": { "type": "string", "minLength": 1 },
-        "prompt_set": { "type": "string", "minLength": 1, "x-known-values": ["mobile-coach"] },
-        "prompt_version": { "$ref": "#/$defs/prompt_version" },
-        "pipeline_version": { "type": "string", "minLength": 1 }
+        "model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "prompt_set": {
+          "type": "string",
+          "minLength": 1,
+          "x-known-values": [
+            "mobile-coach"
+          ]
+        },
+        "prompt_version": {
+          "$ref": "#/$defs/prompt_version"
+        },
+        "pipeline_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "persona": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The character the comments were written in, as a persona registry id. A plain string, not an enum: a new character is a registry entry, not a producer release. Absent from a document produced before personas existed."
+        },
+        "persona_version": {
+          "$ref": "#/$defs/prompt_version",
+          "description": "Version of the persona, as <semver>+<sha256[:8]>."
+        },
+        "persona_display_name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "How the persona is named to a reader, e.g. a byline. Never translated."
+        }
       },
       "additionalProperties": true
     },
@@ -213,59 +353,149 @@
     },
     "game": {
       "type": "object",
-      "required": ["start_fen", "ply_count", "result"],
+      "required": [
+        "start_fen",
+        "ply_count",
+        "result"
+      ],
       "properties": {
         "start_fen": {
-          "oneOf": [{ "$ref": "#/$defs/fen" }, { "type": "null" }],
+          "oneOf": [
+            {
+              "$ref": "#/$defs/fen"
+            },
+            {
+              "type": "null"
+            }
+          ],
           "description": "null for the standard starting position."
         },
-        "ply_count": { "type": "integer", "minimum": 1 },
-        "result": { "enum": ["1-0", "0-1", "1/2-1/2", "*"] }
+        "ply_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "result": {
+          "enum": [
+            "1-0",
+            "0-1",
+            "1/2-1/2",
+            "*"
+          ]
+        },
+        "time_control": {
+          "type": "object",
+          "description": "Base time and increment in seconds; absent when the game did not say.",
+          "properties": {
+            "base_seconds": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "increment_seconds": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "source": {
+              "type": "string",
+              "description": "Where the time control came from: payload, pgn_header, inferred or unknown. A plain string; a consumer that does not know a value should treat it as unknown."
+            }
+          },
+          "additionalProperties": true
+        }
       },
       "additionalProperties": true
     },
     "accuracy": {
       "type": "object",
-      "required": ["white", "black"],
+      "required": [
+        "white",
+        "black"
+      ],
       "properties": {
-        "white": { "$ref": "#/$defs/win_pct" },
-        "black": { "$ref": "#/$defs/win_pct" }
+        "white": {
+          "$ref": "#/$defs/win_pct"
+        },
+        "black": {
+          "$ref": "#/$defs/win_pct"
+        }
       },
       "additionalProperties": true
     },
     "move_ref": {
       "type": "object",
-      "required": ["san", "uci", "eval"],
+      "required": [
+        "san",
+        "uci",
+        "eval"
+      ],
       "properties": {
-        "san": { "$ref": "#/$defs/san" },
-        "uci": { "$ref": "#/$defs/uci" },
-        "eval": { "$ref": "#/$defs/eval" }
+        "san": {
+          "$ref": "#/$defs/san"
+        },
+        "uci": {
+          "$ref": "#/$defs/uci"
+        },
+        "eval": {
+          "$ref": "#/$defs/eval"
+        }
       },
       "additionalProperties": true
     },
     "human": {
       "type": "object",
       "description": "Human-model (Maia) probabilities for a player of the mover's rating.",
-      "required": ["played_prob", "best_prob"],
+      "required": [
+        "played_prob",
+        "best_prob"
+      ],
       "properties": {
-        "played_prob": { "type": "number", "minimum": 0, "maximum": 1 },
-        "best_prob": { "type": "number", "minimum": 0, "maximum": 1 }
+        "played_prob": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "best_prob": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
       },
       "additionalProperties": true
     },
     "variation_move": {
       "type": "object",
-      "required": ["san", "uci", "fen_after"],
+      "required": [
+        "san",
+        "uci",
+        "fen_after"
+      ],
       "properties": {
-        "san": { "$ref": "#/$defs/san" },
-        "uci": { "$ref": "#/$defs/uci" },
-        "fen_after": { "$ref": "#/$defs/fen" }
+        "san": {
+          "$ref": "#/$defs/san"
+        },
+        "uci": {
+          "$ref": "#/$defs/uci"
+        },
+        "fen_after": {
+          "$ref": "#/$defs/fen"
+        }
       },
       "additionalProperties": true
     },
     "variation": {
       "type": "object",
-      "required": ["id", "kind", "eval", "start_fen", "moves"],
+      "required": [
+        "id",
+        "kind",
+        "eval",
+        "start_fen",
+        "moves"
+      ],
       "properties": {
         "id": {
           "type": "string",
@@ -276,10 +506,17 @@
         "kind": {
           "type": "string",
           "minLength": 1,
-          "x-known-values": ["best_line", "refutation", "alternative"],
+          "x-known-values": [
+            "best_line",
+            "refutation",
+            "alternative",
+            "peer_line"
+          ],
           "description": "best_line and alternative start at the node's fen_before (moves the player could have chosen). refutation starts at the node's fen_after (the opponent's punishing reply to the played move)."
         },
-        "eval": { "$ref": "#/$defs/eval" },
+        "eval": {
+          "$ref": "#/$defs/eval"
+        },
         "start_fen": {
           "$ref": "#/$defs/fen",
           "description": "Position the first move is played from. Always present so that clients can render a line of a kind they do not know."
@@ -287,7 +524,44 @@
         "moves": {
           "type": "array",
           "minItems": 1,
-          "items": { "$ref": "#/$defs/variation_move" }
+          "items": {
+            "$ref": "#/$defs/variation_move"
+          }
+        },
+        "source": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Where the FIRST move of the line came from: 'human_model' for a peer line. The rest of the line is always the engine's."
+        },
+        "elo": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 100,
+          "maximum": 4000,
+          "description": "The rating the first move was predicted for; peer lines only."
+        },
+        "elos": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "integer"
+          },
+          "description": "Every rating of the ladder that chose this move."
+        },
+        "human_prob": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1,
+          "description": "How likely a player of that rating is to play the first move."
         }
       },
       "additionalProperties": true
@@ -314,15 +588,41 @@
         "comment_ids"
       ],
       "properties": {
-        "ply": { "type": "integer", "minimum": 1, "description": "1-based index into nodes." },
-        "move_number": { "type": "integer", "minimum": 1, "description": "Full-move number from fen_before." },
-        "color": { "enum": ["white", "black"], "description": "The mover." },
-        "san": { "$ref": "#/$defs/san" },
-        "uci": { "$ref": "#/$defs/uci" },
-        "fen_before": { "$ref": "#/$defs/fen" },
-        "fen_after": { "$ref": "#/$defs/fen" },
-        "eval_before": { "$ref": "#/$defs/eval" },
-        "eval_after": { "$ref": "#/$defs/eval" },
+        "ply": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "1-based index into nodes."
+        },
+        "move_number": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Full-move number from fen_before."
+        },
+        "color": {
+          "enum": [
+            "white",
+            "black"
+          ],
+          "description": "The mover."
+        },
+        "san": {
+          "$ref": "#/$defs/san"
+        },
+        "uci": {
+          "$ref": "#/$defs/uci"
+        },
+        "fen_before": {
+          "$ref": "#/$defs/fen"
+        },
+        "fen_after": {
+          "$ref": "#/$defs/fen"
+        },
+        "eval_before": {
+          "$ref": "#/$defs/eval"
+        },
+        "eval_after": {
+          "$ref": "#/$defs/eval"
+        },
         "win_pct_before": {
           "$ref": "#/$defs/win_pct",
           "description": "Rating-calibrated win probability from the MOVER's point of view before the move."
@@ -338,7 +638,14 @@
         "classification": {
           "type": "string",
           "minLength": 1,
-          "x-known-values": ["book", "best", "good", "inaccuracy", "mistake", "blunder"],
+          "x-known-values": [
+            "book",
+            "best",
+            "good",
+            "inaccuracy",
+            "mistake",
+            "blunder"
+          ],
           "description": "book, or by win_pct_loss: <=1 best, <=3 good, <=8 inaccuracy, <=15 mistake, else blunder."
         },
         "is_critical": {
@@ -346,52 +653,104 @@
           "description": "True exactly when the node was selected as a moment and carries at least one comment."
         },
         "best": {
-          "oneOf": [{ "$ref": "#/$defs/move_ref" }, { "type": "null" }],
+          "oneOf": [
+            {
+              "$ref": "#/$defs/move_ref"
+            },
+            {
+              "type": "null"
+            }
+          ],
           "description": "The engine's first choice at fen_before with its eval. null when the played move is the engine's first choice or no engine result exists for the ply."
         },
-        "human": { "$ref": "#/$defs/human" },
+        "human": {
+          "$ref": "#/$defs/human"
+        },
         "variations": {
           "type": "array",
-          "items": { "$ref": "#/$defs/variation" },
+          "items": {
+            "$ref": "#/$defs/variation"
+          },
           "description": "Engine lines; empty for nodes without a deep pass."
         },
         "comment_ids": {
           "type": "array",
-          "items": { "$ref": "#/$defs/uuid" },
+          "items": {
+            "$ref": "#/$defs/uuid"
+          },
           "uniqueItems": true
+        },
+        "time": {
+          "$ref": "#/$defs/node_time"
         }
       },
       "additionalProperties": true
     },
     "square_mark": {
       "type": "object",
-      "required": ["square", "role"],
+      "required": [
+        "square",
+        "role"
+      ],
       "properties": {
-        "square": { "$ref": "#/$defs/square" },
-        "role": { "type": "string", "minLength": 1, "x-known-values": ["target", "weak", "key"] }
+        "square": {
+          "$ref": "#/$defs/square"
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1,
+          "x-known-values": [
+            "target",
+            "weak",
+            "key"
+          ]
+        }
       },
       "additionalProperties": true
     },
     "arrow": {
       "type": "object",
-      "required": ["from", "to", "role"],
+      "required": [
+        "from",
+        "to",
+        "role"
+      ],
       "properties": {
-        "from": { "$ref": "#/$defs/square" },
-        "to": { "$ref": "#/$defs/square" },
-        "role": { "type": "string", "minLength": 1, "x-known-values": ["played", "best", "threat"] }
+        "from": {
+          "$ref": "#/$defs/square"
+        },
+        "to": {
+          "$ref": "#/$defs/square"
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1,
+          "x-known-values": [
+            "played",
+            "best",
+            "threat"
+          ]
+        }
       },
       "additionalProperties": true
     },
     "line_ref": {
       "type": "object",
-      "required": ["variation_id", "label"],
+      "required": [
+        "variation_id",
+        "label"
+      ],
       "properties": {
         "variation_id": {
           "type": "string",
           "minLength": 1,
           "description": "Must be the id of a variation on the node at the comment's ply."
         },
-        "label": { "type": "string", "minLength": 1, "maxLength": 24 }
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 24
+        }
       },
       "additionalProperties": true
     },
@@ -431,65 +790,229 @@
         "verification"
       ],
       "properties": {
-        "id": { "$ref": "#/$defs/uuid" },
+        "id": {
+          "$ref": "#/$defs/uuid"
+        },
         "type": {
           "type": "string",
           "minLength": 1,
-          "x-known-values": ["critical_moment", "positive_moment"]
+          "x-known-values": [
+            "critical_moment",
+            "positive_moment"
+          ]
         },
-        "ply": { "type": "integer", "minimum": 1 },
-        "title": { "type": "string", "minLength": 1, "maxLength": 40 },
-        "text": { "type": "string", "minLength": 1, "maxLength": 320 },
-        "theme": { "$ref": "#/$defs/theme" },
-        "squares": { "type": "array", "items": { "$ref": "#/$defs/square_mark" } },
+        "ply": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 320
+        },
+        "theme": {
+          "$ref": "#/$defs/theme"
+        },
+        "squares": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/square_mark"
+          }
+        },
         "arrows": {
           "type": "array",
-          "items": { "$ref": "#/$defs/arrow" },
+          "items": {
+            "$ref": "#/$defs/arrow"
+          },
           "description": "Drawn on the node's fen_before, except role threat, which is drawn on fen_after."
         },
-        "lines": { "type": "array", "items": { "$ref": "#/$defs/line_ref" } },
+        "lines": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/line_ref"
+          }
+        },
         "moves_mentioned": {
           "type": "array",
-          "items": { "$ref": "#/$defs/san" },
+          "items": {
+            "$ref": "#/$defs/san"
+          },
           "uniqueItems": true,
           "description": "SAN tokens used in title and text. Subset of: played move, best move, all variation moves of the node."
         },
-        "model": { "$ref": "#/$defs/model_ref" },
-        "prompt_version": { "$ref": "#/$defs/prompt_version" },
-        "verification": { "$ref": "#/$defs/verification" }
+        "model": {
+          "$ref": "#/$defs/model_ref"
+        },
+        "prompt_version": {
+          "$ref": "#/$defs/prompt_version"
+        },
+        "verification": {
+          "$ref": "#/$defs/verification"
+        },
+        "speech": {
+          "$ref": "#/$defs/speech"
+        }
       },
       "additionalProperties": true
     },
     "lesson": {
       "type": "object",
-      "required": ["id", "title", "text", "evidence_plies", "theme"],
+      "required": [
+        "id",
+        "title",
+        "text",
+        "evidence_plies",
+        "theme"
+      ],
       "properties": {
-        "id": { "$ref": "#/$defs/uuid" },
-        "title": { "type": "string", "minLength": 1, "maxLength": 40 },
-        "text": { "type": "string", "minLength": 1, "maxLength": 240 },
+        "id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
         "evidence_plies": {
           "type": "array",
-          "items": { "type": "integer", "minimum": 1 },
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          },
           "uniqueItems": true,
           "description": "Plies (nodes[].ply) that illustrate the lesson."
         },
-        "theme": { "$ref": "#/$defs/theme" }
+        "theme": {
+          "$ref": "#/$defs/theme"
+        },
+        "speech": {
+          "$ref": "#/$defs/speech"
+        }
       },
       "additionalProperties": true
     },
     "summary": {
       "type": "object",
-      "required": ["lessons", "model", "prompt_version", "verification"],
+      "required": [
+        "lessons",
+        "model",
+        "prompt_version",
+        "verification"
+      ],
       "properties": {
         "lessons": {
           "type": "array",
           "minItems": 3,
           "maxItems": 3,
-          "items": { "$ref": "#/$defs/lesson" }
+          "items": {
+            "$ref": "#/$defs/lesson"
+          }
         },
-        "model": { "$ref": "#/$defs/model_ref" },
-        "prompt_version": { "$ref": "#/$defs/prompt_version" },
-        "verification": { "$ref": "#/$defs/verification" }
+        "model": {
+          "$ref": "#/$defs/model_ref"
+        },
+        "prompt_version": {
+          "$ref": "#/$defs/prompt_version"
+        },
+        "verification": {
+          "$ref": "#/$defs/verification"
+        }
+      },
+      "additionalProperties": true
+    },
+    "node_time": {
+      "type": "object",
+      "description": "What the clock says about one move, in seconds. Absent when the source PGN said nothing about the clock for this ply. Derived numbers only: no wall-clock time is ever carried.",
+      "properties": {
+        "seconds_spent": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "How long the mover took. Absent when the increment is unknown and the source did not state the elapsed time, because the derivation would overstate every move by the increment."
+        },
+        "clock_after": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Seconds left on the mover's clock after the move, as the source reported it."
+        },
+        "share_of_remaining": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "spent_vs_median": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Think time over that player's own median for this game."
+        },
+        "time_pressure": {
+          "type": "boolean"
+        },
+        "is_long_think": {
+          "type": "boolean"
+        },
+        "is_snap": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    },
+    "speech": {
+      "type": "object",
+      "description": "The comment as a voice would read it. Derived deterministically from the verified title and text, so it can state nothing the written form did not. Absent when the script could not be produced or failed its containment check; a document without it is valid.",
+      "required": [
+        "script",
+        "language",
+        "derived_from",
+        "renderer_version"
+      ],
+      "properties": {
+        "script": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 600,
+          "description": "For voicing only; do not render it as text. Spelling a move out roughly doubles the notation-heavy stretches, which is why the cap is above the written one."
+        },
+        "language": {
+          "type": "string",
+          "minLength": 2
+        },
+        "derived_from": {
+          "type": "string",
+          "description": "Which parts of the comment the script came from, e.g. 'title+text'."
+        },
+        "renderer_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "voice_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Reserved for a future text-to-speech voice; never set today."
+        }
       },
       "additionalProperties": true
     }

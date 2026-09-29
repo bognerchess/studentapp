@@ -18,6 +18,14 @@ type Query {
   myAnalysisUsage: AnalysisUsage! @cost(weight: "10")
   "Remote configuration of the mobile app for the caller's account."
   mobileConfig: MobileConfig! @cost(weight: "10")
+  "One engine stage run of the caller; null when it does not exist or belongs to someone else."
+  engineStageRun(id: ID!): EngineStageRun @cost(weight: "10")
+  "The current engine stage runs of one of the caller's games: the newest run of each stage that is stored or still working, newest first. A superseded run (one whose stage was run again) is left out, so this is what a UI shows for the game."
+  engineStageRunsForGame(chessGameId: ID!): [EngineStageRun!]!
+    @cost(weight: "10")
+  "The analysis pipeline of one of the caller's games: the four stages in order, what each one is doing and which one can be started next. This is the query an analysis screen polls; it deliberately does not carry the artifacts, which are fetched with `engineStageRun`."
+  gameAnalysisWorkflow(chessGameId: ID!): GameAnalysisWorkflow!
+    @cost(weight: "10")
   "The caller's games, newest first (games without a date last). `search` is a case-insensitive \"contains\" on opponent, white player, black player and event name; `playedFrom` and `playedTo` are inclusive and leave out games without a date."
   myMobileGames(
     search: String
@@ -72,6 +80,17 @@ type Mutation {
   "Stops push for this installation (sign-out). Idempotent: an unknown device yields an empty payload."
   unregisterMobileDevice(input: UnregisterMobileDeviceInput!): UnregisterMobileDevicePayload!
     @cost(weight: "10")
+  "Stage 1. Searches every position of the game once and returns a node per ply with eval, win percentage and a first verdict - enough to draw an eval graph on its own. Engine only, so it is neither gated nor counted. Re-running it supersedes the stored result."
+  runBaseEvaluation(input: RunBaseEvaluationInput!): RunBaseEvaluationPayload!
+    @cost(weight: "10")
+  "Stage 2. Picks the moves worth a deeper look out of the base evaluation. Cheap and almost pure, so this is the stage to re-run with another `maxMoments` until the selection looks right. Needs stage 1 stored for the same moves."
+  runBaseClassification(input: RunBaseClassificationInput!): RunBaseClassificationPayload!
+    @cost(weight: "10")
+  "Stage 3. Runs the multi-line search on the selected moves: best line, refutation, alternatives and the peer lines around the player's rating. Its artifact is the fact packet the coach reads, so once it is stored a comment can be written without an engine. Needs stages 1 and 2 stored for the same moves."
+  runDeepEvaluation(input: RunDeepEvaluationInput!): RunDeepEvaluationPayload!
+    @cost(weight: "10")
+  "Stage 4. Writes the comments and assembles the analysis document from the stored deep evaluation. **The only stage that calls a model**, so this one alone needs a verified email and AI consent, passes the rate limit and queue cap, and counts against the analysis quota. Needs stages 1 to 3 stored for the same moves."
+  runCoaching(input: RunCoachingInput!): RunCoachingPayload! @cost(weight: "10")
   "First-party product analytics, at most 50 events per call. Events counted as `rejected` (unknown name, oversized props, withdrawn analytics consent) are dropped for good; do not retry them."
   trackMobileEvents(input: TrackMobileEventsInput!): TrackMobileEventsPayload!
     @cost(weight: "10")
@@ -115,6 +134,10 @@ type AnalysisJob {
   status: AnalysisJobStatus! @cost(weight: "10")
   "Pipeline stage reported while the job runs, e.g. \"engine\"."
   stage: String
+  "Units of the current stage that are finished (positions, moments or coach comments, depending on the stage). Restarts at 0 with every stage. Null unless the status is RUNNING and the worker has reported progress."
+  progressDone: Int
+  "Units of the current stage in total. progressDone / progressTotal is the progress inside the stage, not of the whole job. Null under the same conditions as progressDone; can be 0."
+  progressTotal: Int
   "Number of queued jobs of the whole account that are ahead of this one (0 = next). Null unless the status is QUEUED."
   queuePosition: Int @cost(weight: "10")
   requestedAt: DateTime!
@@ -273,6 +296,9 @@ type ChessGamePrecisionMove {
   bestMoveUci: String
   bestMoveSan: String
   matched: Boolean!
+  theory: Boolean!
+  eco: String
+  openingName: String
   accountId: ID!
   id: ID!
   created: DateTime!
@@ -314,6 +340,37 @@ type EmailNotVerifiedError implements Error {
   message: String!
 }
 
+"One run of one stage of the analysis pipeline for one game, with its artifact."
+type EngineStageRun {
+  id: ID!
+  chessGameId: ID!
+  "Which pipeline stage this run computed."
+  stage: EngineStage!
+  status: AnalysisJobStatus! @cost(weight: "10")
+  "The stage result exactly as chess-ai produced it, or null until the run finishes. Opaque to the backend; its shape is owned by chess-ai."
+  artifact: Any @cost(weight: "10")
+  "What the run cost (engine milliseconds, engine calls), or null until it finishes."
+  metrics: Any @cost(weight: "10")
+  "Step chess-ai reports while the run works; null when it is not running."
+  progressStage: String
+  "Units finished inside the current step."
+  progressDone: Int
+  "Units of the current step in total."
+  progressTotal: Int
+  "Set when a newer run of the same stage finished; a superseded run is history."
+  supersededAt: DateTime
+  "The run whose artifact was used as input, when this stage needed one."
+  baseEvaluationRunId: ID
+  "The classification run whose artifact was used as input; deep evaluation only."
+  baseClassificationRunId: ID
+  requestedAt: DateTime!
+  startedAt: DateTime
+  finishedAt: DateTime
+  "Machine-readable reason; null unless the run failed."
+  failureCode: String
+  failureMessage: String
+}
+
 type FeatureFlag {
   key: String!
   enabled: Boolean!
@@ -332,6 +389,54 @@ type GameAnalysis {
   promptVersion: String!
   "The analysis document exactly as chess-ai produced it."
   document: Any!
+}
+
+"A stage run without its artifact, for polling. Read the artifact with `engineStageRun(id)`."
+type GameAnalysisStageRun {
+  id: ID!
+  status: AnalysisJobStatus!
+  "True once the artifact is stored and can be fetched or fed to the next stage."
+  hasArtifact: Boolean!
+  "Step chess-ai reports while the run works; null when it is not running."
+  progressStage: String
+  progressDone: Int
+  progressTotal: Int
+  "Coach character of a coaching run; null on the engine stages."
+  persona: String
+  "Language of a coaching run; null on the engine stages."
+  language: String
+  requestedAt: DateTime!
+  startedAt: DateTime
+  finishedAt: DateTime
+  "Machine-readable reason; null unless the run failed."
+  failureCode: String
+  failureMessage: String
+}
+
+"The analysis pipeline of one game: the four stages in order, what each one is doing, and which one can be started next. Poll this while a stage runs; fetch a stage's data with `engineStageRun(id)` when you want the artifact itself."
+type GameAnalysisWorkflow {
+  chessGameId: ID!
+  "The four stages, always in pipeline order."
+  stages: [GameAnalysisWorkflowStage!]!
+  "The earliest stage that can be started and is not ready yet - the button to light up. Null when the pipeline is finished or is waiting on a run."
+  nextRunnableStage: EngineStage
+  "True when all four stages are ready, so the analysis document is stored."
+  isComplete: Boolean!
+}
+
+"One stage of the pipeline for one game."
+type GameAnalysisWorkflowStage {
+  stage: EngineStage!
+  "Where this stage stands. STALE means it finished but its input has since moved on."
+  state: AnalysisStageState!
+  "True when this stage can be started right now."
+  runnable: Boolean!
+  "The nearest earlier stage that is not ready; null when nothing blocks this one."
+  blockedBy: EngineStage
+  "True for the one stage that calls a model. Only that stage needs AI consent and counts against the analysis quota."
+  usesModel: Boolean!
+  "The run this state was read off, or null when the stage never ran."
+  run: GameAnalysisStageRun
 }
 
 type ImportMobileGamePayload {
@@ -450,6 +555,26 @@ type RequestGameAnalysisPayload {
   errors: [RequestGameAnalysisError!]
 }
 
+type RunBaseClassificationPayload {
+  engineStageRun: EngineStageRun
+  errors: [RunBaseClassificationError!]
+}
+
+type RunBaseEvaluationPayload {
+  engineStageRun: EngineStageRun
+  errors: [RunBaseEvaluationError!]
+}
+
+type RunCoachingPayload {
+  engineStageRun: EngineStageRun
+  errors: [RunCoachingError!]
+}
+
+type RunDeepEvaluationPayload {
+  engineStageRun: EngineStageRun
+  errors: [RunDeepEvaluationError!]
+}
+
 type SubmitCoachCommentFeedbackPayload {
   coachCommentFeedback: CoachCommentFeedback
   errors: [SubmitCoachCommentFeedbackError!]
@@ -510,6 +635,31 @@ union RequestGameAnalysisError =
   | RateLimitedError
   | EmailNotVerifiedError
   | AiConsentRequiredError
+  | BusinessError
+  | InputValidationError
+  | TechnicalError
+
+union RunBaseClassificationError =
+  | BusinessError
+  | InputValidationError
+  | TechnicalError
+
+union RunBaseEvaluationError =
+  | BusinessError
+  | InputValidationError
+  | TechnicalError
+
+union RunCoachingError =
+  | AnalysisLimitReachedError
+  | AnalysisQueueFullError
+  | RateLimitedError
+  | EmailNotVerifiedError
+  | AiConsentRequiredError
+  | BusinessError
+  | InputValidationError
+  | TechnicalError
+
+union RunDeepEvaluationError =
   | BusinessError
   | InputValidationError
   | TechnicalError
@@ -603,6 +753,36 @@ input RequestGameAnalysisInput {
   language: String! = "en"
 }
 
+input RunBaseClassificationInput {
+  chessGameId: ID!
+  "How many moments the deep evaluation should look at. Leave it null for the pipeline default. This is the cheap knob: re-running this stage with another value picks other moves without touching the base evaluation."
+  maxMoments: Int
+  "Further chess-ai selection options as a JSON object. `maxMoments` wins over a `max_moments` key given here."
+  optionsJson: String
+}
+
+input RunBaseEvaluationInput {
+  chessGameId: ID!
+  "chess-ai engine options as a JSON object, e.g. `{\"node_scale\": 0.5}` to trade depth for speed. Unknown keys are ignored by the engine."
+  optionsJson: String
+}
+
+input RunCoachingInput {
+  chessGameId: ID!
+  "Coach character. Null is the house voice. An id the registry does not know falls back to the house voice rather than failing the run."
+  persona: String
+  "Coach language; one of `mobileConfig.supportedCoachLanguages`."
+  language: String! = "en"
+  "chess-ai coaching options as a JSON object."
+  optionsJson: String
+}
+
+input RunDeepEvaluationInput {
+  chessGameId: ID!
+  "chess-ai engine options for the multi-line search, as a JSON object."
+  optionsJson: String
+}
+
 input SubmitCoachCommentFeedbackInput {
   "Id of the comment inside the analysis document."
   commentId: ID!
@@ -633,6 +813,21 @@ enum AnalysisJobStatus {
   QUEUED
   RUNNING
   DONE
+  FAILED
+}
+
+enum AnalysisStageState {
+  "Never run for these moves."
+  NOT_RUN
+  "Queued, waiting for a worker."
+  QUEUED
+  "A worker is on it; watch `run.progressDone` / `run.progressTotal`."
+  RUNNING
+  "Done, and its artifact still describes the current moves and inputs."
+  READY
+  "Done, but what it was computed from has moved on: the moves changed, or an earlier stage was re-run after it. The artifact is still readable; run the stage again before building on it."
+  STALE
+  "The last attempt failed; `run.failureCode` says why. Running it again is the way forward."
   FAILED
 }
 
@@ -668,6 +863,13 @@ enum ChessGameSource {
 enum CommentRating {
   UP
   DOWN
+}
+
+enum EngineStage {
+  BASE_EVALUATION
+  BASE_CLASSIFICATION
+  DEEP_EVALUATION
+  COACHING
 }
 
 enum LegalDocumentKey {

@@ -8,9 +8,19 @@ reach. Nothing else from the backend is copied here. Never edit the copy.
 | | |
 | --- | --- |
 | Source | backend repository, `contracts/mobile-schema.graphql` (generated there by `scripts/export-mobile-schema.sh`) |
-| Backend commit | `c2a61b8` (branch `mobile-mvp`) |
-| Copied on | 2026-09-20 |
-| SHA-256 | `96803b4c0e4cae0933d9a0072a0a99ac4fc930542e83d2f437f71a7369e37df8` |
+| Backend commit | `48cd383` (branch `main`; the stage commands and the workflow query, BE-20/BE-21) |
+| Copied on | 2026-09-29 |
+| SHA-256 | `a8a8c7f37c6c2a3cbe881d50f9989bfed6f10cf54cbe329fb3afb96c1ed76684` |
+
+This copy is **purely additive** over the previous one (`c2a61b8`, 2026-09-20): the diff removes no
+line. It adds the staged analysis surface — `engineStageRun`, `engineStageRunsForGame`,
+`gameAnalysisWorkflow`, the four `run*` commands with their payloads, inputs and error unions, the
+`EngineStage` and `AnalysisStageState` enums, and `progressDone` / `progressTotal` on
+`AnalysisJob`.
+
+A second refresh is pending: BE-22 adds `RateLimitedError` to the three engine-stage error unions
+and the message keys `api_errors.entity_not_found` and `web_api_errors.stage_prerequisite_missing`.
+The app already maps both (`stage_mapper.dart`), so that refresh is a copy and a new checksum.
 
 `test/core/api/schema_pin_test.dart` pins the checksum, so a change of the file is always a
 deliberate refresh and never an accident.

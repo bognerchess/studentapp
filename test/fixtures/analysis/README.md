@@ -12,14 +12,26 @@ copied byte for byte together with their `SHA256SUMS`.
 | --- | --- |
 | Source | the analysis service repository (`chess-ai`, private), directory `contracts/` |
 | Files | `contracts/game-analysis.v1.schema.json`, `contracts/fixtures/game-analysis.v1/*.json`, `contracts/SHA256SUMS` |
-| Commit | `062dc36` (branch `main`; `contracts/` last changed by the Maia-2 -> Maia-3 upgrade, `schema_minor` 0 -> 1), vendored 2026-09-22 |
+| Commit | `eaba07c` (branch `main`; `contracts/` at `schema_minor` 5, the staged pipeline), vendored 2026-09-29 |
 
 The document format is an API fact and may be vendored. Nothing else from that repository is.
 
 The files are stored flat, so the paths inside `SHA256SUMS` (`fixtures/game-analysis.v1/…`) do not
 exist here; `test/core/analysis/vendored_fixtures_test.dart` compares by file name. That test fails
-when a vendored file no longer has the pinned checksum, and when the directory contains a file that
-`SHA256SUMS` does not pin.
+when a vendored file no longer has the pinned checksum, and when the directory contains a file the
+app does not vendor.
+
+`SHA256SUMS` pins one file more than this directory holds: `job-api.v1.json`, the contract between
+that service and the backend. The app never sees it, so it is not copied and the test checks the
+four files it does vendor.
+
+**What minor 1 → 5 brought** (all additive; a document of a higher minor needs no app release).
+The one change the app had to answer is `variation.kind = "peer_line"`: what players of the same
+strength tend to play, with the first move from the human model and the rest from the engine. It
+needed `VariationKind.peerLine` and the two exhaustive switches in `lib/features/review/`, where it
+is styled muted and informational, never as a recommendation. Everything else is read past by the
+tolerant parser: `variation.source` / `elo` / `elos` / `human_prob`, `node.time`
+(`clock_after`, `is_snap`, `is_long_think`) and `game.time_control`.
 
 | Fixture | What it covers |
 | --- | --- |
