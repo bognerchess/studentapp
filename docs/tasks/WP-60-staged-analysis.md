@@ -291,3 +291,48 @@ device with no stored assembly and an unfinished coaching stage shows
 answer could change what happens next: with nothing cached the document is
 fetched either way, so that cold open costs one query, not two. A workflow
 query that fails is "nothing known", so the screen still opens offline.
+
+**B7.** The game screen now shows the pipeline, not a job. `_AnalysisCard`
+reads `trackedWorkflowsProvider[gameId]` and picks one of six shapes — nothing
+run, running, engine ready, coach ready, a failed step, moves changed — and
+`_StageStrip` under it lists the four stages with a state each. "Open
+analysis" appears as soon as any engine stage is stored, which is the whole
+point of the staged flow: the eval graph is there minutes before the coach is.
+
+The progress bar is back, deliberately. WP-26-28 decided against one because
+there was a single opaque job and a bar would have been decoration; each stage
+now reports `progressDone` / `progressTotal`, so the bar shows something real
+and falls back to indeterminate only on the stage that is moving.
+
+Three deviations.
+
+1. **The tracker needed a retry path.** The plan says `retryStage` on an engine
+   stage is `startChain` again, because the server reports a failed stage as
+   runnable and `nextRunnableStage` names it. But B5's tracker stops the
+   moment it sees a failed or stale stage, so the retry did nothing: one poll,
+   one bail-out. `startChain` now marks the game as restarted and the next
+   tick gets exactly one attempt at whatever is runnable, failed or stale
+   included. Everything after that tick behaves as before, so a stage that
+   fails twice still stops the chain, and nothing re-analyses behind the
+   user's back.
+2. **`startChain` returns the outcome** of the stage command the poll fired
+   (null when nothing was started). Without it there was nowhere to explain a
+   refusal: the button writes a row, the *poll* fires the mutation, and a
+   rate-limited or refused engine stage would have left the card looking as if
+   the tap had not registered. It is one field on the tracker, cleared as it
+   is read.
+3. **The card's fallback for a cold open is still only `hasAnalysis`.** The
+   plan wants the library row's remembered summary, and the parameter is there
+   with a TODO; it needs `game_summary_codec` version 2, which is B9.
+
+`workflowTrackerUiMountedProvider` is its own provider rather than the job
+tracker's, so a test can run one poller without the other; `pumpApp`'s
+`jobPolling` gates both, and `pollingOverrides()` in `pump_app.dart` turns
+them on for a screen test — which the staged flow needs, because "Analyse"
+only works if something is polling.
+
+`AnalysisNotices` now listens to both trackers. The staged snack bars are the
+three the plan names: the deep evaluation is ready, the coach is ready (the
+same text the job path uses), and a step failed or the moves changed. Stages 1
+and 2 say nothing — the card and the review banner fill in where the user is
+already looking, and four snack bars per game would be four interruptions.

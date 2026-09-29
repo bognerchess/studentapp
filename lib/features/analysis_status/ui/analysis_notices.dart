@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../domain/job_tracker_providers.dart';
+import '../domain/workflow_tracker_providers.dart';
 
 /// Tells the user, on whatever screen is showing, that an analysis has
 /// finished ("Analysis ready", with a button that opens the review) or has
@@ -34,6 +35,9 @@ class _AnalysisNoticesState extends ConsumerState<AnalysisNotices> {
   StreamSubscription<JobTrackerEvent>? _events;
   JobTracker? _tracker;
 
+  StreamSubscription<WorkflowEvent>? _workflowEvents;
+  WorkflowTracker? _workflowTracker;
+
   void _listenTo(JobTracker tracker) {
     if (identical(tracker, _tracker)) {
       return;
@@ -43,16 +47,28 @@ class _AnalysisNoticesState extends ConsumerState<AnalysisNotices> {
     _events = tracker.events.listen(_onEvent);
   }
 
+  void _listenToWorkflows(WorkflowTracker tracker) {
+    if (identical(tracker, _workflowTracker)) {
+      return;
+    }
+    _workflowTracker = tracker;
+    unawaited(_workflowEvents?.cancel());
+    _workflowEvents = tracker.events.listen(_onWorkflowEvent);
+  }
+
   late final JobTrackerUiMounted _mounted;
+  late final WorkflowTrackerUiMounted _workflowsMounted;
 
   @override
   void initState() {
     super.initState();
     _mounted = ref.read(jobTrackerUiMountedProvider.notifier);
+    _workflowsMounted = ref.read(workflowTrackerUiMountedProvider.notifier);
     // Providers must not change while the tree is being built.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _mounted.set(mounted: true);
+        _workflowsMounted.set(mounted: true);
       }
     });
   }
@@ -60,9 +76,16 @@ class _AnalysisNoticesState extends ConsumerState<AnalysisNotices> {
   @override
   void dispose() {
     unawaited(_events?.cancel());
-    // The tracker stops polling; its timers must not outlive the UI.
+    unawaited(_workflowEvents?.cancel());
+    // The trackers stop polling; their timers must not outlive the UI.
     final notifier = _mounted;
-    unawaited(Future.microtask(() => notifier.set(mounted: false)));
+    final workflows = _workflowsMounted;
+    unawaited(
+      Future.microtask(() {
+        notifier.set(mounted: false);
+        workflows.set(mounted: false);
+      }),
+    );
     super.dispose();
   }
 
@@ -129,16 +152,98 @@ class _AnalysisNoticesState extends ConsumerState<AnalysisNotices> {
       ..showSnackBar(snackBar);
   }
 
+  /// The staged pipeline's news. Stages 1 and 2 say nothing: the card and the
+  /// review banner fill in where the user can see them, and a snack bar per
+  /// stage would be four interruptions per game. What is worth saying is that
+  /// there is something to read (the deep evaluation, the coach), and that
+  /// the pipeline stopped.
+  Future<void> _onWorkflowEvent(WorkflowEvent event) async {
+    if (!mounted || _isShowing(event.gameId)) {
+      return;
+    }
+    final String text;
+    final String? action;
+    final bool toReview;
+    switch (event) {
+      case StageReadyEvent(:final stage):
+        switch (stage) {
+          case AnalysisStage.coaching:
+            await _onEvent(AnalysisReadyEvent(event.gameId));
+            return;
+          case AnalysisStage.deepEvaluation:
+            final opponent = await _opponentOf(event.gameId);
+            if (!mounted) {
+              return;
+            }
+            final l10n = context.l10n;
+            text = opponent == null
+                ? l10n.analysisNoticeEngineReady
+                : l10n.analysisNoticeEngineReadyOpponent(opponent);
+            action = l10n.analysisNoticeOpen;
+            toReview = true;
+          case AnalysisStage.baseEvaluation:
+          case AnalysisStage.baseClassification:
+          case AnalysisStage.unknown:
+            return;
+        }
+      case StageFailedEvent():
+        text = context.l10n.analysisNoticeStageFailed;
+        action = context.l10n.analysisNoticeView;
+        toReview = false;
+      case WorkflowStaleEvent():
+        text = context.l10n.analysisNoticeStale;
+        action = context.l10n.analysisNoticeView;
+        toReview = false;
+    }
+    if (!mounted) {
+      return;
+    }
+    final router = ref.read(routerProvider);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(text),
+          duration: const Duration(seconds: 8),
+          persist: false,
+          action: SnackBarAction(
+            label: action,
+            onPressed: () {
+              if (toReview) {
+                ref.read(analyticsProvider).track(
+                  AnalyticsEvents.analysisReadyOpened,
+                  {'source': 'banner'},
+                );
+              }
+              unawaited(
+                router.push(
+                  toReview
+                      ? AppRoutes.gameReview(event.gameId)
+                      : AppRoutes.game(event.gameId),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+  }
+
+  Future<String?> _opponentOf(String gameId) async {
+    final owner = ref.read(currentOwnerProvider);
+    if (owner == null) {
+      return null;
+    }
+    final game = await ref.read(gamesRepositoryProvider).cached(owner, gameId);
+    return game?.displayOpponentName;
+  }
+
   @override
   Widget build(BuildContext context) {
-    // TODO(WP-60 B7): also `ref.watch(workflowTrackerProvider)` here, so the
-    // staged chain starts polling at app start and resumes what an app kill
-    // interrupted, and listen to its events for the three snackbars the plan
-    // names (deep evaluation ready, coach ready, a stage that failed). It is
-    // deliberately not wired yet: nothing starts a chain before B7 and B10, so
-    // a second poller in the app shell would only add timers to every widget
-    // test. B12 then removes the job tracker and this widget keeps one.
+    // Both trackers are created here, so both start polling at app start and
+    // resume what an app kill interrupted. TODO(WP-60 B12): the job tracker
+    // and its half of this widget go when the whole-game path does.
     _listenTo(ref.watch(jobTrackerProvider));
+    _listenToWorkflows(ref.watch(workflowTrackerProvider));
     return widget.child;
   }
 }

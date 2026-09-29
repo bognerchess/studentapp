@@ -10,6 +10,7 @@ import 'package:bogner_chess/core/auth/auth_state.dart';
 import 'package:bogner_chess/core/storage/app_database.dart';
 import 'package:bogner_chess/core/storage/storage_providers.dart';
 import 'package:bogner_chess/features/analysis_status/domain/job_tracker_providers.dart';
+import 'package:bogner_chess/features/analysis_status/domain/workflow_tracker_providers.dart';
 import 'package:bogner_chess/features/consent/ui/first_run_consent_prompt.dart';
 import 'package:bogner_chess/router.dart';
 import 'package:drift/drift.dart' show DatabaseConnection, driftRuntimeOptions;
@@ -64,6 +65,34 @@ class _NeverMounted extends JobTrackerUiMounted {
   void set({required bool mounted}) {}
 }
 
+/// The same for the workflow tracker, which `AnalysisNotices` also creates.
+class _NeverMountedWorkflows extends WorkflowTrackerUiMounted {
+  @override
+  bool build() => false;
+
+  @override
+  void set({required bool mounted}) {}
+}
+
+/// Lets the analysis pollers run in a test that pumps only one screen: the
+/// staged chain is started by the *tracker*, not by the button, so a test
+/// about "Analyse" needs a tracker that polls. `pumpApp` has `jobPolling` for
+/// the same reason.
+List<Override> pollingOverrides() => [
+  jobTrackerUiMountedProvider.overrideWith(_AlwaysMounted.new),
+  workflowTrackerUiMountedProvider.overrideWith(_AlwaysMountedWorkflows.new),
+];
+
+class _AlwaysMounted extends JobTrackerUiMounted {
+  @override
+  bool build() => true;
+}
+
+class _AlwaysMountedWorkflows extends WorkflowTrackerUiMounted {
+  @override
+  bool build() => true;
+}
+
 /// Logical screen sizes of the smallest and a current supported iPhone.
 const Size kIphoneSe = Size(375, 667);
 const Size kIphone17Pro = Size(402, 874);
@@ -112,7 +141,7 @@ List<Override> backendOverrides({List<Override> unless = const []}) {
 /// out with real auth. [overrides] come last, for example
 /// `authRepositoryProvider.overrideWithValue(FakeAuthRepository(...))`.
 /// [firstRunPrompts] lets the one-time analytics question open.
-/// [jobPolling] lets the analysis job poller run (off by default).
+/// [jobPolling] lets both analysis pollers run (off by default).
 /// API and database come from [backendOverrides] unless [overrides] bring
 /// their own.
 Future<void> pumpApp(
@@ -150,9 +179,13 @@ Future<void> pumpApp(
         // screen of every test with working storage.
         if (!firstRunPrompts)
           firstRunConsentPromptEnabledProvider.overrideWithValue(false),
-        // The job poller would leave a pending timer in every test.
-        if (!jobPolling)
+        // The pollers would leave a pending timer in every test.
+        if (!jobPolling) ...[
           jobTrackerUiMountedProvider.overrideWith(_NeverMounted.new),
+          workflowTrackerUiMountedProvider.overrideWith(
+            _NeverMountedWorkflows.new,
+          ),
+        ],
         ...overrides,
       ],
       child: const BognerChessApp(),

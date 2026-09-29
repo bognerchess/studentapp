@@ -11,7 +11,6 @@ import 'package:bogner_chess/features/library/domain/games_repository.dart';
 import 'package:bogner_chess/features/library/domain/owner.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'job_tracker_providers.dart' show jobTrackerUiMountedProvider;
 import 'mobile_config_provider.dart';
 import 'workflow_tracker.dart';
 
@@ -23,10 +22,6 @@ export 'workflow_tracker.dart';
 /// For the push handler: `ref.read(workflowTrackerProvider).refreshNow()` when
 /// an "analysis ready" notification arrives while the app is open.
 ///
-/// It shares `jobTrackerUiMountedProvider` with the tracker it replaces:
-/// `AnalysisNotices` reports one mounted widget tree, and both trackers have
-/// the same reason to care about it. WP-60 B12 deletes the old tracker and
-/// that provider moves here.
 final workflowTrackerProvider = Provider<WorkflowTracker>((ref) {
   final tracker = WorkflowTracker(
     api: ref.watch(stageApiProvider),
@@ -38,10 +33,12 @@ final workflowTrackerProvider = Provider<WorkflowTracker>((ref) {
         WorkflowTracker.defaultBaseInterval,
   );
 
-  // Visible = the life cycle says resumed and the widget tree is mounted.
+  // Visible = the life cycle says resumed and the widget tree is mounted
+  // (`AnalysisNotices` reports that through the provider below).
   var resumed = AppForeground.isForeground;
-  void update() =>
-      tracker.setForeground(resumed && ref.read(jobTrackerUiMountedProvider));
+  void update() => tracker.setForeground(
+    resumed && ref.read(workflowTrackerUiMountedProvider),
+  );
   update();
   final lifecycle = AppForeground(
     onChanged: (foreground) {
@@ -52,7 +49,7 @@ final workflowTrackerProvider = Provider<WorkflowTracker>((ref) {
       update();
     },
   );
-  ref.listen(jobTrackerUiMountedProvider, (_, _) => update());
+  ref.listen(workflowTrackerUiMountedProvider, (_, _) => update());
 
   ref
     ..onDispose(lifecycle.dispose)
@@ -66,6 +63,31 @@ final workflowTrackerProvider = Provider<WorkflowTracker>((ref) {
     }, fireImmediately: true);
   return tracker;
 });
+
+/// Whether the app's widget tree is mounted. `AnalysisNotices` sets it; the
+/// tracker does not poll without it (there is nobody to show anything to, and
+/// its timers must not outlive the UI).
+///
+/// Its own provider rather than the job tracker's: the two are gated
+/// separately so that a test can run one poller without the other, and B12
+/// deletes the job tracker's along with the tracker.
+final workflowTrackerUiMountedProvider =
+    NotifierProvider<WorkflowTrackerUiMounted, bool>(
+      WorkflowTrackerUiMounted.new,
+    );
+
+class WorkflowTrackerUiMounted extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void set({required bool mounted}) {
+    // The last report comes from a disposed widget, possibly after the
+    // container is gone as well.
+    if (ref.mounted) {
+      state = mounted;
+    }
+  }
+}
 
 /// The pipeline of every game the tracker watches, by game id.
 ///

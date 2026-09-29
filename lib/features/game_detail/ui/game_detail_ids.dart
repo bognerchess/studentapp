@@ -2,15 +2,34 @@
 // Copyright (C) 2026 Bogner Chess
 // Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
 
+import 'package:bogner_chess/features/analysis_status/domain/workflow_tracker_providers.dart'
+    show AnalysisStage;
 import 'package:flutter/widgets.dart';
 
 /// Semantics identifiers of the game screen (`accessibilityIdentifier` on
 /// iOS), for UI tests and the simulator tool.
 abstract final class GameDetailIds {
+  /// Starts the three free engine stages.
   static const String analyse = 'game-analyse';
   static const String openAnalysis = 'game-open-analysis';
   static const String retryAnalysis = 'game-retry-analysis';
-  static const String jobCard = 'game-job-card';
+
+  /// Starts the metered coaching stage.
+  static const String askCoach = 'game-ask-coach';
+
+  /// Runs the stage that failed once more.
+  static const String retryStage = 'game-retry-stage';
+
+  /// Starts the pipeline again after the moves changed.
+  static const String reanalyse = 'game-reanalyse';
+
+  /// The card that shows where the pipeline stands.
+  static const String workflowCard = 'game-workflow-card';
+
+  /// The four stage rows, and one row by stage name.
+  static const String stageStrip = 'game-stage-strip';
+  static String stageRow(AnalysisStage stage) => 'game-stage-${stage.name}';
+
   static const String delete = 'game-delete';
   static const String limitSheet = 'game-limit-sheet';
   static const String emailRecheck = 'game-email-recheck';

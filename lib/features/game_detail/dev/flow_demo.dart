@@ -101,7 +101,7 @@ void _request(ProviderContainer container, String gameId) {
     (_, _) {},
   );
   unawaited(
-    runAnalysisRequest(
+    runCoachRequest(
       context,
       container.read(gameDetailControllerProvider(gameId).notifier),
     ).whenComplete(subscription.close),

@@ -2951,6 +2951,180 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View'**
   String get analysisNoticeView;
+
+  /// Hint on the game screen before any stage has run; the free engine stages.
+  ///
+  /// In en, this message translates to:
+  /// **'The engine goes through every move and marks the positions worth a closer look. It takes a couple of minutes and is free.'**
+  String get gameDetailStagedHint;
+
+  /// Accessibility label of the four-row list of pipeline stages.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysis steps'**
+  String get gameDetailStageStripLabel;
+
+  /// Name of the base evaluation stage in the stage strip.
+  ///
+  /// In en, this message translates to:
+  /// **'Engine'**
+  String get gameDetailStageNameEngine;
+
+  /// Name of the base classification stage in the stage strip.
+  ///
+  /// In en, this message translates to:
+  /// **'Key positions'**
+  String get gameDetailStageNameKeyPositions;
+
+  /// Name of the deep evaluation stage in the stage strip.
+  ///
+  /// In en, this message translates to:
+  /// **'Deep analysis'**
+  String get gameDetailStageNameDeep;
+
+  /// Name of the coaching stage in the stage strip.
+  ///
+  /// In en, this message translates to:
+  /// **'Coach'**
+  String get gameDetailStageNameCoach;
+
+  /// State of a stage that has not run yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not started'**
+  String get gameDetailStageStateNotRun;
+
+  /// State of a stage that is queued.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting'**
+  String get gameDetailStageStateWaiting;
+
+  /// State of a stage that is running and reports no progress.
+  ///
+  /// In en, this message translates to:
+  /// **'Running…'**
+  String get gameDetailStageStateRunning;
+
+  /// Progress of a running stage.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total}'**
+  String gameDetailStageStateProgress(int done, int total);
+
+  /// State of a stage whose result is stored.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get gameDetailStageStateReady;
+
+  /// State of a stage whose last attempt failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get gameDetailStageStateFailed;
+
+  /// State of a stage computed for moves that have since changed.
+  ///
+  /// In en, this message translates to:
+  /// **'Out of date'**
+  String get gameDetailStageStateStale;
+
+  /// One row of the stage strip, read as one label.
+  ///
+  /// In en, this message translates to:
+  /// **'{stage}: {state}'**
+  String gameDetailStageRowSemantics(String stage, String state);
+
+  /// Button that starts the metered coaching stage.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask the coach'**
+  String get gameDetailAskCoach;
+
+  /// Explains what the coach button costs, above the usage line.
+  ///
+  /// In en, this message translates to:
+  /// **'The coach writes about your key moments. This is the only step that counts against your quota.'**
+  String get gameDetailAskCoachHint;
+
+  /// Title of the card when one stage of the pipeline failed.
+  ///
+  /// In en, this message translates to:
+  /// **'This step failed'**
+  String get gameDetailStepFailedTitle;
+
+  /// Button that runs the failed stage again.
+  ///
+  /// In en, this message translates to:
+  /// **'Try this step again'**
+  String get gameDetailRetryStage;
+
+  /// Failure text for stage_input_missing.
+  ///
+  /// In en, this message translates to:
+  /// **'An earlier step has to run again.'**
+  String get gameDetailFailureInputMissing;
+
+  /// Failure text for invalid_pgn.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not read the moves of this game.'**
+  String get gameDetailFailureInvalidPgn;
+
+  /// Failure text for expired, chess_ai_job_lost, worker_lost and timeout.
+  ///
+  /// In en, this message translates to:
+  /// **'It took too long. Try again.'**
+  String get gameDetailFailureTimeout;
+
+  /// Failure text for too_many_attempts.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Try again later.'**
+  String get gameDetailFailureTooManyAttempts;
+
+  /// Title of the card when the analysis was made for earlier moves.
+  ///
+  /// In en, this message translates to:
+  /// **'Your moves changed'**
+  String get gameDetailStaleTitle;
+
+  /// Body of the stale card.
+  ///
+  /// In en, this message translates to:
+  /// **'The analysis was made for the earlier moves.'**
+  String get gameDetailStaleMessage;
+
+  /// Button that starts the pipeline again after the moves changed.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyse again'**
+  String get gameDetailReanalyse;
+
+  /// Snack bar when the deep evaluation stage has finished.
+  ///
+  /// In en, this message translates to:
+  /// **'The engine analysis of your game is ready.'**
+  String get analysisNoticeEngineReady;
+
+  /// Snack bar when the deep evaluation stage of a named opponent's game has finished.
+  ///
+  /// In en, this message translates to:
+  /// **'Your game against {name} has been analysed by the engine.'**
+  String analysisNoticeEngineReadyOpponent(String name);
+
+  /// Snack bar when an engine stage failed; the card offers the retry.
+  ///
+  /// In en, this message translates to:
+  /// **'A step of the analysis failed.'**
+  String get analysisNoticeStageFailed;
+
+  /// Snack bar when the pipeline was computed for moves that have since changed.
+  ///
+  /// In en, this message translates to:
+  /// **'Your moves changed, so the analysis stopped.'**
+  String get analysisNoticeStale;
 }
 
 class _AppLocalizationsDelegate

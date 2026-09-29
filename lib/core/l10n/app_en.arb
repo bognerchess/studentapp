@@ -2403,5 +2403,147 @@
   "analysisNoticeView": "View",
   "@analysisNoticeView": {
     "description": "Action of the analysis-failed snack bar: opens the game."
+  },
+  "gameDetailStagedHint": "The engine goes through every move and marks the positions worth a closer look. It takes a couple of minutes and is free.",
+  "@gameDetailStagedHint": {
+    "description": "Hint on the game screen before any stage has run; the free engine stages."
+  },
+  "gameDetailStageStripLabel": "Analysis steps",
+  "@gameDetailStageStripLabel": {
+    "description": "Accessibility label of the four-row list of pipeline stages."
+  },
+  "gameDetailStageNameEngine": "Engine",
+  "@gameDetailStageNameEngine": {
+    "description": "Name of the base evaluation stage in the stage strip."
+  },
+  "gameDetailStageNameKeyPositions": "Key positions",
+  "@gameDetailStageNameKeyPositions": {
+    "description": "Name of the base classification stage in the stage strip."
+  },
+  "gameDetailStageNameDeep": "Deep analysis",
+  "@gameDetailStageNameDeep": {
+    "description": "Name of the deep evaluation stage in the stage strip."
+  },
+  "gameDetailStageNameCoach": "Coach",
+  "@gameDetailStageNameCoach": {
+    "description": "Name of the coaching stage in the stage strip."
+  },
+  "gameDetailStageStateNotRun": "Not started",
+  "@gameDetailStageStateNotRun": {
+    "description": "State of a stage that has not run yet."
+  },
+  "gameDetailStageStateWaiting": "Waiting",
+  "@gameDetailStageStateWaiting": {
+    "description": "State of a stage that is queued."
+  },
+  "gameDetailStageStateRunning": "Running…",
+  "@gameDetailStageStateRunning": {
+    "description": "State of a stage that is running and reports no progress."
+  },
+  "gameDetailStageStateProgress": "{done} of {total}",
+  "@gameDetailStageStateProgress": {
+    "description": "Progress of a running stage.",
+    "placeholders": {
+      "done": {
+        "type": "int",
+        "example": "12"
+      },
+      "total": {
+        "type": "int",
+        "example": "40"
+      }
+    }
+  },
+  "gameDetailStageStateReady": "Ready",
+  "@gameDetailStageStateReady": {
+    "description": "State of a stage whose result is stored."
+  },
+  "gameDetailStageStateFailed": "Failed",
+  "@gameDetailStageStateFailed": {
+    "description": "State of a stage whose last attempt failed."
+  },
+  "gameDetailStageStateStale": "Out of date",
+  "@gameDetailStageStateStale": {
+    "description": "State of a stage computed for moves that have since changed."
+  },
+  "gameDetailStageRowSemantics": "{stage}: {state}",
+  "@gameDetailStageRowSemantics": {
+    "description": "One row of the stage strip, read as one label.",
+    "placeholders": {
+      "stage": {
+        "type": "String",
+        "example": "Deep analysis"
+      },
+      "state": {
+        "type": "String",
+        "example": "Running…"
+      }
+    }
+  },
+  "gameDetailAskCoach": "Ask the coach",
+  "@gameDetailAskCoach": {
+    "description": "Button that starts the metered coaching stage."
+  },
+  "gameDetailAskCoachHint": "The coach writes about your key moments. This is the only step that counts against your quota.",
+  "@gameDetailAskCoachHint": {
+    "description": "Explains what the coach button costs, above the usage line."
+  },
+  "gameDetailStepFailedTitle": "This step failed",
+  "@gameDetailStepFailedTitle": {
+    "description": "Title of the card when one stage of the pipeline failed."
+  },
+  "gameDetailRetryStage": "Try this step again",
+  "@gameDetailRetryStage": {
+    "description": "Button that runs the failed stage again."
+  },
+  "gameDetailFailureInputMissing": "An earlier step has to run again.",
+  "@gameDetailFailureInputMissing": {
+    "description": "Failure text for stage_input_missing."
+  },
+  "gameDetailFailureInvalidPgn": "We could not read the moves of this game.",
+  "@gameDetailFailureInvalidPgn": {
+    "description": "Failure text for invalid_pgn."
+  },
+  "gameDetailFailureTimeout": "It took too long. Try again.",
+  "@gameDetailFailureTimeout": {
+    "description": "Failure text for expired, chess_ai_job_lost, worker_lost and timeout."
+  },
+  "gameDetailFailureTooManyAttempts": "Too many attempts. Try again later.",
+  "@gameDetailFailureTooManyAttempts": {
+    "description": "Failure text for too_many_attempts."
+  },
+  "gameDetailStaleTitle": "Your moves changed",
+  "@gameDetailStaleTitle": {
+    "description": "Title of the card when the analysis was made for earlier moves."
+  },
+  "gameDetailStaleMessage": "The analysis was made for the earlier moves.",
+  "@gameDetailStaleMessage": {
+    "description": "Body of the stale card."
+  },
+  "gameDetailReanalyse": "Analyse again",
+  "@gameDetailReanalyse": {
+    "description": "Button that starts the pipeline again after the moves changed."
+  },
+  "analysisNoticeEngineReady": "The engine analysis of your game is ready.",
+  "@analysisNoticeEngineReady": {
+    "description": "Snack bar when the deep evaluation stage has finished."
+  },
+  "analysisNoticeEngineReadyOpponent": "Your game against {name} has been analysed by the engine.",
+  "@analysisNoticeEngineReadyOpponent": {
+    "description": "Snack bar when the deep evaluation stage of a named opponent's game has finished.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Jonas Keller"
+      }
+    }
+  },
+  "analysisNoticeStageFailed": "A step of the analysis failed.",
+  "@analysisNoticeStageFailed": {
+    "description": "Snack bar when an engine stage failed; the card offers the retry."
+  },
+  "analysisNoticeStale": "Your moves changed, so the analysis stopped.",
+  "@analysisNoticeStale": {
+    "description": "Snack bar when the pipeline was computed for moves that have since changed."
   }
 }
