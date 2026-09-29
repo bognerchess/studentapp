@@ -3185,6 +3185,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The coach has not written yet.'**
   String get reviewSummaryNoCoach;
+
+  /// Library badge: the engine stages are stored, the coach has not written.
+  ///
+  /// In en, this message translates to:
+  /// **'Engine analysis'**
+  String get libraryStatusEngineReady;
 }
 
 class _AppLocalizationsDelegate

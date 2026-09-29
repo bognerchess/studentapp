@@ -513,5 +513,6 @@
   "reviewStageStale": "Deine Züge haben sich seit dieser Analyse geändert.",
   "reviewAskCoach": "Coach fragen",
   "reviewStageRetry": "Noch einmal versuchen",
-  "reviewSummaryNoCoach": "Der Coach hat noch nichts geschrieben."
+  "reviewSummaryNoCoach": "Der Coach hat noch nichts geschrieben.",
+  "libraryStatusEngineReady": "Engine-Analyse"
 }

@@ -65,6 +65,9 @@ GameDetail gameDetailOf(Query$GameById$myChessGameById game) {
     createdAt: summary.createdAt,
     hasAnalysis: summary.hasAnalysis,
     latestJob: summary.latestJob,
+    // The server's game types carry no workflow; `gameAnalysisWorkflow` is
+    // its own query, and the tracker is what caches what it says.
+    workflow: summary.workflow,
     plyCount: plyCountOf(game.rawPgn),
     pgn: game.rawPgn,
     startingFen: _text(game.startingFen),

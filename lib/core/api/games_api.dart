@@ -17,6 +17,9 @@ export 'package:bogner_chess/core/api/api_error.dart';
 export 'package:bogner_chess/core/api/models/analysis_models.dart'
     show JobInfo, JobStatus;
 export 'package:bogner_chess/core/api/models/game_models.dart';
+// `GameSummary.workflow` is one of these, so every reader of a game needs it.
+export 'package:bogner_chess/core/api/models/stage_models.dart'
+    show AnalysisStage, AnalysisStageState, GameWorkflowSummary;
 
 /// The user's games on the server.
 class GamesApi {

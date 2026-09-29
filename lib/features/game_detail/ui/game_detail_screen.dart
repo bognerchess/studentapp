@@ -140,11 +140,10 @@ class _Body extends ConsumerWidget {
             gameId: gameId,
             hasAnalysis: game.hasAnalysis,
             workflow: workflow,
-            // TODO(WP-60 B9): the summary the library row remembers, so that
-            // a cold open of a game with a stored engine analysis shows the
-            // strip instead of the "Analyse" button. It needs
-            // `game_summary_codec` version 2.
-            summary: null,
+            // What the cached row remembers, so that a cold open of a game
+            // with a stored engine analysis shows the strip rather than the
+            // "Analyse" button.
+            summary: game.workflow,
             requesting: state.requesting,
           ),
           if (fen != null) ...[

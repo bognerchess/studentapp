@@ -11,6 +11,7 @@ import 'package:bogner_chess/core/game/library_refresh.dart';
 import 'package:bogner_chess/core/storage/app_database.dart' show DraftState;
 import 'package:bogner_chess/core/storage/storage_providers.dart';
 import 'package:bogner_chess/features/analysis_status/domain/job_tracker_providers.dart';
+import 'package:bogner_chess/features/analysis_status/domain/workflow_tracker_providers.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -311,6 +312,7 @@ final libraryRowsProvider = Provider.autoDispose<List<LibraryRow>?>((ref) {
   }
   final filter = ref.watch(libraryControllerProvider.select((s) => s.filter));
   final tracked = ref.watch(trackedJobsProvider);
+  final workflows = ref.watch(trackedWorkflowsProvider);
   return [
     for (final draft in drafts)
       if (filter.matchesDate(draft.playedDate) &&
@@ -321,6 +323,15 @@ final libraryRowsProvider = Provider.autoDispose<List<LibraryRow>?>((ref) {
           ]))
         draft,
     for (final game in games)
-      LibraryGameRow(game, job: newestJob(tracked[game.id], game.latestJob)),
+      LibraryGameRow(
+        game,
+        job: newestJob(tracked[game.id], game.latestJob),
+        // The tracker's live copy while it is watching; the row falls back to
+        // what the cache remembers.
+        workflow: switch (workflows[game.id]) {
+          null => null,
+          final workflow => GameWorkflowSummary.of(workflow),
+        },
+      ),
   ];
 });

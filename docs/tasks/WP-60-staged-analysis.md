@@ -367,3 +367,31 @@ else; its terminal button becomes "Ask the coach" instead of "See your
 lessons", and the summary tab says "The coach has not written yet." rather than
 "There are no lessons for this game." — a coach who found nothing to say is a
 different thing from a coach who has not run.
+
+**B9.** `GameSummary` gains `workflow`, a `GameWorkflowSummary` the tracker
+writes next to the cached game on every poll that changed something.
+`game_summary_codec` is version 2; a version-1 row reads as a game whose
+pipeline this device knows nothing about, which is what it was. `LibraryStatus`
+gains `engineReady`, badged "Engine analysis", and `statusOfGame` now takes the
+summary as well as the job.
+
+`latestJob` stays. Removing it breaks the whole-game path — the mapper, the job
+tracker, `applyJob` and their tests — so `workflow` sits beside it with a
+TODO for B12, and so does `LibraryGameRow.job` and `statusOfGame`'s `job`
+parameter.
+
+The order in `statusOfGame` is worth reading once: work in flight beats a
+stored result (a game being analysed again reads as "analysing", as it did
+before), the coach's document beats everything else, a failed step beats a
+readable engine analysis — the same choice the game screen's card makes — and
+stage 1 alone is not `engineReady`, because there are no variations and no
+accuracy yet.
+
+**Not in the plan, and needed.** The server's game list and `myChessGameById`
+carry no workflow, so every library refresh and every game-screen open was
+about to overwrite the cached summary with null and blank the badge until the
+next poll. `CachedGamesRepository` now puts the remembered pipeline back in
+`fetchPage`, in `put` and — this one is the easy one to miss — in the value
+`fetchDetail` *returns*, not only in what it stores: the game screen shows what
+it got back, not what went into the database. `GameDetail.withWorkflow` exists
+for that.

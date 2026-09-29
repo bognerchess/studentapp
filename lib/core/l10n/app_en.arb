@@ -2585,5 +2585,9 @@
   "reviewSummaryNoCoach": "The coach has not written yet.",
   "@reviewSummaryNoCoach": {
     "description": "Summary tab of an engine-only analysis, where there are no lessons yet."
+  },
+  "libraryStatusEngineReady": "Engine analysis",
+  "@libraryStatusEngineReady": {
+    "description": "Library badge: the engine stages are stored, the coach has not written."
   }
 }

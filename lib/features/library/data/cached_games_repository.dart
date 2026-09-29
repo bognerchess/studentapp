@@ -65,7 +65,8 @@ class CachedGamesRepository implements GamesRepository {
       after: after,
     );
     await _db.gamesCacheDao.upsertPage(owner, [
-      for (final game in page.games) _input(game),
+      for (final game in await _keepKnownWorkflows(owner, page.games))
+        _input(game),
     ], fetchedAt: fetchedAt);
     return page;
   }
@@ -76,12 +77,21 @@ class CachedGamesRepository implements GamesRepository {
 
   @override
   Future<GameDetail?> fetchDetail(String owner, String gameId) async {
-    final detail = await _api.get(gameId);
-    if (detail == null) {
+    final fetched = await _api.get(gameId);
+    if (fetched == null) {
       await _db.gamesCacheDao.remove(owner, gameId);
-    } else {
-      await put(owner, detail);
+      return null;
     }
+    // The fetch carries no pipeline; the caller shows one, so it has to come
+    // back out of here and not only go into the cache.
+    final row = await _db.gamesCacheDao.get(owner, gameId);
+    final cached = row == null
+        ? null
+        : GameSummaryCodec.decode(row.summaryJson);
+    final detail = cached?.workflow == null
+        ? fetched
+        : fetched.withWorkflow(cached!.workflow);
+    await put(owner, detail);
     return detail;
   }
 
@@ -100,8 +110,61 @@ class CachedGamesRepository implements GamesRepository {
     // not protect it from the next removeStale.
     final existing = await _db.gamesCacheDao.get(owner, game.id);
     await _db.gamesCacheDao.upsertPage(owner, [
-      _input(game),
+      _input(_withWorkflowOf(game, existing)),
     ], fetchedAt: existing?.fetchedAt);
+  }
+
+  /// The server's game list carries no pipeline — `gameAnalysisWorkflow` is
+  /// its own query — so a refresh would otherwise wipe what the tracker
+  /// wrote and blank every badge until the next poll. One read for the whole
+  /// page, and only games that are already cached are touched.
+  Future<List<GameSummary>> _keepKnownWorkflows(
+    String owner,
+    List<GameSummary> games,
+  ) async {
+    final known = <String, GameWorkflowSummary>{};
+    for (final game in games) {
+      final row = await _db.gamesCacheDao.get(owner, game.id);
+      final cached = row == null
+          ? null
+          : GameSummaryCodec.decode(row.summaryJson);
+      if (cached?.workflow case final workflow?) {
+        known[game.id] = workflow;
+      }
+    }
+    if (known.isEmpty) {
+      return games;
+    }
+    return [
+      for (final game in games)
+        if (known[game.id] case final workflow?)
+          gameSummaryWith(
+            game,
+            latestJob: game.latestJob,
+            hasAnalysis: game.hasAnalysis,
+            workflow: workflow,
+          )
+        else
+          game,
+    ];
+  }
+
+  /// [game] with the pipeline the cached [row] remembers, when the incoming
+  /// copy has none.
+  GameSummary _withWorkflowOf(GameSummary game, CachedGame? row) {
+    if (game.workflow != null || row == null) {
+      return game;
+    }
+    final cached = GameSummaryCodec.decode(row.summaryJson);
+    if (cached?.workflow case final workflow?) {
+      return gameSummaryWith(
+        game,
+        latestJob: game.latestJob,
+        hasAnalysis: game.hasAnalysis,
+        workflow: workflow,
+      );
+    }
+    return game;
   }
 
   @override
@@ -119,6 +182,33 @@ class CachedGamesRepository implements GamesRepository {
     await _db.gamesCacheDao.upsertPage(owner, [
       _input(updated),
     ], fetchedAt: row.fetchedAt);
+  }
+
+  @override
+  Future<void> applyWorkflow(
+    String owner,
+    String gameId,
+    GameWorkflowSummary workflow, {
+    bool? hasAnalysis,
+  }) async {
+    final row = await _db.gamesCacheDao.get(owner, gameId);
+    final game = row == null ? null : GameSummaryCodec.decode(row.summaryJson);
+    if (game == null) {
+      return;
+    }
+    if (game.workflow == workflow &&
+        (hasAnalysis == null || game.hasAnalysis == hasAnalysis)) {
+      return;
+    }
+    final updated = gameSummaryWith(
+      game,
+      latestJob: game.latestJob,
+      hasAnalysis: hasAnalysis ?? game.hasAnalysis,
+      workflow: workflow,
+    );
+    await _db.gamesCacheDao.upsertPage(owner, [
+      _input(updated),
+    ], fetchedAt: row!.fetchedAt);
   }
 
   @override

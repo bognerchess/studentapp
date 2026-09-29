@@ -199,4 +199,62 @@ void main() {
     );
     expect(await games.cached(alice, 'unknown-game'), isNull);
   });
+
+  test('applyWorkflow records the pipeline next to the game', () async {
+    await games.fetchPage(alice, fetchedAt: games.now());
+    const summary = GameWorkflowSummary(
+      states: {
+        AnalysisStage.baseEvaluation: AnalysisStageState.ready,
+        AnalysisStage.baseClassification: AnalysisStageState.running,
+      },
+      isComplete: false,
+    );
+    await games.applyWorkflow(alice, 'game-3', summary);
+
+    final game = (await games.cached(alice, 'game-3'))!;
+    expect(game.workflow, summary);
+    expect(game.hasAnalysis, isFalse);
+    expect(game.blackName, 'Anonymous', reason: 'nothing else changed');
+
+    // And it survives the round trip through the cache, states and all.
+    expect(
+      game.workflow!.stateOf(AnalysisStage.baseClassification),
+      AnalysisStageState.running,
+    );
+
+    // A game nobody has cached is left alone.
+    await games.applyWorkflow(alice, 'unknown-game', summary);
+    expect(await games.cached(alice, 'unknown-game'), isNull);
+  });
+
+  test('applyWorkflow can flip the analysis badge with it', () async {
+    await games.fetchPage(alice, fetchedAt: games.now());
+    await games.applyWorkflow(
+      alice,
+      'game-3',
+      const GameWorkflowSummary(
+        states: {AnalysisStage.coaching: AnalysisStageState.ready},
+        isComplete: true,
+      ),
+      hasAnalysis: true,
+    );
+    expect((await games.cached(alice, 'game-3'))!.hasAnalysis, isTrue);
+  });
+
+  test('a refresh keeps the pipeline the tracker wrote', () async {
+    await games.fetchPage(alice, fetchedAt: games.now());
+    const summary = GameWorkflowSummary(
+      states: {AnalysisStage.deepEvaluation: AnalysisStageState.ready},
+      isComplete: false,
+    );
+    await games.applyWorkflow(alice, 'game-1', summary);
+
+    // The server's list carries no workflow; the badge must survive it.
+    await games.fetchPage(alice, fetchedAt: games.now());
+    expect((await games.cached(alice, 'game-1'))!.workflow, summary);
+
+    // And so must fetching the one game with its moves.
+    await games.fetchDetail(alice, 'game-1');
+    expect((await games.cached(alice, 'game-1'))!.workflow, summary);
+  });
 }

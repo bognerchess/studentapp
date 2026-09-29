@@ -12,6 +12,7 @@ import 'package:bogner_chess/core/game/library_refresh.dart';
 import 'package:bogner_chess/core/storage/app_database.dart';
 import 'package:bogner_chess/core/storage/storage_providers.dart';
 import 'package:bogner_chess/core/ui/widgets/error_retry.dart';
+import 'package:bogner_chess/features/library/data/cached_games_repository.dart';
 import 'package:bogner_chess/features/library/domain/draft_actions.dart';
 import 'package:bogner_chess/features/library/domain/game_summary_codec.dart';
 import 'package:bogner_chess/features/library/domain/library_controller.dart';
@@ -23,6 +24,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../core/api/api_test_support.dart';
 import '../../helpers/fixture_link.dart';
 import '../../helpers/pump_app.dart';
 import '../../helpers/pump_screen.dart';
@@ -133,6 +135,41 @@ void main() {
       expect(find.text('Analysis ready'), findsOneWidget);
       expect(find.text('Analysing…'), findsOneWidget);
       expect(find.text('Not analysed'), findsOneWidget);
+    });
+
+    testWidgets('a stored engine analysis gets its own badge', (tester) async {
+      // What the tracker wrote next to the game: the three engine stages are
+      // stored, the coach has not been asked.
+      await seedCachedGame(db, id: 'game-9', black: 'Engine Only');
+      await db.gamesCacheDao.upsertPage(owner, [
+        CachedGameInput(
+          gameId: 'game-9',
+          summaryJson: GameSummaryCodec.encode(
+            gameSummaryWith(
+              (await CachedGamesRepository(
+                api: GamesApi(linkExecutor(api)),
+                db: db,
+              ).cached(owner, 'game-9'))!,
+              latestJob: null,
+              hasAnalysis: false,
+              workflow: const GameWorkflowSummary(
+                states: {
+                  AnalysisStage.baseEvaluation: AnalysisStageState.ready,
+                  AnalysisStage.baseClassification: AnalysisStageState.ready,
+                  AnalysisStage.deepEvaluation: AnalysisStageState.ready,
+                  AnalysisStage.coaching: AnalysisStageState.notRun,
+                },
+                isComplete: false,
+              ),
+            ),
+          ),
+          updatedAt: DateTime.utc(2026, 8),
+        ),
+      ], fetchedAt: DateTime.utc(2026, 8));
+      api.fail('MyMobileGames', const SocketException('offline'));
+
+      await pumpScreen(tester, const LibraryScreen(), overrides: overrides());
+      expect(find.text('Engine analysis'), findsOneWidget);
     });
 
     testWidgets('a failed job shows as failed', (tester) async {

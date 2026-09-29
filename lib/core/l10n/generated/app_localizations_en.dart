@@ -2002,4 +2002,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reviewSummaryNoCoach => 'The coach has not written yet.';
+
+  @override
+  String get libraryStatusEngineReady => 'Engine analysis';
 }

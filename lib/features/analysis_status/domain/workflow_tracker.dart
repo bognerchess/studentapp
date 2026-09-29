@@ -69,7 +69,8 @@ final class WorkflowStaleEvent extends WorkflowEvent {
 ///
 /// 1. A workflow that comes back null (the game is gone, or was never this
 ///    user's) is forgotten and its row deleted.
-/// 2. Every stage whose state changed emits an event.
+/// 2. Every stage whose state changed emits an event, and the new states are
+///    written next to the cached game for the library badge.
 /// 3. The artifact of a stage that just became ready is fetched **once**, by
 ///    run id: the ids it has already read are in `cached_analyses.stage_run_ids`.
 ///    When the deep evaluation is ready only that one is fetched — it contains
@@ -425,7 +426,12 @@ class WorkflowTracker {
     }
 
     _emitChanges(gameId, workflow);
+    final previous = _workflows.value[gameId];
     _workflows.value = {..._workflows.value, gameId: workflow};
+    await _rememberSummary(owner, gameId, previous, workflow);
+    if (_disposed || owner != _owner) {
+      return;
+    }
 
     await _storeArtifacts(owner, gameId, workflow);
     await _followCoaching(owner, gameId, workflow);
@@ -474,6 +480,26 @@ class WorkflowTracker {
       _emit(WorkflowStaleEvent(gameId));
     }
     await _untrack(owner, gameId, state: WorkflowState.failed);
+  }
+
+  /// Writes the pipeline next to the cached game whenever it changed, so that
+  /// the library badge and the game screen show where it stands after a
+  /// restart — the server's game list carries no workflow.
+  Future<void> _rememberSummary(
+    String owner,
+    String gameId,
+    AnalysisWorkflow? previous,
+    AnalysisWorkflow workflow,
+  ) async {
+    final summary = GameWorkflowSummary.of(workflow);
+    if (previous != null && GameWorkflowSummary.of(previous) == summary) {
+      return;
+    }
+    try {
+      await _games.applyWorkflow(owner, gameId, summary);
+    } on Object catch (e, s) {
+      _warn('storing the pipeline of $gameId failed', e, s);
+    }
   }
 
   /// One event per stage whose state changed since the last poll. The first

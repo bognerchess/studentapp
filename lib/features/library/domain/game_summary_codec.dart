@@ -11,9 +11,11 @@ import 'package:bogner_chess/core/game/game_metadata.dart';
 ///
 /// The format is private to the app (version key `v`). Reading is tolerant:
 /// a row this build cannot read is null and simply does not show until the
-/// next refresh replaces it.
+/// next refresh replaces it. Version 2 added `workflow`, so a version-1 row
+/// reads as a game whose pipeline this device knows nothing about — which is
+/// exactly what it was.
 abstract final class GameSummaryCodec {
-  static const int version = 1;
+  static const int version = 2;
 
   static String encode(GameSummary game) => jsonEncode(toJson(game));
 
@@ -37,6 +39,7 @@ abstract final class GameSummaryCodec {
       null => null,
       final job => jobToJson(job),
     },
+    'workflow': game.workflow?.toJson(),
   };
 
   static Map<String, Object?> jobToJson(JobInfo job) => {
@@ -85,6 +88,7 @@ abstract final class GameSummaryCodec {
         final Map<String, dynamic> job => jobFromJson(job),
         _ => null,
       },
+      workflow: workflowFromJson(json['workflow']),
     );
   }
 
@@ -107,6 +111,13 @@ abstract final class GameSummaryCodec {
     );
   }
 
+  /// The pipeline summary of a row, or null: a version-1 row has no key, and
+  /// damaged content reads as "nothing known" rather than failing the row.
+  static GameWorkflowSummary? workflowFromJson(Object? value) =>
+      value is Map<String, dynamic>
+      ? GameWorkflowSummary.fromJson(value)
+      : null;
+
   static String? _string(Object? value) =>
       value is String && value.isNotEmpty ? value : null;
 
@@ -116,11 +127,13 @@ abstract final class GameSummaryCodec {
       value is String ? DateTime.tryParse(value)?.toUtc() : null;
 }
 
-/// [game] with another job and analysis flag; everything else unchanged.
+/// [game] with another job, pipeline summary and analysis flag; everything
+/// else unchanged.
 GameSummary gameSummaryWith(
   GameSummary game, {
   required JobInfo? latestJob,
   required bool hasAnalysis,
+  GameWorkflowSummary? workflow,
 }) {
   return GameSummary(
     id: game.id,
@@ -139,5 +152,6 @@ GameSummary gameSummaryWith(
     createdAt: game.createdAt,
     hasAnalysis: hasAnalysis,
     latestJob: latestJob,
+    workflow: workflow ?? game.workflow,
   );
 }

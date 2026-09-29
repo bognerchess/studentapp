@@ -28,6 +28,19 @@ JobInfo job(
   failureCode: status == JobStatus.failed ? 'engine_timeout' : null,
 );
 
+/// A pipeline summary with [states] set and everything else not run.
+GameWorkflowSummary flow(
+  Map<AnalysisStage, AnalysisStageState> states, {
+  bool isComplete = false,
+}) => GameWorkflowSummary(states: states, isComplete: isComplete);
+
+const _engineReady = {
+  AnalysisStage.baseEvaluation: AnalysisStageState.ready,
+  AnalysisStage.baseClassification: AnalysisStageState.ready,
+  AnalysisStage.deepEvaluation: AnalysisStageState.ready,
+  AnalysisStage.coaching: AnalysisStageState.notRun,
+};
+
 void main() {
   group('GameSummaryCodec', () {
     final full = GameSummary(
@@ -46,6 +59,7 @@ void main() {
       createdAt: DateTime.utc(2026, 9, 12, 18, 30),
       hasAnalysis: true,
       latestJob: job('j1', JobStatus.running, stage: 'coach'),
+      workflow: flow(_engineReady),
     );
 
     test('round trip keeps every field', () {
@@ -65,6 +79,51 @@ void main() {
       expect(back.createdAt, full.createdAt);
       expect(back.hasAnalysis, isTrue);
       expect(back.latestJob, full.latestJob);
+      expect(back.workflow, full.workflow);
+    });
+
+    test('version 2 is what is written', () {
+      expect(GameSummaryCodec.version, 2);
+      expect(GameSummaryCodec.toJson(full)['v'], 2);
+    });
+
+    test('a version-1 row reads as a game with no pipeline known', () {
+      // What a build before WP-60 wrote: no `workflow` key at all. The row
+      // still shows, and the tracker fills the pipeline in on the next poll.
+      final back = GameSummaryCodec.decode(
+        '{"v":1,"id":"g","playerColor":"white","result":"1-0",'
+        '"hasAnalysis":true,'
+        '"job":{"id":"j","gameId":"g","status":"DONE",'
+        '"requestedAt":"2026-09-19T10:00:00Z"}}',
+      )!;
+      expect(back.workflow, isNull);
+      expect(back.hasAnalysis, isTrue);
+      expect(back.latestJob!.id, 'j');
+      expect(
+        statusOfGame(hasAnalysis: back.hasAnalysis, workflow: back.workflow),
+        LibraryStatus.analysisReady,
+      );
+    });
+
+    test('a damaged workflow reads as nothing known', () {
+      final back = GameSummaryCodec.decode(
+        '{"v":2,"id":"g","playerColor":"white","result":"1-0",'
+        '"workflow":"nonsense"}',
+      )!;
+      expect(back.workflow, isNull);
+    });
+
+    test('a workflow with a stage this build does not know', () {
+      final back = GameSummaryCodec.decode(
+        '{"v":2,"id":"g","playerColor":"white","result":"1-0",'
+        '"workflow":{"states":{"BASE_EVALUATION":"READY","TAROT":"READY"},'
+        '"isComplete":false}}',
+      )!;
+      expect(
+        back.workflow!.stateOf(AnalysisStage.baseEvaluation),
+        AnalysisStageState.ready,
+      );
+      expect(back.workflow!.states, hasLength(1));
     });
 
     test('a bare game round-trips with nulls', () {
@@ -109,6 +168,20 @@ void main() {
       expect(changed.hasAnalysis, isFalse);
       expect(changed.whiteName, full.whiteName);
       expect(changed.playedDate, full.playedDate);
+      expect(changed.workflow, full.workflow, reason: 'left alone');
+    });
+
+    test('gameSummaryWith replaces the pipeline when given one', () {
+      final changed = gameSummaryWith(
+        full,
+        latestJob: full.latestJob,
+        hasAnalysis: true,
+        workflow: flow({AnalysisStage.coaching: AnalysisStageState.running}),
+      );
+      expect(
+        changed.workflow!.stateOf(AnalysisStage.coaching),
+        AnalysisStageState.running,
+      );
     });
   });
 
@@ -141,6 +214,104 @@ void main() {
       expect(
         statusOfGame(hasAnalysis: true, job: job('j', JobStatus.running)),
         LibraryStatus.analysing,
+      );
+    });
+
+    test('of a game whose pipeline this device knows', () {
+      expect(
+        statusOfGame(hasAnalysis: false, workflow: flow(_engineReady)),
+        LibraryStatus.engineReady,
+      );
+      expect(
+        statusOfGame(
+          hasAnalysis: false,
+          workflow: flow({
+            ..._engineReady,
+            AnalysisStage.coaching: AnalysisStageState.ready,
+          }, isComplete: true),
+        ),
+        LibraryStatus.analysisReady,
+      );
+      expect(
+        statusOfGame(
+          hasAnalysis: false,
+          workflow: flow({
+            AnalysisStage.baseEvaluation: AnalysisStageState.running,
+          }),
+        ),
+        LibraryStatus.analysing,
+      );
+      expect(
+        statusOfGame(
+          hasAnalysis: false,
+          workflow: flow({
+            AnalysisStage.baseEvaluation: AnalysisStageState.queued,
+          }),
+        ),
+        LibraryStatus.analysing,
+      );
+      expect(
+        statusOfGame(
+          hasAnalysis: false,
+          workflow: flow({
+            AnalysisStage.baseEvaluation: AnalysisStageState.ready,
+            AnalysisStage.baseClassification: AnalysisStageState.failed,
+          }),
+        ),
+        LibraryStatus.analysisFailed,
+      );
+      // A coaching step that failed after the engine was done: the failure
+      // is what needs the user, as on the game screen.
+      expect(
+        statusOfGame(
+          hasAnalysis: false,
+          workflow: flow({
+            ..._engineReady,
+            AnalysisStage.coaching: AnalysisStageState.failed,
+          }),
+        ),
+        LibraryStatus.analysisFailed,
+      );
+      // Stage 1 alone is not enough for the badge: there are no variations
+      // and no accuracy yet.
+      expect(
+        statusOfGame(
+          hasAnalysis: false,
+          workflow: flow({
+            AnalysisStage.baseEvaluation: AnalysisStageState.ready,
+          }),
+        ),
+        LibraryStatus.notAnalysed,
+      );
+      // The coach's document wins, whatever the engine stages say.
+      expect(
+        statusOfGame(hasAnalysis: true, workflow: flow(_engineReady)),
+        LibraryStatus.analysisReady,
+      );
+      // A pipeline running again over a stored analysis reads as running.
+      expect(
+        statusOfGame(
+          hasAnalysis: true,
+          workflow: flow({
+            AnalysisStage.baseEvaluation: AnalysisStageState.running,
+          }),
+        ),
+        LibraryStatus.analysing,
+      );
+    });
+
+    test('the row prefers the tracker to the cached summary', () {
+      const game = GameSummary(
+        id: 'g',
+        playerColor: PlayerColor.white,
+        result: GameResult.whiteWins,
+        hasAnalysis: false,
+        workflow: GameWorkflowSummary(states: {}, isComplete: false),
+      );
+      expect(LibraryGameRow(game).status, LibraryStatus.notAnalysed);
+      expect(
+        LibraryGameRow(game, workflow: flow(_engineReady)).status,
+        LibraryStatus.engineReady,
       );
     });
 

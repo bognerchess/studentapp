@@ -3,6 +3,7 @@
 // Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:bogner_chess/core/auth/auth_state.dart';
@@ -419,6 +420,42 @@ void main() {
         find.bySemanticsIdentifier(GameDetailIds.reanalyse),
         findsOneWidget,
       );
+    });
+
+    testWidgets('a cold open reads the pipeline off the cached row', (
+      tester,
+    ) async {
+      // Nothing is being tracked: the app was killed and started again. The
+      // summary the tracker left next to the game is what the card shows.
+      await db.gamesCacheDao.upsertPage(owner, [
+        CachedGameInput(
+          gameId: freshGame,
+          summaryJson: jsonEncode({
+            'v': 2,
+            'id': freshGame,
+            'playerColor': 'white',
+            'result': '0-1',
+            'hasAnalysis': false,
+            'workflow': {
+              'states': {
+                'BASE_EVALUATION': 'READY',
+                'BASE_CLASSIFICATION': 'READY',
+                'DEEP_EVALUATION': 'READY',
+                'COACHING': 'NOT_RUN',
+              },
+              'isComplete': false,
+            },
+          }),
+          updatedAt: DateTime.utc(2026, 8),
+        ),
+      ], fetchedAt: DateTime.utc(2026, 8));
+
+      await openGame(tester);
+      expect(
+        find.bySemanticsIdentifier(GameDetailIds.askCoach),
+        findsOneWidget,
+      );
+      expect(stateOfRow(tester, AnalysisStage.deepEvaluation), 'Ready');
     });
 
     testWidgets(

@@ -12,6 +12,7 @@ import 'package:bogner_chess/core/api/stage_api.dart';
 import 'package:bogner_chess/core/storage/app_database.dart';
 import 'package:bogner_chess/features/analysis_status/domain/workflow_tracker.dart';
 import 'package:bogner_chess/features/library/data/cached_games_repository.dart';
+import 'package:bogner_chess/features/library/domain/game_summary_codec.dart';
 import 'package:drift/drift.dart' show DatabaseConnection, driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:fake_async/fake_async.dart';
@@ -888,6 +889,86 @@ void main() {
         });
         tick(async);
         expect(cached(async), isNotNull);
+      });
+    });
+  });
+
+  group('the library summary', () {
+    /// A cached game row, so that there is something to write the pipeline on.
+    void cacheGame(FakeAsync async, {bool hasAnalysis = false}) {
+      settle(
+        async,
+        db.gamesCacheDao.upsertPage(alice, [
+          CachedGameInput(
+            gameId: 'g1',
+            summaryJson: jsonEncode({
+              'v': 2,
+              'id': 'g1',
+              'playerColor': 'white',
+              'result': '1-0',
+              'hasAnalysis': hasAnalysis,
+            }),
+            updatedAt: clock(),
+          ),
+        ]),
+      );
+    }
+
+    GameWorkflowSummary? summaryOf(FakeAsync async) {
+      final row = settle(async, db.gamesCacheDao.get(alice, 'g1'))!;
+      return GameSummaryCodec.decode(row.summaryJson)!.workflow;
+    }
+
+    test('the states of every poll are written next to the game', () {
+      fake((async) {
+        cacheGame(async);
+        start(async);
+        tick(async);
+
+        final first = summaryOf(async)!;
+        expect(
+          first.stateOf(AnalysisStage.baseEvaluation),
+          AnalysisStageState.queued,
+        );
+        expect(first.isComplete, isFalse);
+
+        server.set('g1', _be, 'READY');
+        tick(async);
+        expect(
+          summaryOf(async)!.stateOf(AnalysisStage.baseEvaluation),
+          AnalysisStageState.ready,
+        );
+      });
+    });
+
+    test('a poll that changed nothing does not rewrite the row', () {
+      fake((async) {
+        cacheGame(async);
+        start(async);
+        tick(async);
+        final before = settle(async, db.gamesCacheDao.get(alice, 'g1'))!;
+
+        // Stage 1 lands, the classification starts, and then nothing moves.
+        server.set('g1', _be, 'READY');
+        tick(async);
+        tick(async);
+        final written = settle(async, db.gamesCacheDao.get(alice, 'g1'))!;
+        tick(async);
+        final after = settle(async, db.gamesCacheDao.get(alice, 'g1'))!;
+
+        expect(written.summaryJson, isNot(before.summaryJson));
+        expect(after.summaryJson, written.summaryJson);
+      });
+    });
+
+    test('a game nothing has cached is no obstacle', () {
+      fake((async) {
+        // No `cached_games` row at all: the pipeline still runs.
+        start(async);
+        server.set('g1', _be, 'READY');
+        tick(async);
+        expect(tracker.trackedGames, contains('g1'));
+        expect(settle(async, db.gamesCacheDao.get(alice, 'g1')), isNull);
       });
     });
   });

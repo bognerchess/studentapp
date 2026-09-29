@@ -2022,4 +2022,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get reviewSummaryNoCoach => 'Der Coach hat noch nichts geschrieben.';
+
+  @override
+  String get libraryStatusEngineReady => 'Engine-Analyse';
 }

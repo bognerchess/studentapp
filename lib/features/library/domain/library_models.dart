@@ -18,23 +18,46 @@ enum LibraryStatus {
   /// A draft the submit queue gave up on.
   uploadFailed,
 
-  /// An analysis job is queued or running.
+  /// An analysis job or a pipeline stage is queued or running.
   analysing,
+
+  /// The engine stages are stored, so there are evals, key positions and
+  /// variations to look at; the coach has not written.
+  engineReady,
+
   analysisReady,
   analysisFailed,
   notAnalysed,
 }
 
-/// The status of a game on the server, given its newest job.
-LibraryStatus statusOfGame({required bool hasAnalysis, JobInfo? job}) {
-  if (job != null && job.status.isActive) {
+/// The status of a game on the server.
+///
+/// [workflow] is what this device knows about the staged pipeline; [job] is
+/// the whole-game path, which only a game analysed on the web still has
+/// (TODO(WP-60 B12): that parameter goes with it). The coach's document wins
+/// over everything: it is the finished thing.
+LibraryStatus statusOfGame({
+  required bool hasAnalysis,
+  JobInfo? job,
+  GameWorkflowSummary? workflow,
+}) {
+  // Work in flight wins over a stored result: a game being analysed again
+  // reads as "analysing", the way it did on the whole-game path.
+  if (workflow?.anyActive == true || job?.status.isActive == true) {
     return LibraryStatus.analysing;
   }
-  if (hasAnalysis || job?.status == JobStatus.done) {
+  if (hasAnalysis ||
+      workflow?.coachReady == true ||
+      job?.status == JobStatus.done) {
     return LibraryStatus.analysisReady;
   }
-  if (job?.status == JobStatus.failed) {
+  // A step that stopped needs the user, even when the engine's own result is
+  // readable; the game screen's card makes the same choice.
+  if (workflow?.failedStage != null || job?.status == JobStatus.failed) {
     return LibraryStatus.analysisFailed;
+  }
+  if (workflow?.engineReady == true) {
+    return LibraryStatus.engineReady;
   }
   return LibraryStatus.notAnalysed;
 }
@@ -116,12 +139,17 @@ sealed class LibraryRow {
 }
 
 final class LibraryGameRow extends LibraryRow {
-  const LibraryGameRow(this.game, {this.job});
+  const LibraryGameRow(this.game, {this.job, this.workflow});
 
   final GameSummary game;
 
   /// The newest job the app knows of: the tracker's, else the server's.
+  /// TODO(WP-60 B12): goes with the whole-game path.
   final JobInfo? job;
+
+  /// Where the staged pipeline stands: the tracker's live copy while it is
+  /// watching this game, else what the cached row remembers.
+  final GameWorkflowSummary? workflow;
 
   @override
   String? get whiteName => game.whiteName;
@@ -134,8 +162,11 @@ final class LibraryGameRow extends LibraryRow {
   @override
   String? get eventName => game.eventName;
   @override
-  LibraryStatus get status =>
-      statusOfGame(hasAnalysis: game.hasAnalysis, job: job);
+  LibraryStatus get status => statusOfGame(
+    hasAnalysis: game.hasAnalysis,
+    job: job,
+    workflow: workflow ?? game.workflow,
+  );
 }
 
 final class LibraryDraftRow extends LibraryRow {
