@@ -27,7 +27,8 @@ The steps below are the plan's B1–B14. This file is updated as they land.
 
 - **B1 Vendoring.** `graphql/schema.graphql` from the backend's stage commands;
   the chess-ai document contract at `schema_minor` 5, which brings
-  `variation.kind = "peer_line"`.
+  `variation.kind = "peer_line"`. Re-vendored a second time for BE-22's
+  `RateLimitedError` unions and message keys.
 - **B2 Operations and API layer.** `graphql/operations/stages.graphql`,
   `lib/core/api/models/stage_models.dart`,
   `lib/core/api/mappers/stage_mapper.dart`, `lib/core/api/stage_api.dart`.
@@ -51,8 +52,8 @@ The app gains no dependency.
 
 ## Contracts
 
-**Consumes:** `contracts/mobile-schema.graphql` of the backend at `48cd383`
-(a second refresh is pending for BE-22's `RateLimitedError` unions);
+**Consumes:** `contracts/mobile-schema.graphql` of the backend at `41c2bbb`
+(BE-22/A3: the `RateLimitedError` unions and the message keys);
 `contracts/` of chess-ai at `eaba07c` (`schema_minor` 5);
 `lib/core/analysis/analysis_parser.dart`;
 `lib/core/storage/app_database.dart`.
@@ -69,7 +70,14 @@ The app gains no dependency.
 3. **B3** `StageDocumentAssembler`.
 4. **B4** drift schema 2.
 5. **B5** `WorkflowTracker`.
-6. **B6–B14** as listed above.
+6. **B1b** The second re-vendor: `RateLimitedError` on the three engine
+   commands, and the message keys A3 introduced.
+7. **B6** The review repository reads the cache and the workflow.
+8. **B7** Game detail: the stage strip, the free chain, the coach button.
+9. **B8** Review: the stage banner and the engine-only tabs.
+10. **B9** Library: the workflow summary, cached and badged.
+11. **B10** The submit queue starts a chain.
+12. **B11–B14** mock server, deletion, docs and analytics, tests.
 
 ## Acceptance commands
 
@@ -243,3 +251,19 @@ Two bugs the tests found, both worth remembering: `{for (…) ?entry}` where
 happy with it in a `Map<String, dynamic>` position — it only blows up at
 `jsonEncode`. It was in `GameWorkflowSummary.toJson` and in the tracker's run-id
 column; both are written out as loops now, and the round trip is a test.
+
+**B1b, the second re-vendor.** The backend's `41c2bbb` makes the diff over
+`48cd383` three union members and one reworded description, so the copy, the
+checksum and `... on RateLimitedError { retryAfterSeconds }` on the three
+engine mutations was all of it. Two tests that documented the fallback now
+assert the server's number instead: a rate-limited engine stage says 42 s in
+`stage_api_test.dart` and the tracker waits the 90 s of
+`workflow_tracker_test.dart`, not a flat minute.
+
+The keys arrived one letter off the plan: `EntityNotFound` is
+`api_errors.entity_not_found`, not `web_api_errors.entity_not_found`.
+`StageApi._isGameGone` matches on the `entity_not_found` substring, so it
+reads both and needed no change. `web_api_errors.pgn_invalid` comes as an
+`InputValidationError` on `chessGameId` and stays a plain failure: the user
+cannot fix a stage by retrying a game with no moves, and the submit path
+already refuses those.

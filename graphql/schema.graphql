@@ -80,7 +80,7 @@ type Mutation {
   "Stops push for this installation (sign-out). Idempotent: an unknown device yields an empty payload."
   unregisterMobileDevice(input: UnregisterMobileDeviceInput!): UnregisterMobileDevicePayload!
     @cost(weight: "10")
-  "Stage 1. Searches every position of the game once and returns a node per ply with eval, win percentage and a first verdict - enough to draw an eval graph on its own. Engine only, so it is neither gated nor counted. Re-running it supersedes the stored result."
+  "Stage 1. Searches every position of the game once and returns a node per ply with eval, win percentage and a first verdict - enough to draw an eval graph on its own. Engine only, so it is not gated by consent or quota and is not counted; it does pass the fair-use rate limit. Re-running it supersedes the stored result."
   runBaseEvaluation(input: RunBaseEvaluationInput!): RunBaseEvaluationPayload!
     @cost(weight: "10")
   "Stage 2. Picks the moves worth a deeper look out of the base evaluation. Cheap and almost pure, so this is the stage to re-run with another `maxMoments` until the selection looks right. Needs stage 1 stored for the same moves."
@@ -640,11 +640,13 @@ union RequestGameAnalysisError =
   | TechnicalError
 
 union RunBaseClassificationError =
+  | RateLimitedError
   | BusinessError
   | InputValidationError
   | TechnicalError
 
 union RunBaseEvaluationError =
+  | RateLimitedError
   | BusinessError
   | InputValidationError
   | TechnicalError
@@ -660,6 +662,7 @@ union RunCoachingError =
   | TechnicalError
 
 union RunDeepEvaluationError =
+  | RateLimitedError
   | BusinessError
   | InputValidationError
   | TechnicalError

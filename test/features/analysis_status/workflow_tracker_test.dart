@@ -482,16 +482,13 @@ void main() {
         // Refused, but not failed: the game is still watched.
         expect(tracker.trackedGames, contains('g1'));
         expect(events.whereType<StageFailedEvent>(), isEmpty);
-        // The wait beats the 3 s cadence. The fixture says 90 s, but the
-        // engine commands cannot select `retryAfterSeconds` until BE-22 puts
-        // `RateLimitedError` into their unions, so what arrives is the
-        // one-minute fallback of `MutationError.retryAfter`. Both are the
-        // server's answer, honoured over the cadence; after the re-vendor
-        // this becomes 90.
-        expect(tracker.currentInterval, const Duration(seconds: 60));
+        // The wait beats the 3 s cadence: the server said 90 s and the
+        // engine commands now select `retryAfterSeconds`, so that is what
+        // the tracker waits.
+        expect(tracker.currentInterval, const Duration(seconds: 90));
 
         final polls = server.workflowQueriesOf('g1');
-        async.elapse(const Duration(seconds: 59));
+        async.elapse(const Duration(seconds: 89));
         expect(server.workflowQueriesOf('g1'), polls);
         async.elapse(const Duration(seconds: 1));
         async.flushMicrotasks();
@@ -508,10 +505,10 @@ void main() {
         server.set('g1', _be, 'READY');
         server.refuse[_bc] = _rateLimited;
         tick(async);
-        expect(tracker.currentInterval, const Duration(seconds: 60));
+        expect(tracker.currentInterval, const Duration(seconds: 90));
 
         tick(async);
-        expect(tracker.currentInterval, lessThan(const Duration(seconds: 60)));
+        expect(tracker.currentInterval, lessThan(const Duration(seconds: 90)));
       });
     });
   });

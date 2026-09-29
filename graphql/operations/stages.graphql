@@ -68,8 +68,10 @@ mutation RunBaseEvaluation($input: RunBaseEvaluationInput!) {
     }
     errors {
       __typename
-      # RateLimitedError is not yet a member of this union; BE-22 adds it
-      # to the three engine commands. `_outcomeOf` already maps it.
+      ... on RateLimitedError {
+        message
+        retryAfterSeconds
+      }
       ... on BusinessError {
         message
       }
@@ -91,8 +93,10 @@ mutation RunBaseClassification($input: RunBaseClassificationInput!) {
     }
     errors {
       __typename
-      # RateLimitedError is not yet a member of this union; BE-22 adds it
-      # to the three engine commands. `_outcomeOf` already maps it.
+      ... on RateLimitedError {
+        message
+        retryAfterSeconds
+      }
       ... on BusinessError {
         message
       }
@@ -114,8 +118,10 @@ mutation RunDeepEvaluation($input: RunDeepEvaluationInput!) {
     }
     errors {
       __typename
-      # RateLimitedError is not yet a member of this union; BE-22 adds it
-      # to the three engine commands. `_outcomeOf` already maps it.
+      ... on RateLimitedError {
+        message
+        retryAfterSeconds
+      }
       ... on BusinessError {
         message
       }

@@ -2297,11 +2297,13 @@ const possibleTypesMap = <String, Set<String>>{
     'TechnicalError',
   },
   'RunBaseClassificationError': {
+    'RateLimitedError',
     'BusinessError',
     'InputValidationError',
     'TechnicalError',
   },
   'RunBaseEvaluationError': {
+    'RateLimitedError',
     'BusinessError',
     'InputValidationError',
     'TechnicalError',
@@ -2317,6 +2319,7 @@ const possibleTypesMap = <String, Set<String>>{
     'TechnicalError',
   },
   'RunDeepEvaluationError': {
+    'RateLimitedError',
     'BusinessError',
     'InputValidationError',
     'TechnicalError',

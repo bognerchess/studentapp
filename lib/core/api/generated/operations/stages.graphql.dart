@@ -1344,6 +1344,33 @@ const documentNodeMutationRunBaseEvaluation = DocumentNode(
                       InlineFragmentNode(
                         typeCondition: TypeConditionNode(
                           on: NamedTypeNode(
+                            name: NameNode(value: 'RateLimitedError'),
+                            isNonNull: false,
+                          ),
+                        ),
+                        directives: [],
+                        selectionSet: SelectionSetNode(
+                          selections: [
+                            FieldNode(
+                              name: NameNode(value: 'message'),
+                              alias: null,
+                              arguments: [],
+                              directives: [],
+                              selectionSet: null,
+                            ),
+                            FieldNode(
+                              name: NameNode(value: 'retryAfterSeconds'),
+                              alias: null,
+                              arguments: [],
+                              directives: [],
+                              selectionSet: null,
+                            ),
+                          ],
+                        ),
+                      ),
+                      InlineFragmentNode(
+                        typeCondition: TypeConditionNode(
+                          on: NamedTypeNode(
                             name: NameNode(value: 'BusinessError'),
                             isNonNull: false,
                           ),
@@ -1514,6 +1541,11 @@ class Mutation$RunBaseEvaluation$runBaseEvaluation$errors {
     Map<String, dynamic> json,
   ) {
     switch (json["__typename"] as String) {
+      case "RateLimitedError":
+        return Mutation$RunBaseEvaluation$runBaseEvaluation$errors$$RateLimitedError.fromJson(
+          json,
+        );
+
       case "BusinessError":
         return Mutation$RunBaseEvaluation$runBaseEvaluation$errors$$BusinessError.fromJson(
           json,
@@ -1574,6 +1606,10 @@ extension UtilityExtension$Mutation$RunBaseEvaluation$runBaseEvaluation$errors
     on Mutation$RunBaseEvaluation$runBaseEvaluation$errors {
   _T when<_T>({
     required _T Function(
+      Mutation$RunBaseEvaluation$runBaseEvaluation$errors$$RateLimitedError,
+    )
+    rateLimitedError,
+    required _T Function(
       Mutation$RunBaseEvaluation$runBaseEvaluation$errors$$BusinessError,
     )
     businessError,
@@ -1588,6 +1624,12 @@ extension UtilityExtension$Mutation$RunBaseEvaluation$runBaseEvaluation$errors
     required _T Function() orElse,
   }) {
     switch ($__typename) {
+      case "RateLimitedError":
+        return rateLimitedError(
+          this
+              as Mutation$RunBaseEvaluation$runBaseEvaluation$errors$$RateLimitedError,
+        );
+
       case "BusinessError":
         return businessError(
           this
@@ -1613,6 +1655,10 @@ extension UtilityExtension$Mutation$RunBaseEvaluation$runBaseEvaluation$errors
 
   _T maybeWhen<_T>({
     _T Function(
+      Mutation$RunBaseEvaluation$runBaseEvaluation$errors$$RateLimitedError,
+    )?
+    rateLimitedError,
+    _T Function(
       Mutation$RunBaseEvaluation$runBaseEvaluation$errors$$BusinessError,
     )?
     businessError,
@@ -1627,6 +1673,16 @@ extension UtilityExtension$Mutation$RunBaseEvaluation$runBaseEvaluation$errors
     required _T Function() orElse,
   }) {
     switch ($__typename) {
+      case "RateLimitedError":
+        if (rateLimitedError != null) {
+          return rateLimitedError(
+            this
+                as Mutation$RunBaseEvaluation$runBaseEvaluation$errors$$RateLimitedError,
+          );
+        } else {
+          return orElse();
+        }
+
       case "BusinessError":
         if (businessError != null) {
           return businessError(
@@ -1660,6 +1716,81 @@ extension UtilityExtension$Mutation$RunBaseEvaluation$runBaseEvaluation$errors
       default:
         return orElse();
     }
+  }
+}
+
+class Mutation$RunBaseEvaluation$runBaseEvaluation$errors$$RateLimitedError
+    implements Mutation$RunBaseEvaluation$runBaseEvaluation$errors {
+  Mutation$RunBaseEvaluation$runBaseEvaluation$errors$$RateLimitedError({
+    required this.message,
+    required this.retryAfterSeconds,
+    this.$__typename = 'RateLimitedError',
+  });
+
+  factory Mutation$RunBaseEvaluation$runBaseEvaluation$errors$$RateLimitedError.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$message = json['message'];
+    final l$retryAfterSeconds = json['retryAfterSeconds'];
+    final l$$__typename = json['__typename'];
+    return Mutation$RunBaseEvaluation$runBaseEvaluation$errors$$RateLimitedError(
+      message: (l$message as String),
+      retryAfterSeconds: (l$retryAfterSeconds as int),
+      $__typename: (l$$__typename as String),
+    );
+  }
+
+  final String message;
+
+  final int retryAfterSeconds;
+
+  final String $__typename;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$message = message;
+    _resultData['message'] = l$message;
+    final l$retryAfterSeconds = retryAfterSeconds;
+    _resultData['retryAfterSeconds'] = l$retryAfterSeconds;
+    final l$$__typename = $__typename;
+    _resultData['__typename'] = l$$__typename;
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$message = message;
+    final l$retryAfterSeconds = retryAfterSeconds;
+    final l$$__typename = $__typename;
+    return Object.hashAll([l$message, l$retryAfterSeconds, l$$__typename]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other
+            is! Mutation$RunBaseEvaluation$runBaseEvaluation$errors$$RateLimitedError ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$message = message;
+    final lOther$message = other.message;
+    if (l$message != lOther$message) {
+      return false;
+    }
+    final l$retryAfterSeconds = retryAfterSeconds;
+    final lOther$retryAfterSeconds = other.retryAfterSeconds;
+    if (l$retryAfterSeconds != lOther$retryAfterSeconds) {
+      return false;
+    }
+    final l$$__typename = $__typename;
+    final lOther$$__typename = other.$__typename;
+    if (l$$__typename != lOther$$__typename) {
+      return false;
+    }
+    return true;
   }
 }
 
@@ -2025,6 +2156,33 @@ const documentNodeMutationRunBaseClassification = DocumentNode(
                       InlineFragmentNode(
                         typeCondition: TypeConditionNode(
                           on: NamedTypeNode(
+                            name: NameNode(value: 'RateLimitedError'),
+                            isNonNull: false,
+                          ),
+                        ),
+                        directives: [],
+                        selectionSet: SelectionSetNode(
+                          selections: [
+                            FieldNode(
+                              name: NameNode(value: 'message'),
+                              alias: null,
+                              arguments: [],
+                              directives: [],
+                              selectionSet: null,
+                            ),
+                            FieldNode(
+                              name: NameNode(value: 'retryAfterSeconds'),
+                              alias: null,
+                              arguments: [],
+                              directives: [],
+                              selectionSet: null,
+                            ),
+                          ],
+                        ),
+                      ),
+                      InlineFragmentNode(
+                        typeCondition: TypeConditionNode(
+                          on: NamedTypeNode(
                             name: NameNode(value: 'BusinessError'),
                             isNonNull: false,
                           ),
@@ -2197,6 +2355,11 @@ class Mutation$RunBaseClassification$runBaseClassification$errors {
     Map<String, dynamic> json,
   ) {
     switch (json["__typename"] as String) {
+      case "RateLimitedError":
+        return Mutation$RunBaseClassification$runBaseClassification$errors$$RateLimitedError.fromJson(
+          json,
+        );
+
       case "BusinessError":
         return Mutation$RunBaseClassification$runBaseClassification$errors$$BusinessError.fromJson(
           json,
@@ -2257,6 +2420,10 @@ extension UtilityExtension$Mutation$RunBaseClassification$runBaseClassification$
     on Mutation$RunBaseClassification$runBaseClassification$errors {
   _T when<_T>({
     required _T Function(
+      Mutation$RunBaseClassification$runBaseClassification$errors$$RateLimitedError,
+    )
+    rateLimitedError,
+    required _T Function(
       Mutation$RunBaseClassification$runBaseClassification$errors$$BusinessError,
     )
     businessError,
@@ -2271,6 +2438,12 @@ extension UtilityExtension$Mutation$RunBaseClassification$runBaseClassification$
     required _T Function() orElse,
   }) {
     switch ($__typename) {
+      case "RateLimitedError":
+        return rateLimitedError(
+          this
+              as Mutation$RunBaseClassification$runBaseClassification$errors$$RateLimitedError,
+        );
+
       case "BusinessError":
         return businessError(
           this
@@ -2296,6 +2469,10 @@ extension UtilityExtension$Mutation$RunBaseClassification$runBaseClassification$
 
   _T maybeWhen<_T>({
     _T Function(
+      Mutation$RunBaseClassification$runBaseClassification$errors$$RateLimitedError,
+    )?
+    rateLimitedError,
+    _T Function(
       Mutation$RunBaseClassification$runBaseClassification$errors$$BusinessError,
     )?
     businessError,
@@ -2310,6 +2487,16 @@ extension UtilityExtension$Mutation$RunBaseClassification$runBaseClassification$
     required _T Function() orElse,
   }) {
     switch ($__typename) {
+      case "RateLimitedError":
+        if (rateLimitedError != null) {
+          return rateLimitedError(
+            this
+                as Mutation$RunBaseClassification$runBaseClassification$errors$$RateLimitedError,
+          );
+        } else {
+          return orElse();
+        }
+
       case "BusinessError":
         if (businessError != null) {
           return businessError(
@@ -2343,6 +2530,81 @@ extension UtilityExtension$Mutation$RunBaseClassification$runBaseClassification$
       default:
         return orElse();
     }
+  }
+}
+
+class Mutation$RunBaseClassification$runBaseClassification$errors$$RateLimitedError
+    implements Mutation$RunBaseClassification$runBaseClassification$errors {
+  Mutation$RunBaseClassification$runBaseClassification$errors$$RateLimitedError({
+    required this.message,
+    required this.retryAfterSeconds,
+    this.$__typename = 'RateLimitedError',
+  });
+
+  factory Mutation$RunBaseClassification$runBaseClassification$errors$$RateLimitedError.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$message = json['message'];
+    final l$retryAfterSeconds = json['retryAfterSeconds'];
+    final l$$__typename = json['__typename'];
+    return Mutation$RunBaseClassification$runBaseClassification$errors$$RateLimitedError(
+      message: (l$message as String),
+      retryAfterSeconds: (l$retryAfterSeconds as int),
+      $__typename: (l$$__typename as String),
+    );
+  }
+
+  final String message;
+
+  final int retryAfterSeconds;
+
+  final String $__typename;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$message = message;
+    _resultData['message'] = l$message;
+    final l$retryAfterSeconds = retryAfterSeconds;
+    _resultData['retryAfterSeconds'] = l$retryAfterSeconds;
+    final l$$__typename = $__typename;
+    _resultData['__typename'] = l$$__typename;
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$message = message;
+    final l$retryAfterSeconds = retryAfterSeconds;
+    final l$$__typename = $__typename;
+    return Object.hashAll([l$message, l$retryAfterSeconds, l$$__typename]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other
+            is! Mutation$RunBaseClassification$runBaseClassification$errors$$RateLimitedError ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$message = message;
+    final lOther$message = other.message;
+    if (l$message != lOther$message) {
+      return false;
+    }
+    final l$retryAfterSeconds = retryAfterSeconds;
+    final lOther$retryAfterSeconds = other.retryAfterSeconds;
+    if (l$retryAfterSeconds != lOther$retryAfterSeconds) {
+      return false;
+    }
+    final l$$__typename = $__typename;
+    final lOther$$__typename = other.$__typename;
+    if (l$$__typename != lOther$$__typename) {
+      return false;
+    }
+    return true;
   }
 }
 
@@ -2706,6 +2968,33 @@ const documentNodeMutationRunDeepEvaluation = DocumentNode(
                       InlineFragmentNode(
                         typeCondition: TypeConditionNode(
                           on: NamedTypeNode(
+                            name: NameNode(value: 'RateLimitedError'),
+                            isNonNull: false,
+                          ),
+                        ),
+                        directives: [],
+                        selectionSet: SelectionSetNode(
+                          selections: [
+                            FieldNode(
+                              name: NameNode(value: 'message'),
+                              alias: null,
+                              arguments: [],
+                              directives: [],
+                              selectionSet: null,
+                            ),
+                            FieldNode(
+                              name: NameNode(value: 'retryAfterSeconds'),
+                              alias: null,
+                              arguments: [],
+                              directives: [],
+                              selectionSet: null,
+                            ),
+                          ],
+                        ),
+                      ),
+                      InlineFragmentNode(
+                        typeCondition: TypeConditionNode(
+                          on: NamedTypeNode(
                             name: NameNode(value: 'BusinessError'),
                             isNonNull: false,
                           ),
@@ -2876,6 +3165,11 @@ class Mutation$RunDeepEvaluation$runDeepEvaluation$errors {
     Map<String, dynamic> json,
   ) {
     switch (json["__typename"] as String) {
+      case "RateLimitedError":
+        return Mutation$RunDeepEvaluation$runDeepEvaluation$errors$$RateLimitedError.fromJson(
+          json,
+        );
+
       case "BusinessError":
         return Mutation$RunDeepEvaluation$runDeepEvaluation$errors$$BusinessError.fromJson(
           json,
@@ -2936,6 +3230,10 @@ extension UtilityExtension$Mutation$RunDeepEvaluation$runDeepEvaluation$errors
     on Mutation$RunDeepEvaluation$runDeepEvaluation$errors {
   _T when<_T>({
     required _T Function(
+      Mutation$RunDeepEvaluation$runDeepEvaluation$errors$$RateLimitedError,
+    )
+    rateLimitedError,
+    required _T Function(
       Mutation$RunDeepEvaluation$runDeepEvaluation$errors$$BusinessError,
     )
     businessError,
@@ -2950,6 +3248,12 @@ extension UtilityExtension$Mutation$RunDeepEvaluation$runDeepEvaluation$errors
     required _T Function() orElse,
   }) {
     switch ($__typename) {
+      case "RateLimitedError":
+        return rateLimitedError(
+          this
+              as Mutation$RunDeepEvaluation$runDeepEvaluation$errors$$RateLimitedError,
+        );
+
       case "BusinessError":
         return businessError(
           this
@@ -2975,6 +3279,10 @@ extension UtilityExtension$Mutation$RunDeepEvaluation$runDeepEvaluation$errors
 
   _T maybeWhen<_T>({
     _T Function(
+      Mutation$RunDeepEvaluation$runDeepEvaluation$errors$$RateLimitedError,
+    )?
+    rateLimitedError,
+    _T Function(
       Mutation$RunDeepEvaluation$runDeepEvaluation$errors$$BusinessError,
     )?
     businessError,
@@ -2989,6 +3297,16 @@ extension UtilityExtension$Mutation$RunDeepEvaluation$runDeepEvaluation$errors
     required _T Function() orElse,
   }) {
     switch ($__typename) {
+      case "RateLimitedError":
+        if (rateLimitedError != null) {
+          return rateLimitedError(
+            this
+                as Mutation$RunDeepEvaluation$runDeepEvaluation$errors$$RateLimitedError,
+          );
+        } else {
+          return orElse();
+        }
+
       case "BusinessError":
         if (businessError != null) {
           return businessError(
@@ -3022,6 +3340,81 @@ extension UtilityExtension$Mutation$RunDeepEvaluation$runDeepEvaluation$errors
       default:
         return orElse();
     }
+  }
+}
+
+class Mutation$RunDeepEvaluation$runDeepEvaluation$errors$$RateLimitedError
+    implements Mutation$RunDeepEvaluation$runDeepEvaluation$errors {
+  Mutation$RunDeepEvaluation$runDeepEvaluation$errors$$RateLimitedError({
+    required this.message,
+    required this.retryAfterSeconds,
+    this.$__typename = 'RateLimitedError',
+  });
+
+  factory Mutation$RunDeepEvaluation$runDeepEvaluation$errors$$RateLimitedError.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$message = json['message'];
+    final l$retryAfterSeconds = json['retryAfterSeconds'];
+    final l$$__typename = json['__typename'];
+    return Mutation$RunDeepEvaluation$runDeepEvaluation$errors$$RateLimitedError(
+      message: (l$message as String),
+      retryAfterSeconds: (l$retryAfterSeconds as int),
+      $__typename: (l$$__typename as String),
+    );
+  }
+
+  final String message;
+
+  final int retryAfterSeconds;
+
+  final String $__typename;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$message = message;
+    _resultData['message'] = l$message;
+    final l$retryAfterSeconds = retryAfterSeconds;
+    _resultData['retryAfterSeconds'] = l$retryAfterSeconds;
+    final l$$__typename = $__typename;
+    _resultData['__typename'] = l$$__typename;
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$message = message;
+    final l$retryAfterSeconds = retryAfterSeconds;
+    final l$$__typename = $__typename;
+    return Object.hashAll([l$message, l$retryAfterSeconds, l$$__typename]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other
+            is! Mutation$RunDeepEvaluation$runDeepEvaluation$errors$$RateLimitedError ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$message = message;
+    final lOther$message = other.message;
+    if (l$message != lOther$message) {
+      return false;
+    }
+    final l$retryAfterSeconds = retryAfterSeconds;
+    final lOther$retryAfterSeconds = other.retryAfterSeconds;
+    if (l$retryAfterSeconds != lOther$retryAfterSeconds) {
+      return false;
+    }
+    final l$$__typename = $__typename;
+    final lOther$$__typename = other.$__typename;
+    if (l$$__typename != lOther$$__typename) {
+      return false;
+    }
+    return true;
   }
 }
 

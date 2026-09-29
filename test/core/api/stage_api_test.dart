@@ -362,17 +362,14 @@ void main() {
           );
         });
 
-        test('rate limited, even before the union lists it', () async {
+        test('rate limited, with the seconds the server asked for', () async {
           link.use(operation, 'rate_limited');
           final outcome = await call(api());
 
           expect(outcome, isA<AnalysisRateLimited>());
-          // The operation cannot select `retryAfterSeconds` until BE-22 puts
-          // `RateLimitedError` into this union, so the wait falls back to a
-          // minute. The fixture says 42.
           expect(
             (outcome as AnalysisRateLimited).retryAfter,
-            const Duration(seconds: 60),
+            const Duration(seconds: 42),
           );
         });
 
