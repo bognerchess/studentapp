@@ -1,0 +1,13 @@
+{
+  "data": {
+    "runBaseClassification": {
+      "engineStageRun": null,
+      "errors": [
+        {
+          "__typename": "BusinessError",
+          "message": "web_api_errors.stage_prerequisite_missing"
+        }
+      ]
+    }
+  }
+}

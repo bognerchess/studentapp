@@ -17,7 +17,9 @@ import 'package:bogner_chess/core/api/generated/operations/config.graphql.dart';
 import 'package:bogner_chess/core/api/generated/operations/devices.graphql.dart';
 import 'package:bogner_chess/core/api/generated/operations/games.graphql.dart';
 import 'package:bogner_chess/core/api/generated/operations/legal.graphql.dart';
+import 'package:bogner_chess/core/api/generated/operations/stages.graphql.dart';
 import 'package:bogner_chess/core/api/legal_api.dart';
+import 'package:bogner_chess/core/api/stage_api.dart';
 import 'package:bogner_chess/core/api/usage_api.dart';
 import 'package:bogner_chess/core/game/game_metadata.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -79,6 +81,30 @@ final Map<String, _Operation> _operations = {
     call: (e) =>
         AnalysisApi(e)
             .submitFeedback(commentId: 'c-1', rating: CommentRating.up),
+  ),
+  'GameAnalysisWorkflow': (
+    parse: Query$GameAnalysisWorkflow.fromJson,
+    call: (e) => StageApi(e).workflow('game-1'),
+  ),
+  'EngineStageRun': (
+    parse: Query$EngineStageRun.fromJson,
+    call: (e) => StageApi(e).artifact('run-be'),
+  ),
+  'RunBaseEvaluation': (
+    parse: Mutation$RunBaseEvaluation.fromJson,
+    call: (e) => StageApi(e).runBaseEvaluation('game-1'),
+  ),
+  'RunBaseClassification': (
+    parse: Mutation$RunBaseClassification.fromJson,
+    call: (e) => StageApi(e).runBaseClassification('game-1'),
+  ),
+  'RunDeepEvaluation': (
+    parse: Mutation$RunDeepEvaluation.fromJson,
+    call: (e) => StageApi(e).runDeepEvaluation('game-1'),
+  ),
+  'RunCoaching': (
+    parse: Mutation$RunCoaching.fromJson,
+    call: (e) => StageApi(e).runCoaching('game-1'),
   ),
   'MyAnalysisUsage': (
     parse: Query$MyAnalysisUsage.fromJson,
@@ -159,6 +185,22 @@ const Map<String, Set<String>> _errorUnions = {
     'InputValidationError',
     'TechnicalError',
   },
+  // The three engine commands: `RateLimitedError` is not a member of their
+  // unions in the vendored schema yet (BE-22 adds it, and the operations then
+  // select `retryAfterSeconds`). It is listed and has a fixture, because the
+  // backend may well ship A3 before this app re-vendors, and the mapping has
+  // to hold when it does.
+  'RunBaseEvaluation': {'RateLimitedError', ..._generic},
+  'RunBaseClassification': {'RateLimitedError', ..._generic},
+  'RunDeepEvaluation': {'RateLimitedError', ..._generic},
+  'RunCoaching': {
+    'AnalysisLimitReachedError',
+    'AnalysisQueueFullError',
+    'RateLimitedError',
+    'EmailNotVerifiedError',
+    'AiConsentRequiredError',
+    ..._generic,
+  },
   'SubmitCoachCommentFeedback': _generic,
   'RegisterMobileDevice': {'RateLimitedError', ..._generic},
   'UnregisterMobileDevice': _generic,
@@ -195,7 +237,9 @@ void main() {
         in _errorUnions.entries) {
       final seen = <String>{};
       for (final scenario in store.scenarios(operation)) {
-        final payload = store.data(operation, scenario).values.single as Map;
+        final data = store.response(operation, scenario)['data'];
+        if (data == null) continue;
+        final payload = (data as Map).values.single as Map;
         for (final error in payload['errors'] as List? ?? const <Object?>[]) {
           seen.add((error as Map)['__typename'] as String);
         }
@@ -210,6 +254,11 @@ void main() {
   for (final MapEntry(key: operation, value: entry) in _operations.entries) {
     group(operation, () {
       for (final scenario in store.scenarios(operation)) {
+        // A fixture that answers with top-level GraphQL errors has no data to
+        // read; only the repository test below applies to it.
+        final isTopLevelError =
+            store.response(operation, scenario)['data'] == null;
+
         test('$scenario: generated fromJson, toJson round trip', () {
           final data = store.data(operation, scenario);
           final parsed = entry.parse(data);
@@ -220,7 +269,7 @@ void main() {
           final json = jsonEncode(parsed);
           final again = entry.parse(jsonDecode(json) as Map<String, dynamic>);
           expect(jsonEncode(again), json);
-        });
+        }, skip: isTopLevelError);
 
         test('$scenario: through the repository', () async {
           final link = FixtureLink({operation: scenario}, store);
@@ -228,6 +277,8 @@ void main() {
             await entry.call(linkExecutor(link));
           } on ApiRejected {
             // A mutation without typed outcomes reports its errors this way.
+          } on ApiGraphQLError {
+            // A query whose fixture is a top-level error.
           }
           expect(link.requestsOf(operation), hasLength(1));
         });

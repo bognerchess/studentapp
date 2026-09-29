@@ -196,6 +196,10 @@ class GameDetailController extends Notifier<GameDetailState> {
         case AnalysisEmailNotVerified():
         case AnalysisAiConsentRequired():
         case AnalysisRequestFailed():
+        // Neither can come back from `requestGameAnalysis`; WP-60 B7
+        // replaces this method with the staged pair.
+        case AnalysisStageAccepted():
+        case AnalysisPrerequisiteMissing():
           break;
       }
       // Accepted or refused: the numbers under the button may have changed.

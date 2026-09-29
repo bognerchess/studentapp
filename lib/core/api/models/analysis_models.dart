@@ -4,6 +4,7 @@
 
 import 'package:bogner_chess/core/analysis/analysis_parse_result.dart';
 import 'package:bogner_chess/core/api/api_error.dart';
+import 'package:bogner_chess/core/api/models/stage_models.dart';
 import 'package:flutter/foundation.dart';
 
 /// Where an analysis job is. The server folds its internal states into these
@@ -87,6 +88,23 @@ sealed class RequestAnalysisOutcome {
 final class AnalysisAccepted extends RequestAnalysisOutcome {
   const AnalysisAccepted(this.job);
   final JobInfo job;
+}
+
+/// A stage run was queued. The staged answer to [AnalysisAccepted]: the
+/// whole-game path goes in B12 of WP-60 and this takes its name.
+final class AnalysisStageAccepted extends RequestAnalysisOutcome {
+  const AnalysisStageAccepted(this.run);
+  final StageRun run;
+
+  AnalysisStage get stage => run.stage;
+}
+
+/// A stage was asked for before the stage it builds on was stored, or that
+/// input has gone stale. The way forward is to run the earlier stage again,
+/// which `nextRunnableStage` names; the app never has to know which one from
+/// the error itself.
+final class AnalysisPrerequisiteMissing extends RequestAnalysisOutcome {
+  const AnalysisPrerequisiteMissing();
 }
 
 /// The quota of the [window] is used up. Terminal for the submit queue: the

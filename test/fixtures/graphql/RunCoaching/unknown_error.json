@@ -1,0 +1,12 @@
+{
+  "data": {
+    "runCoaching": {
+      "engineStageRun": null,
+      "errors": [
+        {
+          "__typename": "SomethingNewError"
+        }
+      ]
+    }
+  }
+}

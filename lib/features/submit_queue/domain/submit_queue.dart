@@ -417,6 +417,12 @@ class SubmitQueue {
         case AnalysisAccepted(:final job):
           analysis = SubmittedAnalysis.started;
           _jobSink().track(job);
+        case AnalysisStageAccepted():
+        case AnalysisPrerequisiteMissing():
+          // Neither is reachable while this path calls `requestGameAnalysis`;
+          // WP-60 B10 moves it to `runBaseEvaluation`, where the first one
+          // becomes the normal answer.
+          hold = AnalysisHold.requestFailed;
         case AnalysisLimitReached():
           hold = AnalysisHold.limitReached;
         case AnalysisQueueFull():

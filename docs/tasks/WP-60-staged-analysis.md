@@ -110,6 +110,38 @@ the contract between chess-ai and the backend and has no business in this
 repository. `vendored_fixtures_test.dart` therefore checks the four files the
 app vendors rather than every line of `SHA256SUMS`.
 
+**B2.** Three deviations from the plan, all forced by the schema as it stands
+today.
+
+1. `RateLimitedError` is not a member of the three engine commands' error
+   unions yet (BE-22 adds it), so the operations cannot select it — selecting
+   a type that is not in the union fails codegen. The commands therefore
+   select only the three generic members, and the second re-vendor adds the
+   block plus `retryAfterSeconds`. The *mapping* already works: a
+   `RateLimitedError` on one of those commands reads its `__typename` through
+   the generated unknown-member class and comes out as `AnalysisRateLimited`,
+   only with the one-minute fallback instead of the server's number. There is
+   a fixture and a test for exactly that, because the backend may ship A3
+   before this app re-vendors.
+2. The plan's `AnalysisAccepted(StageRun run, AnalysisStage stage)` would have
+   changed the member the whole-game path still uses. The staged answer is a
+   new member, `AnalysisStageAccepted(StageRun run)`; B12 deletes
+   `AnalysisAccepted` and this one takes its name. The three exhaustive
+   switches over the sealed outcome (game detail, its request flow, the submit
+   queue) got a case each that cannot be reached from `requestGameAnalysis`.
+3. `gameAnalysisWorkflow` is non-null in the schema, so a game that is gone or
+   is somebody else's comes back as a *top-level* GraphQL error, and the
+   backend's error filter strips it to a bare message with no code. `workflow()`
+   reads null from that message — the key BE-22 introduces, or the English
+   sentence the resolver sends today — and rethrows anything else, so a cost
+   or validation problem is never mistaken for a deleted game. A fixture whose
+   body is a top-level error also needed `fixtures_test.dart` to skip the
+   `fromJson` round trip for it.
+
+`StageApi.workflow` returning null is what lets the tracker untrack a game;
+`artifact()` uses `kAnalysisApiTimeout` because one artifact is hundreds of
+kilobytes, which is also why the workflow query selects no artifact at all.
+
 Not in the plan but needed: `lib/features/review/dev/demo_analysis.dart`
 carries a copy of `short-game.json`, and `review_providers_test.dart` compares
 the two byte for byte. The copy was regenerated from the new fixture. Its

@@ -1,0 +1,13 @@
+{
+  "data": {
+    "runBaseClassification": {
+      "engineStageRun": null,
+      "errors": [
+        {
+          "__typename": "BusinessError",
+          "message": "api_errors.entity_not_found"
+        }
+      ]
+    }
+  }
+}

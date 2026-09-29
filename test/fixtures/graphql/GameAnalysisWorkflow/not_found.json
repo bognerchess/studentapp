@@ -1,0 +1,10 @@
+{
+  "errors": [
+    {
+      "message": "The game does not exist.",
+      "path": [
+        "gameAnalysisWorkflow"
+      ]
+    }
+  ]
+}

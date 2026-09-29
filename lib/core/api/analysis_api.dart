@@ -14,6 +14,7 @@ import 'package:bogner_chess/core/api/mappers/enum_mappers.dart';
 import 'package:bogner_chess/core/api/mappers/game_mapper.dart';
 import 'package:bogner_chess/core/api/mappers/mutation_error.dart';
 import 'package:bogner_chess/core/api/models/analysis_models.dart';
+import 'package:bogner_chess/core/api/stage_api.dart' show outcomeOf;
 
 export 'package:bogner_chess/core/analysis/analysis_parse_result.dart';
 export 'package:bogner_chess/core/api/api_error.dart';
@@ -57,44 +58,12 @@ class AnalysisApi {
     final payload = data.requestGameAnalysis;
     final error = MutationError.firstOf(payload.errors?.map((e) => e.toJson()));
     if (error != null) {
-      return _outcomeOf(error);
+      return outcomeOf(error);
     }
     final job = payload.analysisJob;
     return job == null
         ? AnalysisRequestFailed(emptyPayload('RequestGameAnalysis'))
         : AnalysisAccepted(jobOf(job));
-  }
-
-  static RequestAnalysisOutcome _outcomeOf(MutationError error) {
-    switch (error.typename) {
-      case 'AnalysisLimitReachedError':
-        final limit = error.integer('limit');
-        final used = error.integer('used');
-        final resetAt = error.instant('resetAt');
-        if (limit != null && used != null && resetAt != null) {
-          return AnalysisLimitReached(
-            window: limitWindowOf(error.string('window')),
-            limit: limit,
-            used: used,
-            resetAt: resetAt,
-          );
-        }
-      case 'AnalysisQueueFullError':
-        final max = error.integer('maxQueuedJobs');
-        if (max != null) {
-          return AnalysisQueueFull(max);
-        }
-      case 'RateLimitedError':
-        return AnalysisRateLimited(error.retryAfter);
-      case 'EmailNotVerifiedError':
-        return const AnalysisEmailNotVerified();
-      case 'AiConsentRequiredError':
-        final version = error.integer('requiredVersion');
-        if (version != null) {
-          return AnalysisAiConsentRequired(version);
-        }
-    }
-    return AnalysisRequestFailed(error.toRejected());
   }
 
   /// One job; null when it does not exist or belongs to someone else. Throws

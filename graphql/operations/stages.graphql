@@ -1,0 +1,174 @@
+# The staged analysis pipeline: base evaluation -> base classification ->
+# deep evaluation -> coaching. The workflow query is what the tracker polls;
+# it carries no artifact, because one stage artifact is hundreds of
+# kilobytes. An artifact is fetched once, by run id, with EngineStageRun.
+
+fragment StageRunFields on EngineStageRun {
+  id
+  chessGameId
+  stage
+  status
+  artifact
+  supersededAt
+  finishedAt
+  failureCode
+  failureMessage
+}
+
+# The run of a stage as the workflow reports it: no artifact, but the
+# progress the worker reports while it is on it.
+fragment WorkflowRunFields on GameAnalysisStageRun {
+  id
+  status
+  hasArtifact
+  progressStage
+  progressDone
+  progressTotal
+  persona
+  language
+  requestedAt
+  startedAt
+  finishedAt
+  failureCode
+  failureMessage
+}
+
+fragment WorkflowFields on GameAnalysisWorkflow {
+  chessGameId
+  nextRunnableStage
+  isComplete
+  stages {
+    stage
+    state
+    runnable
+    blockedBy
+    usesModel
+    run {
+      ...WorkflowRunFields
+    }
+  }
+}
+
+query GameAnalysisWorkflow($gameId: ID!) {
+  gameAnalysisWorkflow(chessGameId: $gameId) {
+    ...WorkflowFields
+  }
+}
+
+query EngineStageRun($id: ID!) {
+  engineStageRun(id: $id) {
+    ...StageRunFields
+  }
+}
+
+mutation RunBaseEvaluation($input: RunBaseEvaluationInput!) {
+  runBaseEvaluation(input: $input) {
+    engineStageRun {
+      ...StageRunFields
+    }
+    errors {
+      __typename
+      # RateLimitedError is not yet a member of this union; BE-22 adds it
+      # to the three engine commands. `_outcomeOf` already maps it.
+      ... on BusinessError {
+        message
+      }
+      ... on InputValidationError {
+        message
+        propertyName
+      }
+      ... on TechnicalError {
+        message
+      }
+    }
+  }
+}
+
+mutation RunBaseClassification($input: RunBaseClassificationInput!) {
+  runBaseClassification(input: $input) {
+    engineStageRun {
+      ...StageRunFields
+    }
+    errors {
+      __typename
+      # RateLimitedError is not yet a member of this union; BE-22 adds it
+      # to the three engine commands. `_outcomeOf` already maps it.
+      ... on BusinessError {
+        message
+      }
+      ... on InputValidationError {
+        message
+        propertyName
+      }
+      ... on TechnicalError {
+        message
+      }
+    }
+  }
+}
+
+mutation RunDeepEvaluation($input: RunDeepEvaluationInput!) {
+  runDeepEvaluation(input: $input) {
+    engineStageRun {
+      ...StageRunFields
+    }
+    errors {
+      __typename
+      # RateLimitedError is not yet a member of this union; BE-22 adds it
+      # to the three engine commands. `_outcomeOf` already maps it.
+      ... on BusinessError {
+        message
+      }
+      ... on InputValidationError {
+        message
+        propertyName
+      }
+      ... on TechnicalError {
+        message
+      }
+    }
+  }
+}
+
+mutation RunCoaching($input: RunCoachingInput!) {
+  runCoaching(input: $input) {
+    engineStageRun {
+      ...StageRunFields
+    }
+    errors {
+      __typename
+      ... on AnalysisLimitReachedError {
+        message
+        window
+        limit
+        used
+        resetAt
+      }
+      ... on AnalysisQueueFullError {
+        message
+        maxQueuedJobs
+      }
+      ... on RateLimitedError {
+        message
+        retryAfterSeconds
+      }
+      ... on EmailNotVerifiedError {
+        message
+      }
+      ... on AiConsentRequiredError {
+        message
+        requiredVersion
+      }
+      ... on BusinessError {
+        message
+      }
+      ... on InputValidationError {
+        message
+        propertyName
+      }
+      ... on TechnicalError {
+        message
+      }
+    }
+  }
+}

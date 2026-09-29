@@ -53,7 +53,12 @@ Future<void> _explain(
   final l10n = context.l10n;
   switch (outcome) {
     case AnalysisAccepted():
+    case AnalysisStageAccepted():
       return;
+    case AnalysisPrerequisiteMissing():
+      // Not reachable from the whole-game request; WP-60 B7 gives the staged
+      // flow its own text ("An earlier step has to run again.").
+      _snack(context, l10n.gameDetailRequestFailed);
     case AnalysisLimitReached():
       await _showSheet<void>(
         context,

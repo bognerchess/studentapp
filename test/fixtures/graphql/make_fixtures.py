@@ -208,3 +208,205 @@ mutation('DeleteMyAccount', 'deleteMyAccount', 'accountDeletion', {
     'unknown_status': {'id': 'deletion-1', 'status': 'ARCHIVED', 'requestedAt': '2026-09-19T10:00:00.000Z', 'completedAt': None}}, {
     'blocked': {'__typename': 'AccountDeletionBlockedError', 'message': 'web_api_errors.account_deletion_blocked', 'reason': 'owns_club'}},
     {'input_invalid': {'__typename': 'InputValidationError', 'message': 'web_api_errors.account_deletion_confirmation_mismatch', 'propertyName': 'Confirmation'}})
+
+# ---- the staged pipeline (WP-60)
+#
+# The workflow query is what the tracker polls; it carries no artifact. The
+# states below are derived the way the backend derives them, so a scenario
+# cannot say something the server could never send: a stage is runnable when
+# every earlier stage is ready and nothing is in flight, and `blockedBy` names
+# the nearest earlier stage that is not ready.
+STAGES = ['BASE_EVALUATION', 'BASE_CLASSIFICATION', 'DEEP_EVALUATION', 'COACHING']
+
+def stage_run(id, status, done=None, total=None, step=None, finished=None, failure=None,
+              persona=None, language=None, requested='2026-09-19T10:00:00.000Z', started=None,
+              has_artifact=None):
+    return {'id': id, 'status': status,
+            'hasArtifact': has_artifact if has_artifact is not None else status == 'DONE',
+            'progressStage': step, 'progressDone': done, 'progressTotal': total,
+            'persona': persona, 'language': language, 'requestedAt': requested,
+            'startedAt': started, 'finishedAt': finished,
+            'failureCode': failure, 'failureMessage': None if failure is None else 'stage failed'}
+
+def workflow(states, runs=None, game='game-1'):
+    """A GameAnalysisWorkflow from one state per stage; everything else follows."""
+    runs = runs or {}
+    stages = []
+    for index, name in enumerate(STAGES):
+        state = states[index]
+        earlier = [STAGES[i] for i in range(index) if states[i] != 'READY']
+        active = any(s in ('QUEUED', 'RUNNING') for s in states)
+        stages.append({
+            'stage': name, 'state': state,
+            'runnable': not earlier and not active and state != 'READY',
+            'blockedBy': earlier[-1] if earlier else None,
+            'usesModel': name == 'COACHING',
+            'run': runs.get(name),
+        })
+    nxt = next((s['stage'] for s in stages if s['runnable']), None)
+    return {'gameAnalysisWorkflow': {
+        'chessGameId': game, 'stages': stages, 'nextRunnableStage': nxt,
+        'isComplete': all(s == 'READY' for s in states)}}
+
+READY_RUNS = {
+    'BASE_EVALUATION': stage_run('run-be', 'DONE', finished='2026-09-19T10:01:00.000Z'),
+    'BASE_CLASSIFICATION': stage_run('run-bc', 'DONE', finished='2026-09-19T10:01:20.000Z'),
+    'DEEP_EVALUATION': stage_run('run-de', 'DONE', finished='2026-09-19T10:03:00.000Z'),
+    'COACHING': stage_run('run-co', 'DONE', finished='2026-09-19T10:04:30.000Z',
+                          persona='house', language='en'),
+}
+
+write('GameAnalysisWorkflow', 'default', workflow(
+    ['RUNNING', 'NOT_RUN', 'NOT_RUN', 'NOT_RUN'],
+    {'BASE_EVALUATION': stage_run('run-be', 'RUNNING', done=8, total=21, step='scan',
+                                  started='2026-09-19T10:00:05.000Z')}))
+write('GameAnalysisWorkflow', 'not_run', workflow(['NOT_RUN'] * 4))
+write('GameAnalysisWorkflow', 'running', workflow(
+    ['READY', 'RUNNING', 'NOT_RUN', 'NOT_RUN'],
+    {'BASE_EVALUATION': READY_RUNS['BASE_EVALUATION'],
+     'BASE_CLASSIFICATION': stage_run('run-bc', 'RUNNING', started='2026-09-19T10:01:05.000Z')}))
+write('GameAnalysisWorkflow', 'engine_ready', workflow(
+    ['READY', 'READY', 'READY', 'NOT_RUN'],
+    {k: v for k, v in READY_RUNS.items() if k != 'COACHING'}))
+write('GameAnalysisWorkflow', 'all_ready', workflow(['READY'] * 4, READY_RUNS))
+write('GameAnalysisWorkflow', 'stage_failed', workflow(
+    ['READY', 'READY', 'FAILED', 'NOT_RUN'],
+    {'BASE_EVALUATION': READY_RUNS['BASE_EVALUATION'],
+     'BASE_CLASSIFICATION': READY_RUNS['BASE_CLASSIFICATION'],
+     'DEEP_EVALUATION': stage_run('run-de', 'FAILED', finished='2026-09-19T10:02:40.000Z',
+                                  failure='stage_input_missing', has_artifact=False)}))
+write('GameAnalysisWorkflow', 'stale', workflow(
+    ['STALE', 'STALE', 'STALE', 'STALE'], READY_RUNS))
+# A stage and a state of the future: both have to read as "unknown" and leave
+# the pipeline alone.
+unknown = workflow(['READY', 'PAUSED', 'NOT_RUN', 'NOT_RUN'],
+                   {'BASE_EVALUATION': READY_RUNS['BASE_EVALUATION']})
+unknown['gameAnalysisWorkflow']['stages'][1]['stage'] = 'SHINY_NEW_STAGE'
+unknown['gameAnalysisWorkflow']['nextRunnableStage'] = 'SHINY_NEW_STAGE'
+write('GameAnalysisWorkflow', 'unknown_stage', unknown)
+# The game is gone or is somebody else's: the field is non-null in the schema,
+# so the server can only answer with a top-level error.
+write('GameAnalysisWorkflow', 'not_found', body={
+    'errors': [{'message': 'The game does not exist.',
+                'path': ['gameAnalysisWorkflow']}]})
+
+# Artifacts, kept small on purpose: one fetch of a real one is hundreds of
+# kilobytes, and these files are read by every fixture test. The nodes are the
+# first plies of the vendored short game, which is where the shapes come from.
+SHORT = json.load(open(os.path.join(root, '..', 'analysis', 'v1', 'short-game.json')))
+
+def scan_positions(count):
+    return [{'fen': SHORT['nodes'][i]['fen_before'],
+             'eval_white': SHORT['nodes'][i]['eval_before'],
+             'best': None, 'terminal': False} for i in range(count)]
+
+def base_artifact(count=3):
+    return {
+        'artifact_version': 1, 'stage': 'base_evaluation', 'student_color': 'black',
+        'white_rating': 1180, 'black_rating': 1100,
+        'scan': {'game': {'moves_san': [n['san'] for n in SHORT['nodes'][:count]],
+                          'moves_uci': [n['uci'] for n in SHORT['nodes'][:count]],
+                          'start_fen': None, 'result': SHORT['game']['result']},
+                 'positions': scan_positions(count), 'book': [True] * count,
+                 'opening_name': 'Caro-Kann Defence', 'engine_calls': count},
+        'nodes': [dict(n, is_critical=False, variations=[], comment_ids=[])
+                  for n in SHORT['nodes'][:count]],
+        'human': {'predictions': {}, 'peer_gap': {}, 'available': False},
+        'engine_calls': count,
+    }
+
+def classification_artifact():
+    return {'artifact_version': 1, 'stage': 'base_classification',
+            'selections': [{'ply': 10, 'kind': 'critical_moment', 'score': 9.7, 'reason': 'mistake'},
+                           {'ply': 16, 'kind': 'critical_moment', 'score': 26.4, 'reason': 'blunder'}],
+            'sharpness': {}}
+
+def deep_artifact(count=3):
+    return {
+        'artifact_version': 1, 'stage': 'deep_evaluation',
+        'context': {'language': 'en', 'student_color': 'black', 'rating_band': '1000-1200',
+                    'result': SHORT['game']['result'], 'ply_count': SHORT['game']['ply_count'],
+                    'opening_name': 'Caro-Kann Defence'},
+        'nodes': SHORT['nodes'][:count],
+        'moments': [{'ply': 10, 'kind': 'critical_moment', 'phase': 'opening',
+                     'moves_before_san': [], 'motifs': [], 'material_balance': 0,
+                     'peer_move_san': None, 'peer_move_prob': None, 'selection_score': 9.7}],
+        'dropped': [], 'accuracy': SHORT['accuracy'],
+        # Flat, not nested: this is the shape StageDocumentAssembler reshapes.
+        'engine': {'name': SHORT['engine']['name'], 'pass1_nodes': 400000,
+                   'pass2_nodes': 3000000, 'pass2_multipv': 3, 'human_model': 'maia3-5m'},
+        'engine_calls': 12,
+    }
+
+def run(id, stage, status='DONE', artifact=None, game='game-1', superseded=None,
+        finished='2026-09-19T10:01:00.000Z', failure=None):
+    return {'engineStageRun': {
+        'id': id, 'chessGameId': game, 'stage': stage, 'status': status, 'artifact': artifact,
+        'supersededAt': superseded, 'finishedAt': finished, 'failureCode': failure,
+        'failureMessage': None if failure is None else 'stage failed'}}
+
+write('EngineStageRun', 'default', run('run-be', 'BASE_EVALUATION', artifact=base_artifact()))
+write('EngineStageRun', 'base_classification',
+      run('run-bc', 'BASE_CLASSIFICATION', artifact=classification_artifact()))
+write('EngineStageRun', 'deep_evaluation',
+      run('run-de', 'DEEP_EVALUATION', artifact=deep_artifact()))
+write('EngineStageRun', 'coaching', run('run-co', 'COACHING', artifact={
+    'artifact_version': 1, 'stage': 'coaching',
+    'document': {'$fixture': 'analysis/v1/short-game.json'},
+    'coach': {'provider': 'azure', 'model': 'gpt-4.1'},
+    'llm': {'calls': 4, 'tokens_in': 8200, 'tokens_out': 1400, 'cost_usd_est': 0.021,
+            'regenerations': 0, 'fallbacks': 0},
+    'engine_calls': 0}))
+write('EngineStageRun', 'superseded',
+      run('run-be-old', 'BASE_EVALUATION', artifact=base_artifact(),
+          superseded='2026-09-19T11:00:00.000Z'))
+write('EngineStageRun', 'running',
+      run('run-de', 'DEEP_EVALUATION', status='RUNNING', finished=None))
+write('EngineStageRun', 'failed',
+      run('run-de', 'DEEP_EVALUATION', status='FAILED', failure='stage_input_missing'))
+write('EngineStageRun', 'unknown_stage', run('run-x', 'SHINY_NEW_STAGE', status='PAUSED'))
+write('EngineStageRun', 'not_found', {'engineStageRun': None})
+
+# The three engine commands. `prerequisite_missing` is the one BusinessError
+# the app reads as an outcome of its own; every other one is a plain failure.
+PREREQUISITE = {'__typename': 'BusinessError',
+                'message': 'web_api_errors.stage_prerequisite_missing'}
+STAGE_ERRORS = {'prerequisite_missing': PREREQUISITE, 'rate_limited': RATE}
+STAGE_GENERIC = {'business_error': {'__typename': 'BusinessError',
+                                    'message': 'api_errors.entity_not_found'},
+                 'input_invalid': {'__typename': 'InputValidationError',
+                                   'message': 'web_api_errors.invalid_input',
+                                   'propertyName': 'ChessGameId'}}
+for op, field, stage in (('RunBaseEvaluation', 'runBaseEvaluation', 'BASE_EVALUATION'),
+                         ('RunBaseClassification', 'runBaseClassification', 'BASE_CLASSIFICATION'),
+                         ('RunDeepEvaluation', 'runDeepEvaluation', 'DEEP_EVALUATION')):
+    mutation(op, field, 'engineStageRun',
+             {'default': run('run-new', stage, status='QUEUED', finished=None)['engineStageRun']},
+             STAGE_ERRORS, STAGE_GENERIC)
+
+# Coaching is the metered stage, so it answers with the whole set the
+# whole-game request used to.
+mutation('RunCoaching', 'runCoaching', 'engineStageRun',
+         {'default': run('run-new', 'COACHING', status='QUEUED', finished=None)['engineStageRun']},
+         {'limit_reached': {'__typename': 'AnalysisLimitReachedError',
+                            'message': 'web_api_errors.analysis_limit_reached',
+                            'window': 'DAY', 'limit': 3, 'used': 3,
+                            'resetAt': '2026-09-19T22:00:00.000Z'},
+          'limit_reached_month': {'__typename': 'AnalysisLimitReachedError',
+                                  'message': 'web_api_errors.analysis_limit_reached',
+                                  'window': 'MONTH', 'limit': 30, 'used': 30,
+                                  'resetAt': '2026-09-30T22:00:00.000Z'},
+          'limit_reached_unknown_window': {'__typename': 'AnalysisLimitReachedError',
+                                           'message': 'web_api_errors.analysis_limit_reached',
+                                           'window': 'WEEK', 'limit': 10, 'used': 10,
+                                           'resetAt': '2026-09-21T00:00:00+02:00'},
+          'queue_full': {'__typename': 'AnalysisQueueFullError',
+                         'message': 'web_api_errors.analysis_queue_full', 'maxQueuedJobs': 2},
+          'rate_limited': RATE,
+          'email_not_verified': {'__typename': 'EmailNotVerifiedError',
+                                 'message': 'web_api_errors.email_not_verified'},
+          'ai_consent_required': {'__typename': 'AiConsentRequiredError',
+                                  'message': 'web_api_errors.ai_consent_required',
+                                  'requiredVersion': 1},
+          'prerequisite_missing': PREREQUISITE},
+         STAGE_GENERIC)
