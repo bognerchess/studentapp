@@ -68,6 +68,16 @@ abstract interface class GamesRepository {
   /// that is not cached is left alone.
   Future<void> applyJob(String owner, JobInfo job, {bool? hasAnalysis});
 
+  /// Flips the "has an analysis" badge of a cached game, without touching
+  /// anything else about it. The staged path has no job to record, so this is
+  /// what the workflow tracker calls when the coach's document arrives. A
+  /// game that is not cached is left alone.
+  Future<void> applyAnalysis(
+    String owner,
+    String gameId, {
+    required bool hasAnalysis,
+  });
+
   /// The database clock.
   DateTime now();
 }

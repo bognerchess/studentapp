@@ -197,3 +197,49 @@ have put the pipeline's shape into the schema.
 `schema.rawDatabase`, migrates, and checks what the row now means — that it
 reads as a coach document and that an engine assembly still cannot write over
 it. The generated `from 1 to 2` case only compares the shape of the schema.
+
+**B5.** The tracker keeps `JobTracker`'s shape — the same gating, the same
+3 s / ×1.5 / 30 s cadence, the same single-flight poll — and changes what one
+tick is: one `gameAnalysisWorkflow` per watched game, then artifacts, then the
+next stage. Its public surface is `workflows`, `events`, `setOwner`,
+`setForeground`, `refreshNow`, `startChain` and `trackCoaching`.
+
+Three decisions worth knowing.
+
+`startChain` does not fire a mutation itself. It writes the `pending_workflows`
+row and calls `refreshNow()`, and the poll that follows starts the right stage.
+That is one extra query before the first one goes out, and in exchange there is
+exactly one place that decides which stage is next — so "Analyse" on a game
+whose base evaluation is already stored starts the classification rather than
+running stage 1 again.
+
+A pipeline that went stale stops with `WorkflowState.failed` and a
+`WorkflowStaleEvent`. `failed` in that column means "the tracker stopped and
+the user has to act", which covers both a stage that failed and moves that
+changed; which of the two it was comes off the workflow, not off the row. The
+chain deliberately does not re-run a stale stage: the server reports it as
+runnable, and firing it would re-analyse behind the user's back.
+
+A ready coaching stage short-circuits the artifact work. The server has the
+whole document in that case, so assembling one from the engine artifacts would
+cost a fetch of hundreds of kilobytes and be replaced in the same tick.
+
+Deviations:
+
+- **Nothing reads `workflowTrackerProvider` yet.** `AnalysisNotices` carries a
+  TODO instead of a second `ref.watch`. Wiring a poller into the app shell
+  before any screen starts a chain would only add timers to every widget test,
+  and there is nothing to resume until B7 and B10 exist. The snackbar policy
+  the plan names (deep evaluation ready, coach ready, failures) goes in with
+  that wiring, where its ARB keys are written anyway.
+- **The library summary is in memory only.** `GameWorkflowSummary` and
+  `trackedWorkflowsProvider` are there, but persisting the summary next to the
+  cached game needs `game_summary_codec` version 2, which is B9. `applyAnalysis`
+  was added to `GamesRepository` now, because the coach document arriving has
+  to flip the badge and there is no job to record on the staged path.
+
+Two bugs the tests found, both worth remembering: `{for (…) ?entry}` where
+`entry` is a `MapEntry?` is a **set** of entries, not a map, and the analyzer is
+happy with it in a `Map<String, dynamic>` position — it only blows up at
+`jsonEncode`. It was in `GameWorkflowSummary.toJson` and in the tracker's run-id
+column; both are written out as loops now, and the round trip is a test.

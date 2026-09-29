@@ -409,19 +409,18 @@ class GameWorkflowSummary {
     return null;
   }
 
-  Map<String, dynamic> toJson() => {
-    'states': {
-      for (final MapEntry(:key, :value) in states.entries) ?_entry(key, value),
-    },
-    'isComplete': isComplete,
-  };
-
-  static MapEntry<String, String>? _entry(
-    AnalysisStage stage,
-    AnalysisStageState state,
-  ) {
-    final wire = stage.wire;
-    return wire == null ? null : MapEntry(wire, state.wire ?? 'UNKNOWN');
+  Map<String, dynamic> toJson() {
+    // Written out rather than built in a collection literal: a stage this
+    // build does not know has no wire name and is left out, and a literal of
+    // `MapEntry` elements is a *set* of entries, which no JSON encoder takes.
+    final wire = <String, String>{};
+    for (final MapEntry(:key, :value) in states.entries) {
+      final name = key.wire;
+      if (name != null) {
+        wire[name] = value.wire ?? 'UNKNOWN';
+      }
+    }
+    return {'states': wire, 'isComplete': isComplete};
   }
 
   @override

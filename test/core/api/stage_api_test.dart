@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Bogner Chess
 // Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:bogner_chess/core/api/stage_api.dart';
@@ -261,6 +262,59 @@ void main() {
     test('a foreign or deleted run is null', () async {
       link.use('EngineStageRun', 'not_found');
       expect(await api().artifact('run-9'), isNull);
+    });
+  });
+
+  group('GameWorkflowSummary', () {
+    test('survives the round trip through the library cache', () async {
+      link.use('GameAnalysisWorkflow', 'engine_ready');
+      final workflow = (await api().workflow('game-1'))!;
+      final summary = GameWorkflowSummary.of(workflow);
+
+      // It is stored as JSON next to the cached game, so this has to be a map
+      // a codec can write — not, say, a set of entries.
+      final json = jsonDecode(jsonEncode(summary.toJson()));
+      expect(json, {
+        'states': {
+          'BASE_EVALUATION': 'READY',
+          'BASE_CLASSIFICATION': 'READY',
+          'DEEP_EVALUATION': 'READY',
+          'COACHING': 'NOT_RUN',
+        },
+        'isComplete': false,
+      });
+      expect(
+        GameWorkflowSummary.fromJson(json! as Map<String, dynamic>),
+        summary,
+      );
+      expect(summary.engineReady, isTrue);
+      expect(summary.coachReady, isFalse);
+      expect(summary.anyActive, isFalse);
+      expect(summary.failedStage, isNull);
+    });
+
+    test('a row an older build wrote reads as nothing known', () {
+      expect(GameWorkflowSummary.fromJson(const {}).states, isEmpty);
+      // A stage or a state of the future: the stage is dropped, the state
+      // reads as unknown.
+      final summary = GameWorkflowSummary.fromJson(const {
+        'states': {'SHINY_NEW_STAGE': 'READY', 'DEEP_EVALUATION': 'PAUSED'},
+        'isComplete': false,
+      });
+      expect(summary.states.keys, [AnalysisStage.deepEvaluation]);
+      expect(
+        summary.stateOf(AnalysisStage.deepEvaluation),
+        AnalysisStageState.unknown,
+      );
+      expect(summary.anyActive, isTrue);
+    });
+
+    test('a failed stage is named, earliest first', () async {
+      link.use('GameAnalysisWorkflow', 'stage_failed');
+      final summary = GameWorkflowSummary.of((await api().workflow('game-1'))!);
+
+      expect(summary.failedStage, AnalysisStage.deepEvaluation);
+      expect(summary.engineReady, isFalse);
     });
   });
 

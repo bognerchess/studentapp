@@ -121,6 +121,27 @@ class CachedGamesRepository implements GamesRepository {
     ], fetchedAt: row.fetchedAt);
   }
 
+  @override
+  Future<void> applyAnalysis(
+    String owner,
+    String gameId, {
+    required bool hasAnalysis,
+  }) async {
+    final row = await _db.gamesCacheDao.get(owner, gameId);
+    final game = row == null ? null : GameSummaryCodec.decode(row.summaryJson);
+    if (game == null || game.hasAnalysis == hasAnalysis) {
+      return;
+    }
+    final updated = gameSummaryWith(
+      game,
+      latestJob: game.latestJob,
+      hasAnalysis: hasAnalysis,
+    );
+    await _db.gamesCacheDao.upsertPage(owner, [
+      _input(updated),
+    ], fetchedAt: row!.fetchedAt);
+  }
+
   CachedGameInput _input(GameSummary game) => CachedGameInput(
     gameId: game.id,
     summaryJson: GameSummaryCodec.encode(game),

@@ -131,6 +131,13 @@ class _AnalysisNoticesState extends ConsumerState<AnalysisNotices> {
 
   @override
   Widget build(BuildContext context) {
+    // TODO(WP-60 B7): also `ref.watch(workflowTrackerProvider)` here, so the
+    // staged chain starts polling at app start and resumes what an app kill
+    // interrupted, and listen to its events for the three snackbars the plan
+    // names (deep evaluation ready, coach ready, a stage that failed). It is
+    // deliberately not wired yet: nothing starts a chain before B7 and B10, so
+    // a second poller in the app shell would only add timers to every widget
+    // test. B12 then removes the job tracker and this widget keeps one.
     _listenTo(ref.watch(jobTrackerProvider));
     return widget.child;
   }
