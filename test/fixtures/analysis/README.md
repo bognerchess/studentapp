@@ -64,3 +64,24 @@ vendored fixture). They are not part of the contract and not pinned.
 | --- | --- |
 | `v1-with-unknowns.json` | Major 1 with `schema_minor: 7`: unknown top-level keys, extra fields inside nodes, evals, variations, comments and lessons, and unknown values for `classification` (ply 3), variation `kind` (`v12-plan`), comment `type` (a comment on ply 2), `theme`, square `role`, arrow `role`, `verification.status` and `engine.human_model`. Must parse as a supported document. |
 | `v2-major.json` | A made-up `schema_version: 2` with a changed node shape (nested evals in another unit, `classification` as an object, variations as UCI strings, comments replaced by an `annotations` map). Must come out as "newer major" with the 21 moves readable. |
+
+## `stages/`: hand-made, the staged pipeline
+
+The backend runs the analysis one stage at a time and hands the app an
+artifact per stage instead of a finished document;
+`lib/core/analysis/stage_document_assembler.dart` puts a document back
+together from them, and these three files are what it is tested against.
+
+Derived from `v1/forty-move-game.json` by `make_fixtures.py` in this
+directory, so every move, FEN, eval and variation in them is copied from the
+contract fixture. Not pinned and not part of any contract — `v1/` holds
+exactly the vendored files. Run the script again after re-vendoring.
+
+| Fixture | What it covers |
+| --- | --- |
+| `base-evaluation.json` | Stage 1: a node per ply with evals and classification, `variations: []` and `is_critical: false` everywhere, plus the `scan` the later stages read. |
+| `base-classification.json` | Stage 2: ten selected plies — the eight the deep pass keeps plus two it drops, so the selection is visibly a superset. |
+| `deep-evaluation.json` | Stage 3: the full nodes with variations and the settled `is_critical`, the accuracy, and the **flat** `engine` block the assembler has to nest. One `peer_line` per critical node (minor 5's new variation kind, which the vendored fixtures happen not to contain). |
+
+The shapes come from chess-ai `main`,
+`src/chess_coaching/game_analysis/stages.py`.

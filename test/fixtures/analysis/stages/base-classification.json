@@ -1,0 +1,67 @@
+{
+  "artifact_version": 1,
+  "stage": "base_classification",
+  "selections": [
+    {
+      "ply": 6,
+      "kind": "critical_moment",
+      "score": 8.9,
+      "reason": "mistake"
+    },
+    {
+      "ply": 10,
+      "kind": "critical_moment",
+      "score": 5.9,
+      "reason": "inaccuracy"
+    },
+    {
+      "ply": 14,
+      "kind": "critical_moment",
+      "score": 0.9,
+      "reason": "best"
+    },
+    {
+      "ply": 18,
+      "kind": "critical_moment",
+      "score": 12.2,
+      "reason": "mistake"
+    },
+    {
+      "ply": 22,
+      "kind": "critical_moment",
+      "score": 9.2,
+      "reason": "mistake"
+    },
+    {
+      "ply": 26,
+      "kind": "critical_moment",
+      "score": 0.0,
+      "reason": "best"
+    },
+    {
+      "ply": 30,
+      "kind": "critical_moment",
+      "score": 26.7,
+      "reason": "blunder"
+    },
+    {
+      "ply": 34,
+      "kind": "positive_moment",
+      "score": 0.0,
+      "reason": "only_move"
+    },
+    {
+      "ply": 36,
+      "kind": "critical_moment",
+      "score": 41.0,
+      "reason": "blunder"
+    },
+    {
+      "ply": 38,
+      "kind": "critical_moment",
+      "score": 5.4,
+      "reason": "inaccuracy"
+    }
+  ],
+  "sharpness": {}
+}

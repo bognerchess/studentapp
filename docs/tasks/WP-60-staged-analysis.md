@@ -147,3 +147,30 @@ carries a copy of `short-game.json`, and `review_providers_test.dart` compares
 the two byte for byte. The copy was regenerated from the new fixture. Its
 comment and lesson ids did not change, so the German texts next to it still
 match.
+
+**B3.** `StageDocumentAssembler` is pure and total: it never throws and never
+touches an artifact. With no usable nodes it returns a document with an empty
+`nodes` list, which the parser then rejects — the caller parses before it
+stores, so there is no second place that decides what "valid" means.
+
+The one real shape difference is `engine`: stage 3 writes it flat
+(`pass1_nodes`, `pass2_nodes`, `pass2_multipv`), the document nests it. A key
+that is not in the artifact is left out rather than guessed.
+
+`is_critical` has three sources and they must not fight: stage 1 sets it false
+everywhere, stage 2's selections stand in until stage 3 lands, and stage 3's
+nodes carry the settled value. So `build` applies `criticalPlies` only when
+there is no deep artifact, and `withCriticalPlies` — the in-place patch for
+"stage 2 finished before stage 3" — is idempotent and also clears a mark that
+a re-run of stage 2 no longer picks.
+
+The stage fixtures are generated from the vendored forty-move game by a
+committed `make_fixtures.py`. Two things in them are deliberate: the stage-2
+selection holds two plies more than stage 3 keeps, so "superset" is visible
+rather than asserted; and one `peer_line` is added per critical node, because
+the vendored fixtures are minor 5 but happen to contain none, and the app has
+to carry that kind through without mistaking it for a recommendation.
+
+The `!` glyph on a positive moment needs a comment, so it stays absent until
+the coach has run. That is a gap the staged flow cannot close on the engine
+stages alone.
