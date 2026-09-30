@@ -25,10 +25,31 @@ sealed class WorkflowEvent {
   final String gameId;
 }
 
+/// A stage command of [gameId] was accepted by the server.
+///
+/// [chained] says who asked: false when the user just did (the screen or the
+/// submit queue that called [WorkflowTracker.startChain] gets the outcome
+/// back and records it under its own name), true when the chain carried on by
+/// itself. That is the whole difference the tracker can tell, and it is what
+/// keeps one started stage from being counted twice.
+final class StageStartedEvent extends WorkflowEvent {
+  const StageStartedEvent(super.gameId, this.stage, {required this.chained});
+  final AnalysisStage stage;
+  final bool chained;
+
+  @override
+  String toString() =>
+      'StageStartedEvent($gameId, ${stage.name}, chained: $chained)';
+}
+
 /// A stage of [gameId] is stored and its result can be shown.
 final class StageReadyEvent extends WorkflowEvent {
-  const StageReadyEvent(super.gameId, this.stage);
+  const StageReadyEvent(super.gameId, this.stage, {this.took});
   final AnalysisStage stage;
+
+  /// How long the run took, from when it was requested to when it finished;
+  /// null when the server did not report both.
+  final Duration? took;
 
   @override
   String toString() => 'StageReadyEvent($gameId, ${stage.name})';
@@ -427,15 +448,21 @@ class WorkflowTracker {
 
     _emitChanges(gameId, workflow);
     final previous = _workflows.value[gameId];
-    _workflows.value = {..._workflows.value, gameId: workflow};
-    await _rememberSummary(owner, gameId, previous, workflow);
-    if (_disposed || owner != _owner) {
+
+    // The documents first, then the pipeline. A screen that learns a stage is
+    // READY goes looking for what that stage produced, so publishing the
+    // state before storing the artifact tells it to look at a cache that is
+    // still empty — and nothing asks a second time until the *next* stage
+    // lands. On a tick where nothing new is ready both calls return at once,
+    // so the progress of a running stage is not held up by this.
+    await _storeArtifacts(owner, gameId, workflow);
+    await _followCoaching(owner, gameId, workflow);
+    if (_disposed || owner != _owner || !_targets.containsKey(gameId)) {
       return;
     }
 
-    await _storeArtifacts(owner, gameId, workflow);
-    await _followCoaching(owner, gameId, workflow);
-
+    _workflows.value = {..._workflows.value, gameId: workflow};
+    await _rememberSummary(owner, gameId, previous, workflow);
     if (_disposed || owner != _owner) {
       return;
     }
@@ -459,7 +486,13 @@ class WorkflowTracker {
       return;
     }
 
-    final started = await _chain(owner, gameId, workflow, target);
+    final started = await _chain(
+      owner,
+      gameId,
+      workflow,
+      target,
+      restarted: restarted,
+    );
     if (_disposed || owner != _owner) {
       return;
     }
@@ -517,7 +550,7 @@ class WorkflowTracker {
       }
       switch (stage.state) {
         case AnalysisStageState.ready:
-          _emit(StageReadyEvent(gameId, stage.stage));
+          _emit(StageReadyEvent(gameId, stage.stage, took: _tookOf(stage.run)));
         case AnalysisStageState.failed:
           _emit(
             StageFailedEvent(
@@ -534,6 +567,17 @@ class WorkflowTracker {
           break;
       }
     }
+  }
+
+  /// From requested to finished, which is what a user waits; null unless the
+  /// server reported both.
+  static Duration? _tookOf(StageRunSummary? run) {
+    final finished = run?.finishedAt;
+    if (run == null || finished == null) {
+      return null;
+    }
+    final took = finished.difference(run.requestedAt);
+    return took.isNegative ? null : took;
   }
 
   AnalysisStage? _staleStageUpTo(
@@ -757,8 +801,9 @@ class WorkflowTracker {
     String owner,
     String gameId,
     AnalysisWorkflow workflow,
-    AnalysisStage target,
-  ) async {
+    AnalysisStage target, {
+    required bool restarted,
+  }) async {
     if (workflow.anyActive || _starting.contains(gameId)) {
       return false;
     }
@@ -787,7 +832,7 @@ class WorkflowTracker {
     switch (outcome) {
       case AnalysisAccepted():
         // The next poll sees it queued; no need to guess a state here.
-        break;
+        _emit(StageStartedEvent(gameId, next, chained: !restarted));
       case AnalysisRateLimited(:final retryAfter):
         // Fair use on the engine commands. Wait what the server asked for,
         // then carry on where we left off.

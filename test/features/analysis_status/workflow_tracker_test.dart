@@ -778,6 +778,31 @@ void main() {
       });
     });
 
+    test('the stage is published only once its document is stored', () {
+      fake((async) {
+        start(async);
+        // What a screen sees when it learns a stage is READY: it goes looking
+        // for what that stage produced, so the cache has to hold it by then.
+        // Publishing first left the review on "nothing available" until the
+        // *next* stage landed.
+        AnalysisSource? sourceWhenSeen;
+        tracker.workflows.addListener(() {
+          if (tracker.workflows.value['g1']?.newestReadyEngineStage != null &&
+              sourceWhenSeen == null) {
+            sourceWhenSeen = settle(
+              async,
+              db.analysisCacheDao.get(alice, 'g1'),
+            )?.source;
+          }
+        });
+
+        server.set('g1', _be, 'READY');
+        tick(async);
+
+        expect(sourceWhenSeen, AnalysisSource.engine);
+      });
+    });
+
     test('one fetch per run id: a second poll fetches nothing', () {
       fake((async) {
         start(async);
