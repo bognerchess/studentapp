@@ -2025,4 +2025,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get libraryStatusEngineReady => 'Engine-Analyse';
+
+  @override
+  String get gameDetailRerunCoach => 'Coach noch einmal fragen';
 }

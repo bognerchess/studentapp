@@ -514,5 +514,6 @@
   "reviewAskCoach": "Coach fragen",
   "reviewStageRetry": "Noch einmal versuchen",
   "reviewSummaryNoCoach": "Der Coach hat noch nichts geschrieben.",
-  "libraryStatusEngineReady": "Engine-Analyse"
+  "libraryStatusEngineReady": "Engine-Analyse",
+  "gameDetailRerunCoach": "Coach noch einmal fragen"
 }

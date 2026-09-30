@@ -808,6 +808,29 @@ void main() {
         workflow: workflowFixture(FixtureStore(), 'all_ready'),
       );
       expect(tester.reviewControl(ReviewIds.stageBanner), findsNothing);
+      expect(
+        tester.reviewControl(ReviewIds.stageRerunCoach),
+        findsNothing,
+        reason: 'a run costs this account a quota',
+      );
+    });
+
+    testWidgets('a finished pipeline without a limit: the coach again', (
+      tester,
+    ) async {
+      final api = FixtureLink({'MyAnalysisUsage': 'unlimited'});
+      await pumpReview(
+        tester,
+        workflow: workflowFixture(api.store, 'all_ready'),
+        api: api,
+      );
+      // The finished pipeline has no news, so the banner is the offer alone.
+      expect(bannerText(tester), 'Run the coach again');
+
+      await tester.tapReview(ReviewIds.stageRerunCoach);
+      final input =
+          api.requestsOf('RunCoaching').single.variables['input'] as Map;
+      expect(input['chessGameId'], kReviewGameId);
     });
 
     testWidgets('a game nothing is watching says nothing', (tester) async {

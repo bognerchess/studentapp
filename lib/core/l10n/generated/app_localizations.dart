@@ -3191,6 +3191,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Engine analysis'**
   String get libraryStatusEngineReady;
+
+  /// Button on a finished analysis that writes the coach document again. Only accounts without a limit see it.
+  ///
+  /// In en, this message translates to:
+  /// **'Run the coach again'**
+  String get gameDetailRerunCoach;
 }
 
 class _AppLocalizationsDelegate

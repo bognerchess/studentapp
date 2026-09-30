@@ -29,6 +29,11 @@ abstract final class ReviewIds {
   static const String stageAskCoach = 'review-stage-ask-coach';
   static const String stageRetry = 'review-stage-retry';
 
+  /// Its action on a finished pipeline: write the coach document again.
+  /// Only shown to accounts whose usage policy is unlimited, because every
+  /// run spends a quota (see `GameDetailIds.rerunCoach`).
+  static const String stageRerunCoach = 'review-stage-rerun-coach';
+
   static const String tabCoach = 'review-tab-coach';
   static const String tabMoves = 'review-tab-moves';
   static const String tabSummary = 'review-tab-summary';

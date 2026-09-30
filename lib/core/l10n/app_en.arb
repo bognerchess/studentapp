@@ -2589,5 +2589,9 @@
   "libraryStatusEngineReady": "Engine analysis",
   "@libraryStatusEngineReady": {
     "description": "Library badge: the engine stages are stored, the coach has not written."
+  },
+  "gameDetailRerunCoach": "Run the coach again",
+  "@gameDetailRerunCoach": {
+    "description": "Button on a finished analysis that writes the coach document again. Only accounts without a limit see it."
   }
 }
