@@ -76,6 +76,72 @@ void main() {
       ((data.values.single as Map)['errors'] as List).single
           as Map<String, dynamic>;
 
+  // ------------------------------------------------------- staged analysis
+
+  Future<Map<String, dynamic>> workflowOf(String gameId) async =>
+      (await data('GameAnalysisWorkflow', {
+            'gameId': gameId,
+          }))['gameAnalysisWorkflow']
+          as Map<String, dynamic>;
+
+  List<Map<String, dynamic>> stagesOf(Map<String, dynamic> workflow) =>
+      (workflow['stages'] as List).cast<Map<String, dynamic>>();
+
+  Map<String, Object?> statesOf(Map<String, dynamic> workflow) => {
+    for (final stage in stagesOf(workflow))
+      stage['stage'] as String: stage['state'],
+  };
+
+  Map<String, dynamic> stageOf(Map<String, dynamic> workflow, String stage) =>
+      stagesOf(workflow).firstWhere((entry) => entry['stage'] == stage);
+
+  /// The payload of one `run*` mutation, errors and all.
+  Future<Map<String, dynamic>> runStage(
+    String operation,
+    String gameId, [
+    Map<String, dynamic> extra = const {},
+  ]) async {
+    final result = await data(operation, {
+      'input': {'chessGameId': gameId, ...extra},
+    });
+    return result.values.single as Map<String, dynamic>;
+  }
+
+  /// The run of an accepted `run*` mutation.
+  Future<Map<String, dynamic>> acceptStage(
+    String operation,
+    String gameId, [
+    Map<String, dynamic> extra = const {},
+  ]) async {
+    final payload = await runStage(operation, gameId, extra);
+    expect(payload['errors'], isNull, reason: jsonEncode(payload));
+    return payload['engineStageRun'] as Map<String, dynamic>;
+  }
+
+  /// Starts [operation] and polls the workflow until [stage] is over.
+  Future<Map<String, dynamic>> finishStage(
+    String operation,
+    String stage,
+    String gameId,
+  ) async {
+    await acceptStage(operation, gameId);
+    for (var i = 0; i < 10; i++) {
+      final workflow = await workflowOf(gameId);
+      final state = statesOf(workflow)[stage];
+      if (state != 'QUEUED' && state != 'RUNNING') {
+        return workflow;
+      }
+    }
+    fail('$stage of $gameId never finished');
+  }
+
+  /// The three free stages of [gameId], up to DEEP_EVALUATION READY.
+  Future<void> engineChain(String gameId) async {
+    await finishStage('RunBaseEvaluation', 'BASE_EVALUATION', gameId);
+    await finishStage('RunBaseClassification', 'BASE_CLASSIFICATION', gameId);
+    await finishStage('RunDeepEvaluation', 'DEEP_EVALUATION', gameId);
+  }
+
   group('HTTP', () {
     test('health, state and unknown routes', () async {
       final base = server.graphqlUri.resolve('/');
@@ -269,7 +335,6 @@ void main() {
       expect(game['playedDate'], '2026-09-18');
       expect(game['result'], 'WHITE_WINS');
       expect(game['hasAnalysis'], isFalse);
-      expect(game['latestAnalysisJob'], isNull);
     });
 
     test('import errors', () async {
@@ -318,213 +383,465 @@ void main() {
     });
   });
 
-  group('analysis', () {
-    Future<Map<String, dynamic>> request(
-      String gameId, {
-      String language = 'en',
-    }) => data('RequestGameAnalysis', {
-      'input': {'chessGameId': gameId, 'language': language},
+  group('staged analysis', () {
+    test(
+      'a game nothing has run: the derived fields of the workflow',
+      () async {
+        final id = await importGame('c-1');
+        final workflow = await workflowOf(id);
+
+        expect(workflow['chessGameId'], id);
+        expect(statesOf(workflow), {
+          'BASE_EVALUATION': 'NOT_RUN',
+          'BASE_CLASSIFICATION': 'NOT_RUN',
+          'DEEP_EVALUATION': 'NOT_RUN',
+          'COACHING': 'NOT_RUN',
+        });
+        expect(stagesOf(workflow).map((stage) => stage['runnable']), [
+          true,
+          false,
+          false,
+          false,
+        ], reason: 'only the first stage can start');
+        expect(stagesOf(workflow).map((stage) => stage['blockedBy']), [
+          null,
+          'BASE_EVALUATION',
+          'BASE_CLASSIFICATION',
+          'DEEP_EVALUATION',
+        ]);
+        expect(stagesOf(workflow).map((stage) => stage['usesModel']), [
+          false,
+          false,
+          false,
+          true,
+        ]);
+        expect(
+          stagesOf(workflow).map((stage) => stage['run']),
+          everyElement(isNull),
+        );
+        expect(workflow['nextRunnableStage'], 'BASE_EVALUATION');
+        expect(workflow['isComplete'], isFalse);
+      },
+    );
+
+    test('a game that does not exist is a top-level error', () async {
+      final response = await post(
+        'GameAnalysisWorkflow',
+        variables: {'gameId': 'nope'},
+      );
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      expect(body['data'], isNull);
+      expect(
+        ((body['errors'] as List).single as Map)['message'],
+        'web_api_errors.entity_not_found',
+      );
     });
 
-    Future<Map<String, dynamic>> accepted(String gameId) async {
-      final payload = (await request(gameId))['requestGameAnalysis'] as Map;
-      expect(payload['errors'], isNull);
-      return payload['analysisJob'] as Map<String, dynamic>;
-    }
+    test('the seeded analysed game already has a finished pipeline', () async {
+      final workflow = await workflowOf('game-1');
 
-    Future<String> statusOf(String jobId) async =>
-        ((await data('AnalysisJob', {'id': jobId}))['analysisJob']
-                as Map)['status']
-            as String;
+      expect(statesOf(workflow).values, everyElement('READY'));
+      expect(workflow['isComplete'], isTrue);
+      expect(workflow['nextRunnableStage'], isNull);
+      expect(
+        stagesOf(workflow).map((stage) => (stage['run'] as Map)['hasArtifact']),
+        everyElement(isTrue),
+      );
+      expect(
+        (stageOf(workflow, 'COACHING')['run'] as Map)['language'],
+        'en',
+        reason: 'only the coaching run carries a language',
+      );
+      expect(
+        (stageOf(workflow, 'DEEP_EVALUATION')['run'] as Map)['language'],
+        isNull,
+      );
+    });
 
-    test('AI consent is required until it is recorded', () async {
+    test('stage 1: QUEUED, RUNNING with progress, READY, then its '
+        'artifact', () async {
       final id = await importGame('c-1');
-      final refused = errorOf(await request(id));
-      expect(refused['__typename'], 'AiConsentRequiredError');
-      expect(refused['requiredVersion'], 1);
-      expect(
-        ((await data('MyAiConsent'))['myAiConsent'] as Map)['required'],
-        isTrue,
-      );
+      final run = await acceptStage('RunBaseEvaluation', id);
+      expect(run['status'], 'QUEUED');
+      expect(run['stage'], 'BASE_EVALUATION');
+      expect(run['artifact'], isNull, reason: 'nothing to show yet');
 
-      final wrong = await data('RecordAiConsent', {
-        'input': {'version': 7},
-      });
-      expect(errorOf(wrong)['propertyName'], 'Version');
+      final states = <Object?>[];
+      final progress = <Object?>[];
+      for (var i = 0; i < 4; i++) {
+        final stage = stageOf(await workflowOf(id), 'BASE_EVALUATION');
+        final polled = stage['run'] as Map;
+        states.add(stage['state']);
+        progress.add(
+          polled['progressDone'] == null
+              ? null
+              : '${polled['progressStage']} '
+                    '${polled['progressDone']}/${polled['progressTotal']}',
+        );
+      }
+      expect(states, ['QUEUED', 'RUNNING', 'RUNNING', 'READY']);
+      expect(progress, [
+        null,
+        'base-evaluation 1/5',
+        'base-evaluation 3/5',
+        null,
+      ]);
 
-      final recorded = await data('RecordAiConsent', {
-        'input': {'version': 1},
-      });
+      final ready =
+          stageOf(await workflowOf(id), 'BASE_EVALUATION')['run'] as Map;
+      expect(ready['hasArtifact'], isTrue);
+      expect(ready['startedAt'], isNotNull);
+      expect(ready['finishedAt'], isNotNull);
+
+      final fetched =
+          (await data('EngineStageRun', {'id': run['id']}))['engineStageRun']
+              as Map;
+      final artifact = fetched['artifact'] as Map;
+      expect(fetched['status'], 'DONE');
+      expect(artifact['stage'], 'base_evaluation');
+      expect(artifact['nodes'] as List, hasLength(80));
       expect(
-        ((recorded['recordAiConsent'] as Map)['aiConsentStatus']
-            as Map)['required'],
+        ((artifact['nodes'] as List).first as Map)['is_critical'],
         isFalse,
+        reason: 'stage 1 marks nothing critical',
       );
-      await accepted(id);
-
-      await scenario({'name': 'consent_required'});
-      final other = await importGame('c-2');
       expect(
-        errorOf(await request(other))['__typename'],
-        'AiConsentRequiredError',
+        (await data('EngineStageRun', {'id': 'nope'}))['engineStageRun'],
+        isNull,
       );
     });
 
-    test('a job goes QUEUED, RUNNING, DONE across polls; then the analysis '
-        'is there', () async {
+    test('a stage before its prerequisite is refused with the key', () async {
+      final id = await importGame('c-1');
+      for (final operation in [
+        'RunBaseClassification',
+        'RunDeepEvaluation',
+        'RunCoaching',
+      ]) {
+        final error =
+            ((await runStage(operation, id))['errors'] as List).single as Map;
+        expect(error['__typename'], 'BusinessError', reason: operation);
+        expect(
+          error['message'],
+          'web_api_errors.stage_prerequisite_missing',
+          reason: operation,
+        );
+      }
+    });
+
+    test('tapping a stage twice returns the run that is under way', () async {
+      final id = await importGame('c-1');
+      final first = await acceptStage('RunBaseEvaluation', id);
+      expect((await acceptStage('RunBaseEvaluation', id))['id'], first['id']);
+
+      // Once it is over the same tap starts a new run, and the old one
+      // becomes history.
+      await finishStage('RunBaseEvaluation', 'BASE_EVALUATION', id);
+      final again = await acceptStage('RunBaseEvaluation', id);
+      expect(again['id'], isNot(first['id']));
+      await finishStage('RunBaseEvaluation', 'BASE_EVALUATION', id);
+      final old =
+          (await data('EngineStageRun', {'id': first['id']}))['engineStageRun']
+              as Map;
+      expect(old['supersededAt'], isNotNull);
+    });
+
+    test('the whole chain, and the coach writes the document that '
+        'GameAnalysis serves', () async {
       await scenario({'name': 'consent_accepted'});
       final id = await importGame('c-1');
-      final job = await accepted(id);
-      expect(job['status'], 'QUEUED');
-      expect(job['queuePosition'], 0);
+      await engineChain(id);
 
+      var workflow = await workflowOf(id);
+      expect(statesOf(workflow), {
+        'BASE_EVALUATION': 'READY',
+        'BASE_CLASSIFICATION': 'READY',
+        'DEEP_EVALUATION': 'READY',
+        'COACHING': 'NOT_RUN',
+      });
+      expect(workflow['nextRunnableStage'], 'COACHING');
+      expect(stageOf(workflow, 'COACHING')['runnable'], isTrue);
+      expect(workflow['isComplete'], isFalse);
       expect(
         (await data('GameAnalysis', {'gameId': id}))['gameAnalysis'],
         isNull,
-      );
-      expect(
-        [for (var i = 0; i < 4; i++) await statusOf(job['id'] as String)],
-        ['QUEUED', 'RUNNING', 'RUNNING', 'DONE'],
+        reason: 'the engine stages write no document',
       );
 
-      final game =
-          (await data('GameById', {'id': id}))['myChessGameById'] as Map;
-      expect(game['hasAnalysis'], isTrue);
-      expect((game['latestAnalysisJob'] as Map)['status'], 'DONE');
+      final deep = stageOf(workflow, 'DEEP_EVALUATION')['run'] as Map;
+      final artifact =
+          ((await data('EngineStageRun', {'id': deep['id']}))['engineStageRun']
+                  as Map)['artifact']
+              as Map;
+      expect(artifact['stage'], 'deep_evaluation');
+      expect(
+        (artifact['engine'] as Map).keys,
+        contains('pass1_nodes'),
+        reason: 'stage 3 writes engine flat; the assembler nests it',
+      );
+      expect(artifact['accuracy'], isA<Map<String, dynamic>>());
+
+      final coaching = await acceptStage('RunCoaching', id, {
+        'language': 'de',
+        'persona': 'calm',
+      });
+      workflow = await finishStage('RunCoaching', 'COACHING', id);
+      expect(workflow['isComplete'], isTrue);
+      expect(workflow['nextRunnableStage'], isNull);
+      final run = stageOf(workflow, 'COACHING')['run'] as Map;
+      expect(run['persona'], 'calm');
+      expect(run['language'], 'de');
+
       final analysis =
           (await data('GameAnalysis', {'gameId': id}))['gameAnalysis'] as Map;
-      expect(analysis['schemaVersion'], 1);
-      expect(((analysis['document'] as Map)['nodes'] as List), hasLength(80));
+      final document = analysis['document'] as Map;
+      expect(document['language'], 'de');
+      expect(document['nodes'] as List, hasLength(80));
+      expect(document['comments'] as List, isNotEmpty);
+      expect(
+        ((await data('GameById', {'id': id}))['myChessGameById']
+            as Map)['hasAnalysis'],
+        isTrue,
+      );
+      expect(
+        ((await data('MyAnalysisUsage'))['myAnalysisUsage']
+            as Map)['dailyUsed'],
+        1,
+        reason: 'only the coaching stage is metered',
+      );
+
+      // The coaching artifact wraps the very document GameAnalysis serves.
+      final wrapped =
+          ((await data('EngineStageRun', {
+                    'id': coaching['id'],
+                  }))['engineStageRun']
+                  as Map)['artifact']
+              as Map;
+      expect(wrapped['stage'], 'coaching');
+      expect(
+        (wrapped['document'] as Map)['analysis_id'],
+        document['analysis_id'],
+      );
+      expect((wrapped['llm'] as Map).keys, contains('tokens_in'));
     });
 
-    test('asking again while a job is under way returns that job', () async {
-      await scenario({'name': 'consent_accepted'});
+    test('the coaching stage keeps every gate: the language, the game, the '
+        'consent, the address and the quota', () async {
       final id = await importGame('c-1');
-      final first = await accepted(id);
-      final second = await accepted(id);
-      expect(second['id'], first['id']);
-      final usage = (await data('MyAnalysisUsage'))['myAnalysisUsage'] as Map;
-      expect(usage['dailyUsed'], 1);
-    });
+      await engineChain(id);
 
-    test('active jobs are polled together and disappear when done', () async {
+      expect(
+        errorOf(
+          await data('RunCoaching', {
+            'input': {'chessGameId': id, 'language': 'fr'},
+          }),
+        )['propertyName'],
+        'Language',
+      );
+      expect(
+        errorOf(
+          await data('RunCoaching', {
+            'input': {'chessGameId': 'nope'},
+          }),
+        )['message'],
+        'web_api_errors.entity_not_found',
+      );
+      var error =
+          ((await runStage('RunCoaching', id))['errors'] as List).single as Map;
+      expect(error['__typename'], 'AiConsentRequiredError');
+      expect(error['requiredVersion'], 1);
+
       await scenario({'name': 'consent_accepted'});
-      final job = await accepted(await importGame('c-1'));
-      Future<List<Object?>> active() async => [
-        for (final j
-            in (await data('MyActiveAnalysisJobs'))['myActiveAnalysisJobs']
-                as List)
-          if ((j as Map)['id'] == job['id']) j['status'],
-      ];
-      expect(await active(), ['QUEUED']);
-      expect(await active(), ['RUNNING']);
-      expect(await active(), ['RUNNING']);
-      expect(await active(), isEmpty);
-      expect(await statusOf(job['id'] as String), 'DONE');
+      await scenario({'name': 'email_not_verified'});
+      error =
+          ((await runStage('RunCoaching', id))['errors'] as List).single as Map;
+      expect(error['__typename'], 'EmailNotVerifiedError');
+
+      await scenario({'name': 'default'});
+      await scenario({'name': 'consent_accepted'});
+      await scenario({'name': 'limit_reached'});
+      error =
+          ((await runStage('RunCoaching', id))['errors'] as List).single as Map;
+      expect(error['__typename'], 'AnalysisLimitReachedError');
+      expect(error['window'], 'DAY');
     });
 
-    test('jobs can go by the clock instead', () async {
+    test('two coaching runs fill the queue', () async {
+      // Without the seed, whose running job would occupy a worker of its own.
+      await server.close();
+      await start(MockOptions(now: () => now, seed: false));
+      await scenario({'name': 'consent_accepted'});
+      final ids = [for (var i = 1; i <= 3; i++) await importGame('c-$i')];
+      for (final id in ids) {
+        await engineChain(id);
+      }
+      await acceptStage('RunCoaching', ids[0]);
+      await acceptStage('RunCoaching', ids[1]);
+      final error =
+          ((await runStage('RunCoaching', ids[2]))['errors'] as List).single
+              as Map;
+      expect(error['__typename'], 'AnalysisQueueFullError');
+      expect(error['maxQueuedJobs'], 2);
+    });
+
+    test('scenario stage_fails: BASE_EVALUATION by default, any stage on '
+        'request', () async {
+      await scenario({'name': 'stage_fails'});
+      final first = await importGame('c-1');
+      var workflow = await finishStage(
+        'RunBaseEvaluation',
+        'BASE_EVALUATION',
+        first,
+      );
+      expect(statesOf(workflow)['BASE_EVALUATION'], 'FAILED');
+      final failed = stageOf(workflow, 'BASE_EVALUATION')['run'] as Map;
+      expect(failed['failureCode'], 'stage_input_missing');
+      expect(failed['failureMessage'], 'stage failed');
+      expect(failed['hasArtifact'], isFalse);
+      expect(
+        stageOf(workflow, 'BASE_EVALUATION')['runnable'],
+        isTrue,
+        reason: 'running it again is the way forward',
+      );
+      expect(workflow['nextRunnableStage'], 'BASE_EVALUATION');
+
+      await scenario({'name': 'stage_fails', 'stage': 'DEEP_EVALUATION'});
+      final second = await importGame('c-2');
+      await finishStage('RunBaseEvaluation', 'BASE_EVALUATION', second);
+      await finishStage('RunBaseClassification', 'BASE_CLASSIFICATION', second);
+      workflow = await finishStage(
+        'RunDeepEvaluation',
+        'DEEP_EVALUATION',
+        second,
+      );
+      expect(statesOf(workflow), {
+        'BASE_EVALUATION': 'READY',
+        'BASE_CLASSIFICATION': 'READY',
+        'DEEP_EVALUATION': 'FAILED',
+        'COACHING': 'NOT_RUN',
+      });
+      expect(stageOf(workflow, 'COACHING')['blockedBy'], 'DEEP_EVALUATION');
+
+      final unknown = await scenario({'name': 'stage_fails', 'stage': 'NOPE'});
+      expect(unknown.statusCode, 400);
+      expect(unknown.body, contains('BASE_EVALUATION'));
+    });
+
+    test('scenario rate_limited refuses all four commands', () async {
+      await scenario({'name': 'consent_accepted'});
+      await scenario({'name': 'rate_limited'});
+      final id = await importGame('c-1');
+      for (final operation in [
+        'RunBaseEvaluation',
+        'RunBaseClassification',
+        'RunDeepEvaluation',
+        'RunCoaching',
+      ]) {
+        final error =
+            ((await runStage(operation, id))['errors'] as List).single as Map;
+        expect(error['__typename'], 'RateLimitedError', reason: operation);
+        expect(error['retryAfterSeconds'], 42, reason: operation);
+      }
+
+      await scenario({'name': 'rate_limited', 'retryAfterSeconds': 7});
+      expect(
+        (((await runStage('RunBaseEvaluation', id))['errors'] as List).single
+            as Map)['retryAfterSeconds'],
+        7,
+      );
+
+      await scenario({'name': 'default'});
+      expect((await runStage('RunBaseEvaluation', id))['errors'], isNull);
+    });
+
+    test('scenario stale: what was ready reads STALE, and stage 1 can run '
+        'again', () async {
+      await scenario({'name': 'stale'});
+      var workflow = await workflowOf('game-1');
+      expect(statesOf(workflow).values, everyElement('STALE'));
+      expect(workflow['isComplete'], isFalse);
+      expect(workflow['nextRunnableStage'], 'BASE_EVALUATION');
+      expect(stagesOf(workflow).map((stage) => stage['runnable']), [
+        true,
+        false,
+        false,
+        false,
+      ]);
+      expect(
+        stageOf(workflow, 'BASE_CLASSIFICATION')['blockedBy'],
+        'BASE_EVALUATION',
+      );
+      expect(
+        (await data('GameAnalysis', {'gameId': 'game-1'}))['gameAnalysis'],
+        isNotNull,
+        reason: 'a stale document is still readable',
+      );
+
+      workflow = await finishStage(
+        'RunBaseEvaluation',
+        'BASE_EVALUATION',
+        'game-1',
+      );
+      expect(statesOf(workflow)['BASE_EVALUATION'], 'READY');
+      expect(statesOf(workflow)['BASE_CLASSIFICATION'], 'STALE');
+      expect(workflow['nextRunnableStage'], 'BASE_CLASSIFICATION');
+    });
+
+    test('a stage run can go by the clock too', () async {
       await server.close();
       await start(
         MockOptions(now: () => now, jobDuration: const Duration(seconds: 30)),
       );
-      await scenario({'name': 'consent_accepted'});
-      final job = await accepted(await importGame('c-1'));
-      final jobId = job['id'] as String;
-      expect(await statusOf(jobId), 'QUEUED');
-      now = now.add(const Duration(seconds: 11));
-      expect(await statusOf(jobId), 'RUNNING');
-      now = now.add(const Duration(seconds: 20));
-      expect(await statusOf(jobId), 'DONE');
-    });
-
-    test(
-      'usage counts up and the fourth analysis of the day is refused',
-      () async {
-        await server.close();
-        await start(
-          MockOptions(now: () => now, queuedPolls: 0, runningPolls: 0),
-        );
-        await scenario({'name': 'consent_accepted'});
-        for (var i = 1; i <= 3; i++) {
-          final job = await accepted(await importGame('c-$i'));
-          expect(await statusOf(job['id'] as String), 'DONE');
-          final usage =
-              (await data('MyAnalysisUsage'))['myAnalysisUsage'] as Map;
-          expect(usage['dailyUsed'], i);
-          expect(usage['dailyLimit'], 3);
-        }
-        final refused = errorOf(await request(await importGame('c-4')));
-        expect(refused['__typename'], 'AnalysisLimitReachedError');
-        expect(refused['window'], 'DAY');
-        expect(refused['limit'], 3);
-        expect(refused['used'], 3);
-        expect(refused['resetAt'], '2026-09-20T00:00:00.000Z');
-      },
-    );
-
-    test('scenario limit_reached refuses right away', () async {
-      await scenario({'name': 'consent_accepted'});
-      await scenario({'name': 'limit_reached'});
-      final refused = errorOf(await request(await importGame('c-1')));
-      expect(refused['__typename'], 'AnalysisLimitReachedError');
-    });
-
-    test('the queue is full after two active jobs', () async {
-      await server.close();
-      await start(MockOptions(now: () => now, seed: false));
-      await scenario({'name': 'consent_accepted'});
-      await accepted(await importGame('c-1'));
-      final second = await accepted(await importGame('c-2'));
-      expect(
-        second['queuePosition'],
-        0,
-        reason: 'same instant: nobody is ahead',
-      );
-      final refused = errorOf(await request(await importGame('c-3')));
-      expect(refused['__typename'], 'AnalysisQueueFullError');
-      expect(refused['maxQueuedJobs'], 2);
-    });
-
-    test('email_not_verified, job_fails, a language the coach does not speak, '
-        'a game that does not exist', () async {
-      await scenario({'name': 'consent_accepted'});
       final id = await importGame('c-1');
-      expect(
-        errorOf(await request(id, language: 'fr'))['propertyName'],
-        'Language',
-      );
-      expect(errorOf(await request('nope'))['__typename'], 'BusinessError');
+      await acceptStage('RunBaseEvaluation', id);
+      expect(statesOf(await workflowOf(id))['BASE_EVALUATION'], 'QUEUED');
+      now = now.add(const Duration(seconds: 11));
+      expect(statesOf(await workflowOf(id))['BASE_EVALUATION'], 'RUNNING');
+      now = now.add(const Duration(seconds: 20));
+      expect(statesOf(await workflowOf(id))['BASE_EVALUATION'], 'READY');
+    });
 
-      await scenario({'name': 'email_not_verified'});
-      expect(errorOf(await request(id))['__typename'], 'EmailNotVerifiedError');
-
-      await scenario({'name': 'default'});
-      await scenario({'name': 'job_fails'});
-      final job = await accepted(id);
-      for (var i = 0; i < 3; i++) {
-        await statusOf(job['id'] as String);
+    test('the coach is metered: the fourth document of the day is '
+        'refused', () async {
+      await server.close();
+      await start(MockOptions(now: () => now, queuedPolls: 0, runningPolls: 0));
+      await scenario({'name': 'consent_accepted'});
+      for (var i = 1; i <= 3; i++) {
+        final id = await importGame('c-$i');
+        await engineChain(id);
+        await finishStage('RunCoaching', 'COACHING', id);
+        final usage = (await data('MyAnalysisUsage'))['myAnalysisUsage'] as Map;
+        expect(usage['dailyUsed'], i);
+        expect(usage['dailyLimit'], 3);
+        expect(usage['queuedJobs'], 0, reason: 'the run is over');
       }
-      final failed =
-          (await data('AnalysisJob', {'id': job['id']}))['analysisJob'] as Map;
-      expect(failed['status'], 'FAILED');
-      expect(failed['failureCode'], 'engine_timeout');
+      final fourth = await importGame('c-4');
+      await engineChain(fourth);
+      final refused =
+          ((await runStage('RunCoaching', fourth))['errors'] as List).single
+              as Map;
+      expect(refused['__typename'], 'AnalysisLimitReachedError');
+      expect(refused['window'], 'DAY');
+      expect(refused['limit'], 3);
+      expect(refused['used'], 3);
+      expect(refused['resetAt'], '2026-09-20T00:00:00.000Z');
       expect(
-        (await data('GameAnalysis', {'gameId': id}))['gameAnalysis'],
-        isNull,
+        statesOf(await workflowOf(fourth))['COACHING'],
+        'NOT_RUN',
+        reason: 'a refused command starts no run',
       );
     });
 
-    test('every analysis has comment ids of its own, and feedback is '
+    test('every coached game has comment ids of its own, and feedback is '
         'remembered per comment', () async {
       await server.close();
       await start(MockOptions(now: () => now, queuedPolls: 0, runningPolls: 0));
       await scenario({'name': 'consent_accepted'});
 
-      Future<Map<String, dynamic>> analysed(String clientGameId) async {
+      Future<Map<String, dynamic>> coached(String clientGameId) async {
         final id = await importGame(clientGameId);
-        final job = await accepted(id);
-        await statusOf(job['id'] as String);
+        await engineChain(id);
+        await finishStage('RunCoaching', 'COACHING', id);
         return (await data('GameAnalysis', {'gameId': id}))['gameAnalysis']
             as Map<String, dynamic>;
       }
@@ -534,8 +851,8 @@ void main() {
           (c as Map)['id'] as String,
       };
 
-      final first = await analysed('c-1');
-      final second = await analysed('c-2');
+      final first = await coached('c-1');
+      final second = await coached('c-2');
       final seeded =
           (await data('GameAnalysis', {'gameId': 'game-1'}))['gameAnalysis']
               as Map<String, dynamic>;
@@ -590,6 +907,40 @@ void main() {
         'input': {'commentId': 'nope', 'rating': 'UP'},
       });
       expect(errorOf(unknown)['message'], 'web_api_errors.comment_not_found');
+    });
+
+    test('GET /__state lists the workflows, and reset forgets them', () async {
+      final id = await importGame('c-1');
+      await finishStage('RunBaseEvaluation', 'BASE_EVALUATION', id);
+
+      final base = server.graphqlUri.resolve('/');
+      var state =
+          jsonDecode((await http.get(base.resolve('__state'))).body) as Map;
+      expect(state['workflows'], {
+        'game-1': {
+          'BASE_EVALUATION': 'READY',
+          'BASE_CLASSIFICATION': 'READY',
+          'DEEP_EVALUATION': 'READY',
+          'COACHING': 'READY',
+        },
+        id: {
+          'BASE_EVALUATION': 'READY',
+          'BASE_CLASSIFICATION': 'NOT_RUN',
+          'DEEP_EVALUATION': 'NOT_RUN',
+          'COACHING': 'NOT_RUN',
+        },
+      });
+      expect((state['flags'] as Map)['stage_fails'], isNull);
+      expect((state['flags'] as Map)['rate_limited'], isFalse);
+
+      state = jsonDecode((await scenario({'name': 'reset'})).body) as Map;
+      expect((state['workflows'] as Map).keys, ['game-1']);
+
+      await data('DeleteChessGame', {
+        'input': {'chessGameId': 'game-1'},
+      });
+      state = jsonDecode((await http.get(base.resolve('__state'))).body) as Map;
+      expect(state['workflows'], isEmpty);
     });
   });
 
@@ -670,6 +1021,32 @@ void main() {
         );
       },
     );
+
+    test('the AI consent is recorded once and is then no longer '
+        'required', () async {
+      expect(
+        ((await data('MyAiConsent'))['myAiConsent'] as Map)['required'],
+        isTrue,
+      );
+      final wrong = await data('RecordAiConsent', {
+        'input': {'version': 7},
+      });
+      expect(errorOf(wrong)['propertyName'], 'Version');
+
+      final recorded = await data('RecordAiConsent', {
+        'input': {'version': 1},
+      });
+      expect(
+        ((recorded['recordAiConsent'] as Map)['aiConsentStatus']
+            as Map)['required'],
+        isFalse,
+      );
+      await scenario({'name': 'consent_required'});
+      expect(
+        ((await data('MyAiConsent'))['myAiConsent'] as Map)['required'],
+        isTrue,
+      );
+    });
 
     test('devices', () async {
       final registered = await data('RegisterMobileDevice', {

@@ -21,8 +21,7 @@ export 'package:bogner_chess/core/api/games_api.dart'
         GameDetail,
         GameSummary,
         GamesPage,
-        JobInfo,
-        JobStatus;
+        GameWorkflowSummary;
 
 /// The user's games: the server's list with an offline copy in front of it.
 ///
@@ -57,16 +56,31 @@ abstract interface class GamesRepository {
   Future<GameDetail?> fetchDetail(String owner, String gameId);
 
   /// Deletes the game on the server and, when that worked, its cached copy,
-  /// its cached analysis and its jobs.
+  /// its cached analysis and the pipeline the tracker was watching.
   Future<DeleteGameOutcome> delete(String owner, String gameId);
 
   /// Stores a game the app just learned about, e.g. the answer of an upload,
   /// so that it is in the library before the next refresh.
   Future<void> put(String owner, GameSummary game);
 
-  /// Records what the job tracker learned about a game's newest job. A game
+  /// Records where the staged pipeline of [gameId] stands, so that the
+  /// library badge and the game screen show it again after a restart. A game
   /// that is not cached is left alone.
-  Future<void> applyJob(String owner, JobInfo job, {bool? hasAnalysis});
+  Future<void> applyWorkflow(
+    String owner,
+    String gameId,
+    GameWorkflowSummary workflow, {
+    bool? hasAnalysis,
+  });
+
+  /// Flips the "has an analysis" badge of a cached game, without touching
+  /// anything else about it: what the workflow tracker calls when the coach's
+  /// document arrives. A game that is not cached is left alone.
+  Future<void> applyAnalysis(
+    String owner,
+    String gameId, {
+    required bool hasAnalysis,
+  });
 
   /// The database clock.
   DateTime now();

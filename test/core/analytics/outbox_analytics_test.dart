@@ -5,9 +5,12 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:bogner_chess/core/analytics/analysis_analytics.dart';
 import 'package:bogner_chess/core/analytics/analytics.dart';
 import 'package:bogner_chess/core/analytics/outbox_analytics.dart';
+import 'package:bogner_chess/core/analytics/props_sanitizer.dart';
 import 'package:bogner_chess/core/analytics/session_tracker.dart';
+import 'package:bogner_chess/core/api/models/stage_models.dart';
 import 'package:bogner_chess/core/log.dart';
 import 'package:bogner_chess/core/storage/app_database.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -147,6 +150,90 @@ void main() {
     for (final name in AnalyticsEvents.all) {
       expect(name, matches(RegExp(r'^[a-z][a-z_]+$')));
     }
-    expect(AnalyticsEvents.all, hasLength(15));
+    expect(AnalyticsEvents.all, hasLength(19));
   });
+
+  group('the staged pipeline', () {
+    late _Recorder analytics;
+
+    setUp(() => analytics = _Recorder());
+
+    // A record that holds a map is only equal to itself, so the name and the
+    // properties of an event are compared apart.
+    Iterable<String> names() => analytics.events.map((e) => e.$1);
+    Iterable<Map<String, Object?>> props() => analytics.events.map((e) => e.$2);
+
+    test('an accepted base evaluation is a stage and a request', () {
+      analytics.stageStarted(
+        AnalysisStage.baseEvaluation,
+        source: 'game_detail',
+      );
+
+      expect(names(), ['analysis_stage_started', 'analysis_requested']);
+      expect(props(), [
+        {'stage': 'base_evaluation', 'source': 'game_detail'},
+        {'source': 'game_detail'},
+      ]);
+    });
+
+    test('every later stage is only a stage', () {
+      analytics
+        ..stageStarted(AnalysisStage.deepEvaluation, source: 'chain')
+        ..stageStarted(AnalysisStage.coaching, source: 'game_detail_coach');
+
+      expect(names(), ['analysis_stage_started', 'analysis_stage_started']);
+      expect(props().map((p) => p['stage']), ['deep_evaluation', 'coaching']);
+    });
+
+    test('ready carries the seconds it took, failed its code', () {
+      analytics
+        ..stageReady(
+          AnalysisStage.deepEvaluation,
+          took: const Duration(minutes: 2, seconds: 5),
+        )
+        ..stageReady(AnalysisStage.baseEvaluation)
+        ..stageFailed(AnalysisStage.coaching, code: 'stage_input_missing')
+        ..coachRequested('de');
+
+      expect(names(), [
+        'analysis_stage_ready',
+        'analysis_stage_ready',
+        'analysis_stage_failed',
+        'coach_requested',
+      ]);
+      expect(props(), [
+        {'stage': 'deep_evaluation', 'duration_s': 125},
+        {'stage': 'base_evaluation'},
+        {'stage': 'coaching', 'code': 'stage_input_missing'},
+        {'language': 'de'},
+      ]);
+    });
+
+    test('a stage this build does not know carries no name', () {
+      analytics.stageStarted(AnalysisStage.unknown, source: 'chain');
+
+      expect(props().single, {'source': 'chain'});
+    });
+
+    test('every property survives the sanitiser', () {
+      analytics
+        ..stageStarted(AnalysisStage.baseClassification, source: 'submit_queue')
+        ..stageReady(AnalysisStage.coaching, took: const Duration(seconds: 3))
+        ..stageFailed(AnalysisStage.deepEvaluation, code: 'too_many_attempts');
+
+      for (final event in props()) {
+        expect(sanitizeEventProps(event), event);
+      }
+    });
+  });
+}
+
+/// The events a caller fired, in order. The pipeline's helpers are about which
+/// event goes out with which properties, not about the outbox.
+class _Recorder implements Analytics {
+  final List<(String, Map<String, Object?>)> events = [];
+
+  @override
+  void track(String name, [Map<String, Object?> props = const {}]) =>
+      events.add((name, props));
 }

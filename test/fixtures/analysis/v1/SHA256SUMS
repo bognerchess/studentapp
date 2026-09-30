@@ -1,4 +1,5 @@
-e38d9ff973602ea78b344e323dd2887ad409f20e24c358bedbb5a550ede6813b  game-analysis.v1.schema.json
-0a83d01b3e4b7f5782d7dcc13657d2c000cd9e75acf85a9692f15f4bbc44a2b6  fixtures/game-analysis.v1/fallback-case.json
-b591aa8594145d72a580f6c3ecca0689fc6c9cf1efe854c9d08c3f1c0fd5fe4a  fixtures/game-analysis.v1/forty-move-game.json
-c0baec3052ff59404f0178c57f3329a08bf050d673657967c60d91deb6b18107  fixtures/game-analysis.v1/short-game.json
+bf9ca7354ca71796acd6bfae0aef430c7f712fc8bf29bcd106c2277f24301842  game-analysis.v1.schema.json
+9dbf2a0b77ededb6643d95640b751764aa262cc59621478ce64af8340302d947  job-api.v1.json
+965ad0ea153a7c90ffdbff685cfc0435c30b5000f2945358e9255a66f61c1ad9  fixtures/game-analysis.v1/fallback-case.json
+cb931a2108cd9e68c7a76e2820ab153917fd94bc4b76f0390b3ba896e3821332  fixtures/game-analysis.v1/forty-move-game.json
+23e6829a2ff2e6e2b93c9eb6aed0b29888910c498f8af1b5c3254e1359d4638a  fixtures/game-analysis.v1/short-game.json

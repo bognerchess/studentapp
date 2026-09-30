@@ -57,12 +57,28 @@ class ReviewController extends Notifier<ReviewState> {
 
   int get plyCount => document?.plyCount ?? partial?.moves.length ?? 0;
 
+  /// An engine assembly the coach has not written on: the coach tab would be
+  /// one engine fact per move and no comment anywhere.
+  bool get _opensOnMoves =>
+      _data.source == AnalysisSource.engine &&
+      (document?.comments.isEmpty ?? true);
+
+  /// Whether the document has any coach text at all. The coach tab turns its
+  /// last button into "Ask the coach" when it has not.
+  bool get hasCoachText => document?.comments.isNotEmpty ?? false;
+
   @override
   ReviewState build() {
     _data = ref.watch(reviewDataProvider(gameId)).requireValue;
     _ratingSeq.clear();
     return ReviewState(
-      tab: document == null ? ReviewTab.moves : ReviewTab.coach,
+      // The coach is the star, so the coach tab opens — unless there is no
+      // coach yet. An engine assembly without a single comment has nothing to
+      // show there, and the move list with the eval graph is what the three
+      // engine stages actually produced.
+      tab: document == null || _opensOnMoves
+          ? ReviewTab.moves
+          : ReviewTab.coach,
       feedback: {
         for (final MapEntry(:key, :value) in _data.myFeedback.entries)
           key: ?value,

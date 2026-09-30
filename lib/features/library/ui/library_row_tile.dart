@@ -189,6 +189,11 @@ class LibraryStatusBadge extends StatelessWidget {
         l10n.libraryStatusAnalysing,
         scheme.primary,
       ),
+      LibraryStatus.engineReady => (
+        Icons.insights_outlined,
+        l10n.libraryStatusEngineReady,
+        scheme.primary,
+      ),
       LibraryStatus.analysisReady => (
         Icons.check_circle_outline,
         l10n.libraryStatusReady,

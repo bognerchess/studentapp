@@ -4,12 +4,14 @@
 
 import 'package:bogner_chess/core/analysis/analysis_parser.dart';
 import 'package:bogner_chess/core/analysis/analysis_view.dart';
+import 'package:bogner_chess/core/chess/san_localizer.dart';
 import 'package:bogner_chess/core/l10n/l10n.dart';
 import 'package:bogner_chess/core/ui/theme.dart';
 import 'package:dartchess/dartchess.dart' show Side;
 import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../domain/review_repository.dart' show AnalysisSource;
 import 'review_colors.dart';
 import 'review_ids.dart';
 import 'review_l10n.dart';
@@ -20,10 +22,15 @@ class SummaryTab extends StatelessWidget {
   const SummaryTab({
     super.key,
     required this.document,
+    required this.source,
     required this.onEvidence,
   });
 
   final AnalysisDocument document;
+
+  /// An engine assembly has no lessons yet, which is a different thing from a
+  /// coach who found nothing to say.
+  final AnalysisSource source;
 
   /// A tap on an evidence chip, with its ply.
   final ValueChanged<int> onEvidence;
@@ -54,7 +61,9 @@ class SummaryTab extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           if (lessons.isEmpty)
             Text(
-              l10n.reviewLessonsEmpty,
+              source == AnalysisSource.engine
+                  ? l10n.reviewSummaryNoCoach
+                  : l10n.reviewLessonsEmpty,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: scheme.onSurfaceVariant,
               ),
@@ -152,7 +161,7 @@ class _LessonCard extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.only(top: 3),
                       child: Text(
-                        lesson.title,
+                        context.displaySanInText(lesson.title),
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w700,
                           fontSize: 15,
@@ -162,7 +171,7 @@ class _LessonCard extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      lesson.text,
+                      context.displaySanInText(lesson.text),
                       style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
                     ),
                     if (themeLabel != null || evidence.isNotEmpty) ...[
@@ -177,7 +186,9 @@ class _LessonCard extends StatelessWidget {
                                 number,
                                 node.ply,
                               ),
-                              label: l10n.reviewLessonEvidence(node.moveLabel),
+                              label: l10n.reviewLessonEvidence(
+                                context.displaySanInText(node.moveLabel),
+                              ),
                               onTap: () => onEvidence(node.ply),
                               child: ActionChip(
                                 visualDensity: VisualDensity.compact,
@@ -188,7 +199,9 @@ class _LessonCard extends StatelessWidget {
                                   color: scheme.primary,
                                 ),
                                 label: Text(
-                                  l10n.reviewLessonEvidence(node.moveLabel),
+                                  l10n.reviewLessonEvidence(
+                                    context.displaySanInText(node.moveLabel),
+                                  ),
                                 ),
                               ),
                             ),

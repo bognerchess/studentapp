@@ -2,10 +2,9 @@
 // Copyright (C) 2026 Bogner Chess
 // Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
 
-import 'package:bogner_chess/core/api/analysis_api.dart';
 import 'package:bogner_chess/core/storage/app_database.dart';
 import 'package:bogner_chess/core/storage/storage_providers.dart';
-import 'package:bogner_chess/features/analysis_status/domain/job_tracker_providers.dart';
+import 'package:bogner_chess/features/analysis_status/domain/workflow_tracker_providers.dart';
 import 'package:bogner_chess/router.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
@@ -14,17 +13,61 @@ import 'package:material_ui/material_ui.dart';
 import '../../helpers/fixture_link.dart';
 import '../../helpers/pump_app.dart';
 
-/// A job that has just finished, for [JobTracker.track], which takes the
-/// short way to the same event a poll produces.
-JobInfo finished(String gameId, {bool ok = true, String? failureCode}) =>
-    JobInfo(
-      id: 'job-finished-$gameId',
-      gameId: gameId,
-      status: ok ? JobStatus.done : JobStatus.failed,
-      requestedAt: DateTime.utc(2026, 9, 19, 10),
-      finishedAt: DateTime.utc(2026, 9, 19, 10, 3),
-      failureCode: failureCode,
-    );
+/// The state of every stage of every watched game, which the scripted
+/// `GameAnalysisWorkflow` answers from. A test moves one stage on and polls
+/// again; the tracker turns the change into the event this widget shows.
+final Map<String, Map<AnalysisStage, String>> _states = {};
+
+void _script(String gameId, Map<AnalysisStage, String> states) =>
+    _states[gameId] = {...states};
+
+Map<String, dynamic> _workflowOf(String gameId) {
+  final states = _states[gameId] ?? const {};
+  final ready = [
+    for (final stage in AnalysisStage.pipeline) states[stage] == 'READY',
+  ];
+  return {
+    'chessGameId': gameId,
+    'stages': [
+      for (final (index, stage) in AnalysisStage.pipeline.indexed)
+        {
+          'stage': stage.wire,
+          'state': states[stage] ?? 'NOT_RUN',
+          // Nothing in these tests is runnable: the point is what the tracker
+          // *says*, and a chain that fires mutations would need a server.
+          'runnable': false,
+          'blockedBy': index == 0 || ready[index - 1]
+              ? null
+              : AnalysisStage.pipeline[index - 1].wire,
+          'usesModel': stage.usesModel,
+          'run': states[stage] == null
+              ? null
+              : {
+                  'id': 'run-${stage.wire}-$gameId',
+                  'status': switch (states[stage]) {
+                    'QUEUED' => 'QUEUED',
+                    'RUNNING' => 'RUNNING',
+                    'FAILED' => 'FAILED',
+                    _ => 'DONE',
+                  },
+                  'hasArtifact': states[stage] == 'READY',
+                  'progressStage': null,
+                  'progressDone': null,
+                  'progressTotal': null,
+                  'persona': null,
+                  'language': stage.usesModel ? 'en' : null,
+                  'requestedAt': '2026-09-19T10:00:00.000Z',
+                  'startedAt': null,
+                  'finishedAt': null,
+                  'failureCode': states[stage] == 'FAILED' ? 'timeout' : null,
+                  'failureMessage': null,
+                },
+        },
+    ],
+    'nextRunnableStage': null,
+    'isComplete': ready.every((value) => value),
+  };
+}
 
 void main() {
   late AppDatabase db;
@@ -32,8 +75,22 @@ void main() {
 
   setUp(() {
     db = openWidgetTestDatabase();
-    // Nothing is running: the tracker only reports what this test hands it.
-    api = FixtureLink({'MyActiveAnalysisJobs': 'empty'});
+    _states.clear();
+    api = FixtureLink()
+      ..respond('GameAnalysisWorkflow', (variables) {
+        final gameId = variables['gameId'] as String;
+        return {
+          'data': {'gameAnalysisWorkflow': _workflowOf(gameId)},
+        };
+      })
+      // The artifacts are not what this widget is about, and one of them is a
+      // hundred kilobytes.
+      ..respond(
+        'EngineStageRun',
+        (_) => {
+          'data': {'engineStageRun': null},
+        },
+      );
   });
   tearDown(() => db.close());
 
@@ -42,16 +99,47 @@ void main() {
     ...api.overrides,
   ];
 
-  Future<void> report(WidgetTester tester, JobInfo job) async {
-    await containerOf(tester).read(jobTrackerProvider).track(job);
+  /// Watches [gameId] up to [target] and takes the first poll, which the
+  /// tracker compares every later one against.
+  Future<void> watch(
+    WidgetTester tester,
+    String gameId, {
+    AnalysisStage target = AnalysisStage.deepEvaluation,
+  }) async {
+    await containerOf(tester)
+        .read(workflowTrackerProvider)
+        .startChain(gameId, target: target);
+    await tester.pumpAndSettle();
+  }
+
+  /// Moves [gameId] on and polls again.
+  Future<void> report(
+    WidgetTester tester,
+    String gameId,
+    Map<AnalysisStage, String> states,
+  ) async {
+    _script(gameId, states);
+    await containerOf(tester).read(workflowTrackerProvider).refreshNow();
     await tester.pumpAndSettle();
   }
 
   testWidgets('a finished analysis is announced with the opponent', (
     tester,
   ) async {
-    await pumpApp(tester, jobPolling: true, overrides: overrides());
-    await report(tester, finished('game-1'));
+    _script('game-1', {
+      AnalysisStage.baseEvaluation: 'READY',
+      AnalysisStage.baseClassification: 'READY',
+      AnalysisStage.deepEvaluation: 'READY',
+      AnalysisStage.coaching: 'RUNNING',
+    });
+    await pumpApp(tester, polling: true, overrides: overrides());
+    await watch(tester, 'game-1', target: AnalysisStage.coaching);
+    await report(tester, 'game-1', {
+      AnalysisStage.baseEvaluation: 'READY',
+      AnalysisStage.baseClassification: 'READY',
+      AnalysisStage.deepEvaluation: 'READY',
+      AnalysisStage.coaching: 'READY',
+    });
 
     expect(
       find.text('Your game against Jonas Keller has been analysed.'),
@@ -60,9 +148,57 @@ void main() {
     expect(find.text('Open'), findsOneWidget);
   });
 
+  testWidgets('the engine result is announced before the coach has run', (
+    tester,
+  ) async {
+    _script('game-1', {
+      AnalysisStage.baseEvaluation: 'READY',
+      AnalysisStage.baseClassification: 'READY',
+      AnalysisStage.deepEvaluation: 'RUNNING',
+    });
+    await pumpApp(tester, polling: true, overrides: overrides());
+    await watch(tester, 'game-1');
+    await report(tester, 'game-1', {
+      AnalysisStage.baseEvaluation: 'READY',
+      AnalysisStage.baseClassification: 'READY',
+      AnalysisStage.deepEvaluation: 'READY',
+    });
+
+    expect(
+      find.text(
+        'Your game against Jonas Keller has been analysed by '
+        'the engine.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Open'), findsOneWidget);
+  });
+
+  testWidgets('the first two stages say nothing', (tester) async {
+    _script('game-1', {AnalysisStage.baseEvaluation: 'RUNNING'});
+    await pumpApp(tester, polling: true, overrides: overrides());
+    await watch(tester, 'game-1');
+    await report(tester, 'game-1', {
+      AnalysisStage.baseEvaluation: 'READY',
+      AnalysisStage.baseClassification: 'RUNNING',
+    });
+
+    expect(find.byType(SnackBar), findsNothing);
+  });
+
   testWidgets('the notice goes away by itself', (tester) async {
-    await pumpApp(tester, jobPolling: true, overrides: overrides());
-    await report(tester, finished('game-1'));
+    _script('game-1', {
+      AnalysisStage.baseEvaluation: 'READY',
+      AnalysisStage.baseClassification: 'READY',
+      AnalysisStage.deepEvaluation: 'RUNNING',
+    });
+    await pumpApp(tester, polling: true, overrides: overrides());
+    await watch(tester, 'game-1');
+    await report(tester, 'game-1', {
+      AnalysisStage.baseEvaluation: 'READY',
+      AnalysisStage.baseClassification: 'READY',
+      AnalysisStage.deepEvaluation: 'READY',
+    });
     expect(find.byType(SnackBar), findsOneWidget);
 
     // Long enough for the eight seconds the notice asks for, and then some:
@@ -72,12 +208,38 @@ void main() {
     expect(find.byType(SnackBar), findsNothing);
   });
 
-  testWidgets('a failed analysis says the limit is untouched', (tester) async {
-    await pumpApp(tester, jobPolling: true, overrides: overrides());
-    await report(tester, finished('game-1', ok: false, failureCode: 'oom'));
+  testWidgets('a failed step is announced with a way to it', (tester) async {
+    _script('game-1', {
+      AnalysisStage.baseEvaluation: 'READY',
+      AnalysisStage.baseClassification: 'RUNNING',
+    });
+    await pumpApp(tester, polling: true, overrides: overrides());
+    await watch(tester, 'game-1');
+    await report(tester, 'game-1', {
+      AnalysisStage.baseEvaluation: 'READY',
+      AnalysisStage.baseClassification: 'FAILED',
+    });
+
+    expect(find.text('A step of the analysis failed.'), findsOneWidget);
+    expect(find.text('View'), findsOneWidget);
+  });
+
+  testWidgets('moves that changed stop the pipeline and say so', (
+    tester,
+  ) async {
+    _script('game-1', {
+      AnalysisStage.baseEvaluation: 'READY',
+      AnalysisStage.baseClassification: 'RUNNING',
+    });
+    await pumpApp(tester, polling: true, overrides: overrides());
+    await watch(tester, 'game-1');
+    await report(tester, 'game-1', {
+      AnalysisStage.baseEvaluation: 'STALE',
+      AnalysisStage.baseClassification: 'STALE',
+    });
 
     expect(
-      find.text("An analysis failed. It doesn't count towards your limit."),
+      find.text('Your moves changed, so the analysis stopped.'),
       findsOneWidget,
     );
     expect(find.text('View'), findsOneWidget);
@@ -86,7 +248,22 @@ void main() {
   testWidgets('nothing is said on the screen of that very game', (
     tester,
   ) async {
-    await pumpApp(tester, jobPolling: true, overrides: overrides());
+    // The engine is done on the game we open and the coach is waiting, so
+    // nothing on that screen is animating: `pumpAndSettle` would never return
+    // on a running stage, because its progress bar is indeterminate.
+    _script('game-1', {
+      AnalysisStage.baseEvaluation: 'READY',
+      AnalysisStage.baseClassification: 'READY',
+      AnalysisStage.deepEvaluation: 'READY',
+    });
+    _script('game-3', {
+      AnalysisStage.baseEvaluation: 'READY',
+      AnalysisStage.baseClassification: 'READY',
+      AnalysisStage.deepEvaluation: 'RUNNING',
+    });
+    await pumpApp(tester, polling: true, overrides: overrides());
+    await watch(tester, 'game-1', target: AnalysisStage.coaching);
+    await watch(tester, 'game-3');
     await tester.tap(find.text('Fake User – Jonas Keller'));
     await tester.pumpAndSettle();
     expect(
@@ -96,17 +273,43 @@ void main() {
 
     // That screen turns into the ready card by itself; a snack bar over it
     // would only cover the button it just grew.
-    await report(tester, finished('game-1'));
+    await report(tester, 'game-1', {
+      AnalysisStage.baseEvaluation: 'READY',
+      AnalysisStage.baseClassification: 'READY',
+      AnalysisStage.deepEvaluation: 'READY',
+      AnalysisStage.coaching: 'READY',
+    });
     expect(find.byType(SnackBar), findsNothing);
 
     // Another game's analysis is still worth saying.
-    await report(tester, finished('game-3'));
+    await report(tester, 'game-3', {
+      AnalysisStage.baseEvaluation: 'READY',
+      AnalysisStage.baseClassification: 'READY',
+      AnalysisStage.deepEvaluation: 'READY',
+    });
     expect(find.byType(SnackBar), findsOneWidget);
   });
 
   testWidgets('German', (tester) async {
-    await pumpApp(tester, locale: const Locale('de'), overrides: overrides());
-    await report(tester, finished('game-1'));
+    _script('game-1', {
+      AnalysisStage.baseEvaluation: 'READY',
+      AnalysisStage.baseClassification: 'READY',
+      AnalysisStage.deepEvaluation: 'READY',
+      AnalysisStage.coaching: 'RUNNING',
+    });
+    await pumpApp(
+      tester,
+      locale: const Locale('de'),
+      polling: true,
+      overrides: overrides(),
+    );
+    await watch(tester, 'game-1', target: AnalysisStage.coaching);
+    await report(tester, 'game-1', {
+      AnalysisStage.baseEvaluation: 'READY',
+      AnalysisStage.baseClassification: 'READY',
+      AnalysisStage.deepEvaluation: 'READY',
+      AnalysisStage.coaching: 'READY',
+    });
 
     expect(
       find.text('Deine Partie gegen Jonas Keller ist analysiert.'),

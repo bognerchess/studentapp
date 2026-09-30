@@ -157,18 +157,17 @@ void main() {
   test('remove takes the analysis and the jobs of the game along', () async {
     await dao.upsertPage(alice, [game('g1'), game('g2')]);
     for (final id in ['g1', 'g2']) {
-      await db.analysisCacheDao.put(
+      await db.analysisCacheDao.putCoach(
         alice,
         id,
         schemaVersion: 1,
         schemaMinor: 0,
         payload: '{}',
       );
-      await db.pendingJobsDao.upsert(
+      await db.pendingWorkflowsDao.upsert(
         alice,
-        jobId: 'job-$id',
         gameId: id,
-        state: JobState.queued,
+        targetStage: 'DEEP_EVALUATION',
       );
     }
 
@@ -178,15 +177,16 @@ void main() {
     expect(await ids(dao.watchGames(alice)), ['g2']);
     expect(await db.analysisCacheDao.get(alice, 'g1'), isNull);
     expect(await db.analysisCacheDao.get(alice, 'g2'), isNotNull);
-    expect((await db.pendingJobsDao.getActive(alice)).map((j) => j.jobId), [
-      'job-g2',
-    ]);
+    expect(
+      (await db.pendingWorkflowsDao.getActive(alice)).map((w) => w.gameId),
+      ['g2'],
+    );
   });
 
   test('removeStale drops what a full refresh did not see', () async {
     await dao.upsertPage(alice, [game('kept'), game('gone')]);
     await dao.upsertPage(bob, [game('bobs')]);
-    await db.analysisCacheDao.put(
+    await db.analysisCacheDao.putCoach(
       alice,
       'gone',
       schemaVersion: 1,

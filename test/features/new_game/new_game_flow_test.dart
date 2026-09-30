@@ -222,13 +222,15 @@ void main() {
       expect(input['pgn'], contains(_foolsMatePgn));
       expect(input['pgn'], contains('[Black "Fake User"]'));
       expect(
-        (h.api.requestsOf('RequestGameAnalysis').single.variables['input']
+        (h.api.requestsOf('RunBaseEvaluation').single.variables['input']
             as Map)['chessGameId'],
         'game-10',
       );
-      // The default job sink: the poller finds the job in the database.
-      final jobs = await h.db.pendingJobsDao.getActive(kFlowUser.sub);
-      expect(jobs.single.jobId, 'job-10');
+      // The row the workflow tracker watches; the coach is not asked here.
+      final pending = await h.db.pendingWorkflowsDao.getActive(kFlowUser.sub);
+      expect(pending.single.gameId, 'game-10');
+      expect(pending.single.targetStage, 'DEEP_EVALUATION');
+      expect(h.api.requestsOf('RunCoaching'), isEmpty);
 
       // Uploaded: the banner has nothing to say, the snack bar does.
       expect(find.byKey(SubmitQueueBanner.bannerKey), findsNothing);
@@ -272,7 +274,7 @@ void main() {
       expect(meta.metadata.playerColor, PlayerColor.black);
       expect(meta.orientation, Side.black);
       expect(h.api.requestsOf('ImportMobileGame'), hasLength(1));
-      expect(h.api.requestsOf('RequestGameAnalysis'), isEmpty);
+      expect(h.api.requestsOf('RunBaseEvaluation'), isEmpty);
       expect(h.api.requestsOf('MyAiConsent'), isEmpty);
       expect(find.text('Game uploaded.'), findsOneWidget);
       await finish(tester);
@@ -324,7 +326,7 @@ void main() {
       expect(input['source'], 'MOBILE_PGN');
       expect(input['playerColor'], 'WHITE');
       expect(input['clientGameId'], draft.clientGameId);
-      expect(h.api.requestsOf('RequestGameAnalysis'), hasLength(1));
+      expect(h.api.requestsOf('RunBaseEvaluation'), hasLength(1));
       await finish(tester);
     });
 
@@ -347,7 +349,7 @@ void main() {
       expect(meta.metadata.blackName, 'Jonas Keller');
       expect(meta.metadata.playedDate, isNull);
       expect(meta.metadata.result, GameResult.blackWins);
-      expect(h.api.requestsOf('RequestGameAnalysis'), isEmpty);
+      expect(h.api.requestsOf('RunBaseEvaluation'), isEmpty);
       await finish(tester);
     });
 
@@ -400,7 +402,7 @@ void main() {
 
       expect(locationOf(tester), AppRoutes.games);
       expect((await h.drafts()).single.wantsAnalysis, isTrue);
-      expect(h.api.requestsOf('RequestGameAnalysis'), hasLength(1));
+      expect(h.api.requestsOf('RunBaseEvaluation'), hasLength(1));
       await finish(tester);
     });
 
@@ -421,13 +423,16 @@ void main() {
       final draft = (await h.drafts()).single;
       expect(draft.wantsAnalysis, isFalse);
       expect(draft.state, DraftState.submitted);
-      expect(h.api.requestsOf('RequestGameAnalysis'), isEmpty);
+      expect(h.api.requestsOf('RunBaseEvaluation'), isEmpty);
       await finish(tester);
     });
 
     testWidgets('the server cannot be asked: the game is saved anyway and the '
-        'queue finds out', (tester) async {
-      final api = FixtureLink({'RequestGameAnalysis': 'ai_consent_required'})
+        'queue starts the engine', (tester) async {
+      // Consent is for the coach, and the coach is asked on the game screen.
+      // A consent check that cannot reach the server therefore does not stop
+      // the free stages.
+      final api = FixtureLink()
         ..fail('MyAiConsent', const SocketException('offline'));
       final h = await pumpFlow(tester, api: api);
       await openImport(tester, _pgnOfUser);
@@ -435,17 +440,8 @@ void main() {
 
       final draft = (await h.drafts()).single;
       expect(draft.state, DraftState.submitted);
-      expect(
-        DraftMeta.decode(draft.metaJson).analysisHold,
-        AnalysisHold.aiConsentRequired,
-      );
-      expect(
-        find.text(
-          'Game saved. Analysis not started: Your consent to the AI analysis '
-          'is missing.',
-        ),
-        findsOneWidget,
-      );
+      expect(DraftMeta.decode(draft.metaJson).analysisHold, isNull);
+      expect(h.api.requestsOf('RunBaseEvaluation'), hasLength(1));
       await finish(tester);
     });
   });
@@ -497,11 +493,13 @@ void main() {
       await pumpFrames(tester, 60);
     });
 
-    testWidgets('the analysis limit is reached: the game is saved and the '
+    testWidgets('fair use refuses the first stage: the game is saved and the '
         'reason is said', (tester) async {
+      // The quota cannot refuse this path any more — the engine stages are
+      // free — so the one refusal left is the rate limit.
       final h = await pumpFlow(
         tester,
-        api: FixtureLink({'RequestGameAnalysis': 'limit_reached'}),
+        api: FixtureLink({'RunBaseEvaluation': 'rate_limited'}),
       );
       await openImport(tester, _pgnOfUser);
       await tapSave(tester);
@@ -510,11 +508,12 @@ void main() {
       expect(draft.state, DraftState.submitted);
       expect(
         DraftMeta.decode(draft.metaJson).analysisHold,
-        AnalysisHold.limitReached,
+        AnalysisHold.rateLimited,
       );
       expect(
         find.text(
-          'Game saved. Analysis not started: Your analysis limit is used up.',
+          'Game saved. Analysis not started: Too many requests in a short '
+          'time.',
         ),
         findsOneWidget,
       );

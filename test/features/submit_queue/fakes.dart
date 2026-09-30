@@ -4,9 +4,8 @@
 
 import 'dart:async';
 
-import 'package:bogner_chess/core/analysis/analysis_job_sink.dart';
-import 'package:bogner_chess/core/api/analysis_api.dart';
 import 'package:bogner_chess/core/api/games_api.dart';
+import 'package:bogner_chess/core/api/stage_api.dart';
 import 'package:bogner_chess/core/connectivity/connectivity.dart';
 import 'package:bogner_chess/core/game/game_metadata.dart';
 
@@ -96,37 +95,27 @@ class FakeGamesApi implements GamesApi {
   Object? noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-class FakeAnalysisApi implements AnalysisApi {
-  final List<({String gameId, String language})> calls = [];
+/// The staged commands the queue uses: only `runBaseEvaluation`.
+class FakeStageApi implements StageApi {
+  final List<String> started = [];
 
-  /// Outcomes for the next requests; when empty a request is accepted.
+  /// Outcomes for the next commands; when empty a command is accepted.
   final List<RequestAnalysisOutcome> outcomes = [];
 
   @override
-  Future<RequestAnalysisOutcome> request({
-    required String gameId,
-    String language = 'en',
-    String? deviceId,
-  }) async {
-    calls.add((gameId: gameId, language: language));
+  Future<RequestAnalysisOutcome> runBaseEvaluation(String gameId) async {
+    started.add(gameId);
     if (outcomes.isNotEmpty) return outcomes.removeAt(0);
     return AnalysisAccepted(
-      JobInfo(
-        id: 'job-${calls.length}',
+      StageRun(
+        id: 'run-${started.length}',
         gameId: gameId,
+        stage: AnalysisStage.baseEvaluation,
         status: JobStatus.queued,
-        requestedAt: DateTime.utc(2026, 9, 20, 10),
       ),
     );
   }
 
   @override
   Object? noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
-
-class RecordingJobSink implements AnalysisJobSink {
-  final List<JobInfo> jobs = [];
-
-  @override
-  void track(JobInfo job) => jobs.add(job);
 }

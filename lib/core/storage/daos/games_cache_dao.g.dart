@@ -6,7 +6,8 @@ part of 'games_cache_dao.dart';
 mixin _$GamesCacheDaoMixin on DatabaseAccessor<AppDatabase> {
   $CachedGamesTable get cachedGames => attachedDatabase.cachedGames;
   $CachedAnalysesTable get cachedAnalyses => attachedDatabase.cachedAnalyses;
-  $PendingJobsTable get pendingJobs => attachedDatabase.pendingJobs;
+  $PendingWorkflowsTable get pendingWorkflows =>
+      attachedDatabase.pendingWorkflows;
   GamesCacheDaoManager get managers => GamesCacheDaoManager(this);
 }
 
@@ -20,6 +21,9 @@ class GamesCacheDaoManager {
         _db.attachedDatabase,
         _db.cachedAnalyses,
       );
-  $$PendingJobsTableTableManager get pendingJobs =>
-      $$PendingJobsTableTableManager(_db.attachedDatabase, _db.pendingJobs);
+  $$PendingWorkflowsTableTableManager get pendingWorkflows =>
+      $$PendingWorkflowsTableTableManager(
+        _db.attachedDatabase,
+        _db.pendingWorkflows,
+      );
 }

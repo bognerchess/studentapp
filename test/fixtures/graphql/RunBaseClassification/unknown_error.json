@@ -1,0 +1,12 @@
+{
+  "data": {
+    "runBaseClassification": {
+      "engineStageRun": null,
+      "errors": [
+        {
+          "__typename": "SomethingNewError"
+        }
+      ]
+    }
+  }
+}

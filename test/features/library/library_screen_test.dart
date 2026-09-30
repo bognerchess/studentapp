@@ -12,6 +12,7 @@ import 'package:bogner_chess/core/game/library_refresh.dart';
 import 'package:bogner_chess/core/storage/app_database.dart';
 import 'package:bogner_chess/core/storage/storage_providers.dart';
 import 'package:bogner_chess/core/ui/widgets/error_retry.dart';
+import 'package:bogner_chess/features/library/data/cached_games_repository.dart';
 import 'package:bogner_chess/features/library/domain/draft_actions.dart';
 import 'package:bogner_chess/features/library/domain/game_summary_codec.dart';
 import 'package:bogner_chess/features/library/domain/library_controller.dart';
@@ -23,6 +24,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../core/api/api_test_support.dart';
 import '../../helpers/fixture_link.dart';
 import '../../helpers/pump_app.dart';
 import '../../helpers/pump_screen.dart';
@@ -102,9 +104,7 @@ void main() {
 
   setUp(() {
     db = openWidgetTestDatabase();
-    // No active jobs unless a test says so: the default fixture of that
-    // query would put game-3 into the queue.
-    api = FixtureLink({'MyActiveAnalysisJobs': 'empty'});
+    api = FixtureLink();
   });
   tearDown(() => db.close());
 
@@ -114,10 +114,49 @@ void main() {
     ...more,
   ];
 
+  /// Remembers [workflow] next to the cached copy of [gameId], which is what
+  /// the tracker does on every poll that changed something. A refresh puts it
+  /// back on the row the server sends, so the badge survives.
+  Future<void> rememberWorkflow(
+    String gameId,
+    GameWorkflowSummary workflow,
+  ) async {
+    await seedCachedGame(db, id: gameId, black: 'Seeded');
+    final cached = (await CachedGamesRepository(
+      api: GamesApi(linkExecutor(api)),
+      db: db,
+    ).cached(owner, gameId))!;
+    await db.gamesCacheDao.upsertPage(owner, [
+      CachedGameInput(
+        gameId: gameId,
+        summaryJson: GameSummaryCodec.encode(
+          gameSummaryWith(
+            cached,
+            hasAnalysis: cached.hasAnalysis,
+            workflow: workflow,
+          ),
+        ),
+        updatedAt: DateTime.utc(2026, 8),
+      ),
+    ], fetchedAt: DateTime.utc(2026, 8));
+  }
+
+  /// One stage queued or running: the pipeline of a game being analysed.
+  const running = GameWorkflowSummary(
+    states: {
+      AnalysisStage.baseEvaluation: AnalysisStageState.ready,
+      AnalysisStage.baseClassification: AnalysisStageState.running,
+    },
+    isComplete: false,
+  );
+
   group('list', () {
     testWidgets('rows: players, date and event, result, status badge', (
       tester,
     ) async {
+      // The server's list carries no pipeline, so the one game that reads as
+      // "analysing" is the one this device remembers a running stage for.
+      await rememberWorkflow('game-2', running);
       await pumpScreen(tester, const LibraryScreen(), overrides: overrides());
 
       expect(titles(tester), [
@@ -135,17 +174,66 @@ void main() {
       expect(find.text('Not analysed'), findsOneWidget);
     });
 
-    testWidgets('a failed job shows as failed', (tester) async {
-      api.respond('MyMobileGames', (_) {
-        final body = api.store.response('MyMobileGames', 'default');
-        final nodes =
-            ((body['data'] as Map)['myMobileGames'] as Map)['nodes'] as List;
-        ((nodes[1] as Map)['latestAnalysisJob'] as Map)
-          ..['status'] = 'FAILED'
-          ..['failureCode'] = 'engine_timeout'
-          ..['finishedAt'] = '2026-09-19T10:05:00.000Z';
-        return body;
-      });
+    testWidgets('a stored engine analysis gets its own badge', (tester) async {
+      // What the tracker wrote next to the game: the three engine stages are
+      // stored, the coach has not been asked.
+      await seedCachedGame(db, id: 'game-9', black: 'Engine Only');
+      await db.gamesCacheDao.upsertPage(owner, [
+        CachedGameInput(
+          gameId: 'game-9',
+          summaryJson: GameSummaryCodec.encode(
+            gameSummaryWith(
+              (await CachedGamesRepository(
+                api: GamesApi(linkExecutor(api)),
+                db: db,
+              ).cached(owner, 'game-9'))!,
+              hasAnalysis: false,
+              workflow: const GameWorkflowSummary(
+                states: {
+                  AnalysisStage.baseEvaluation: AnalysisStageState.ready,
+                  AnalysisStage.baseClassification: AnalysisStageState.ready,
+                  AnalysisStage.deepEvaluation: AnalysisStageState.ready,
+                  AnalysisStage.coaching: AnalysisStageState.notRun,
+                },
+                isComplete: false,
+              ),
+            ),
+          ),
+          updatedAt: DateTime.utc(2026, 8),
+        ),
+      ], fetchedAt: DateTime.utc(2026, 8));
+      api.fail('MyMobileGames', const SocketException('offline'));
+
+      await pumpScreen(tester, const LibraryScreen(), overrides: overrides());
+      expect(find.text('Engine analysis'), findsOneWidget);
+    });
+
+    testWidgets('a failed step shows as failed', (tester) async {
+      await seedCachedGame(db, id: 'game-9', black: 'Stopped Opponent');
+      await db.gamesCacheDao.upsertPage(owner, [
+        CachedGameInput(
+          gameId: 'game-9',
+          summaryJson: GameSummaryCodec.encode(
+            gameSummaryWith(
+              (await CachedGamesRepository(
+                api: GamesApi(linkExecutor(api)),
+                db: db,
+              ).cached(owner, 'game-9'))!,
+              hasAnalysis: false,
+              workflow: const GameWorkflowSummary(
+                states: {
+                  AnalysisStage.baseEvaluation: AnalysisStageState.ready,
+                  AnalysisStage.baseClassification: AnalysisStageState.failed,
+                },
+                isComplete: false,
+              ),
+            ),
+          ),
+          updatedAt: DateTime.utc(2026, 8),
+        ),
+      ], fetchedAt: DateTime.utc(2026, 8));
+      api.fail('MyMobileGames', const SocketException('offline'));
+
       await pumpScreen(tester, const LibraryScreen(), overrides: overrides());
       expect(find.text('Analysis failed'), findsOneWidget);
     });
@@ -563,6 +651,7 @@ void main() {
 
     testWidgets('German strings', (tester) async {
       await seedDraft(db, opponent: 'Eins');
+      await rememberWorkflow('game-2', running);
       await pumpScreen(
         tester,
         const LibraryScreen(),

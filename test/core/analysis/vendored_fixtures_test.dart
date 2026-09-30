@@ -45,12 +45,18 @@ void main() {
               .first,
     };
 
-    test('SHA256SUMS lists the schema and the three fixtures', () {
-      expect(sums.keys, {'game-analysis.v1.schema.json', ...officialFixtures});
+    // What this app vendors. `SHA256SUMS` pins more than that: the contract
+    // repository also publishes its job API there (`job-api.v1.json`), which
+    // is between that service and the backend and has no business here.
+    final vendored = {'game-analysis.v1.schema.json', ...officialFixtures};
+
+    test('SHA256SUMS pins the schema and the three fixtures', () {
+      expect(sums.keys, containsAll(vendored));
     });
 
     test('every vendored file has the pinned sha256 (drift detection)', () {
-      for (final MapEntry(key: name, value: expected) in sums.entries) {
+      for (final name in vendored) {
+        final expected = sums[name];
         final actual = sha256Hex(File('$vendoredDir/$name').readAsBytesSync());
         expect(
           actual,
@@ -63,12 +69,12 @@ void main() {
       }
     });
 
-    test('the directory holds nothing but what SHA256SUMS pins', () {
+    test('the directory holds nothing but the vendored files', () {
       final names = {
         for (final entity in Directory(vendoredDir).listSync())
           entity.uri.pathSegments.last,
       };
-      expect(names, {...sums.keys, 'SHA256SUMS'});
+      expect(names, {...vendored, 'SHA256SUMS'});
     });
   });
 }

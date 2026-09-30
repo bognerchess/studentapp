@@ -3,7 +3,12 @@
 // Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
 
 import 'package:bogner_chess/core/analysis/analysis_parser.dart';
+import 'package:bogner_chess/core/storage/app_database.dart'
+    show AnalysisSource;
 import 'package:flutter/foundation.dart';
+
+export 'package:bogner_chess/core/storage/app_database.dart'
+    show AnalysisSource;
 
 /// The user's verdict on one coach comment (AN-7).
 enum CommentRating { up, down }
@@ -31,6 +36,7 @@ class GameHeaderInfo {
 class ReviewData {
   const ReviewData({
     required this.result,
+    this.source = AnalysisSource.coach,
     this.header = const GameHeaderInfo(),
     this.myFeedback = const {},
   });
@@ -39,6 +45,12 @@ class ReviewData {
   /// so a repository hands over whatever it got: supported, newer major or
   /// invalid. The screen has a state for each.
   final AnalysisParseResult result;
+
+  /// Whether [result] is the coach's document or one the app assembled from
+  /// the engine stage artifacts. The engine assembly has the eval graph, the
+  /// key positions, the variations and the accuracy, but no comments and no
+  /// lessons, so the tabs say where the text is rather than looking empty.
+  final AnalysisSource source;
 
   final GameHeaderInfo header;
 

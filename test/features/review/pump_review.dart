@@ -14,10 +14,15 @@ import 'package:bogner_chess/features/review/domain/review_controller.dart';
 import 'package:bogner_chess/features/review/domain/review_repository.dart';
 import 'package:bogner_chess/features/review/ui/review_screen.dart';
 import 'package:bogner_chess/router.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../helpers/fixture_link.dart';
 import '../../helpers/pump_app.dart';
+import '../../helpers/workflow_fixtures.dart';
+
+export '../../helpers/workflow_fixtures.dart';
 
 /// The game id every review test uses.
 const String kReviewGameId = 'game-1';
@@ -129,6 +134,10 @@ Future<ReviewHarness> pumpReview(
     result: '1-0',
   ),
   Map<String, CommentRating?> myFeedback = const {},
+  AnalysisSource source = AnalysisSource.coach,
+  AnalysisWorkflow? workflow,
+  FixtureLink? api,
+  List<Override> overrides = const [],
   Object? loadError,
   Env? env,
   AuthState? auth,
@@ -141,6 +150,7 @@ Future<ReviewHarness> pumpReview(
     FakeReviewRepository(
       ReviewData(
         result: result ?? parseFixture(fixture, patch: patch),
+        source: source,
         header: header,
         myFeedback: myFeedback,
       ),
@@ -159,6 +169,9 @@ Future<ReviewHarness> pumpReview(
     overrides: [
       reviewRepositoryProvider.overrideWithValue(harness.repository),
       feedbackSinkProvider.overrideWithValue(harness.sink),
+      if (api != null) ...api.overrides,
+      if (workflow != null) tracking(kReviewGameId, workflow),
+      ...overrides,
     ],
   );
 

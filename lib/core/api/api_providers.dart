@@ -13,6 +13,7 @@ import 'package:bogner_chess/core/api/devices_api.dart';
 import 'package:bogner_chess/core/api/events_api.dart';
 import 'package:bogner_chess/core/api/games_api.dart';
 import 'package:bogner_chess/core/api/legal_api.dart';
+import 'package:bogner_chess/core/api/stage_api.dart';
 import 'package:bogner_chess/core/api/usage_api.dart';
 import 'package:bogner_chess/core/app_info.dart';
 import 'package:bogner_chess/core/auth/auth_providers.dart';
@@ -56,6 +57,10 @@ final gamesApiProvider = Provider<GamesApi>(
 
 final analysisApiProvider = Provider<AnalysisApi>(
   (ref) => AnalysisApi(ref.watch(apiExecutorProvider)),
+);
+
+final stageApiProvider = Provider<StageApi>(
+  (ref) => StageApi(ref.watch(apiExecutorProvider)),
 );
 
 final usageApiProvider = Provider<UsageApi>(

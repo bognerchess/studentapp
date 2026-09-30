@@ -11,6 +11,7 @@ import 'package:bogner_chess/core/api/events_api.dart';
 import 'package:bogner_chess/core/api/games_api.dart';
 import 'package:bogner_chess/core/api/generated/operations/config.graphql.dart';
 import 'package:bogner_chess/core/api/legal_api.dart';
+import 'package:bogner_chess/core/api/stage_api.dart';
 import 'package:bogner_chess/core/api/usage_api.dart';
 import 'package:bogner_chess/core/auth/fake_auth_repository.dart';
 import 'package:bogner_chess/core/game/game_metadata.dart';
@@ -61,10 +62,34 @@ void main() {
     return (outcome as GameImported).game;
   }
 
-  test('the whole loop: consent, import, analysis, poll, review, feedback, '
-      'limit, delete', () async {
+  /// The pipeline of [gameId], polled until [stage] is no longer active.
+  Future<AnalysisWorkflow> until(String gameId, AnalysisStage stage) async {
+    final stages = StageApi(executor);
+    for (var i = 0; i < 10; i++) {
+      final workflow = (await stages.workflow(gameId))!;
+      if (!workflow.stateOf(stage).isActive) {
+        return workflow;
+      }
+    }
+    fail('${stage.name} never finished');
+  }
+
+  /// The three free stages of [gameId], each run to READY.
+  Future<void> engineChain(String gameId) async {
+    final stages = StageApi(executor);
+    await stages.runBaseEvaluation(gameId);
+    await until(gameId, AnalysisStage.baseEvaluation);
+    await stages.runBaseClassification(gameId);
+    await until(gameId, AnalysisStage.baseClassification);
+    await stages.runDeepEvaluation(gameId);
+    await until(gameId, AnalysisStage.deepEvaluation);
+  }
+
+  test('the whole loop: import, list, consent, the coach, review and '
+      'feedback', () async {
     final games = GamesApi(executor);
     final analysis = AnalysisApi(executor);
+    final stages = StageApi(executor);
     final legal = LegalApi(executor);
     final usage = UsageApi(executor);
 
@@ -94,8 +119,10 @@ void main() {
     expect(detail.plyCount, 6);
     expect(detail.pgn, contains('[Event "Club night"]'));
 
-    // Consent first.
-    final refused = await analysis.request(gameId: game.id, language: 'de');
+    // The three free stages first; the coach is the step that asks for
+    // consent.
+    await engineChain(game.id);
+    final refused = await stages.runCoaching(game.id, language: 'de');
     expect((refused as AnalysisAiConsentRequired).requiredVersion, 1);
     final consent = await legal.aiConsent();
     expect(consent.required, isTrue);
@@ -110,21 +137,16 @@ void main() {
       isFalse,
     );
 
-    // Request, poll until done.
-    final accepted = await analysis.request(gameId: game.id, language: 'de');
-    var job = (accepted as AnalysisAccepted).job;
-    expect(job.status, JobStatus.queued);
-    expect((await games.get(game.id))?.latestJob?.id, job.id);
-    expect((await analysis.activeJobs()).map((j) => j.id), contains(job.id));
+    // Ask the coach, poll until the document is there.
+    final accepted =
+        await stages.runCoaching(game.id, language: 'de') as AnalysisAccepted;
+    expect(accepted.stage, AnalysisStage.coaching);
+    expect(accepted.run.status, JobStatus.queued);
     expect(await analysis.analysis(game.id), isNull);
 
-    final statuses = <JobStatus>[];
-    for (var i = 0; i < 10 && !job.status.isTerminal; i++) {
-      job = (await analysis.job(job.id))!;
-      statuses.add(job.status);
-    }
-    expect(statuses, containsAllInOrder([JobStatus.running, JobStatus.done]));
-    expect(job.finishedAt, isNotNull);
+    final workflow = await until(game.id, AnalysisStage.coaching);
+    expect(workflow.coachReady, isTrue);
+    expect(workflow.isComplete, isTrue);
     expect((await games.get(game.id))?.hasAnalysis, isTrue);
 
     // Review and feedback.
@@ -154,21 +176,209 @@ void main() {
       throwsA(isA<ApiRejected>()),
     );
 
-    // The accepted request counts against the quota.
+    // Only the coaching stage counts against the quota.
     expect((await usage.usage()).dailyUsed, 1);
   });
 
-  test('the fourth analysis of the day reaches the limit', () async {
+  test('the staged chain: three engine stages, the coach, and a document '
+      'GameAnalysis serves', () async {
+    final stages = StageApi(executor);
+    final analysis = AnalysisApi(executor);
+    final games = GamesApi(executor);
+    final usage = UsageApi(executor);
+    await LegalApi(executor).recordAiConsent(version: 1);
+    final game = await importGame('client-1');
+
+    // Nothing has run: only the first stage can start.
+    var workflow = (await stages.workflow(game.id))!;
+    expect(workflow.gameId, game.id);
+    expect(workflow.stages.map((s) => s.state), [
+      AnalysisStageState.notRun,
+      AnalysisStageState.notRun,
+      AnalysisStageState.notRun,
+      AnalysisStageState.notRun,
+    ]);
+    expect(workflow.nextRunnableStage, AnalysisStage.baseEvaluation);
+    expect(workflow.anyActive, isFalse);
+    expect(workflow.newestReadyEngineStage, isNull);
+    expect(
+      workflow.stageOf(AnalysisStage.coaching)?.blockedBy,
+      AnalysisStage.deepEvaluation,
+    );
+    expect(
+      workflow.stageOf(AnalysisStage.coaching)?.usesModel,
+      isTrue,
+      reason: 'the server says which stage is metered',
+    );
+
+    // A game that is not ours reads as null, which is how the tracker learns
+    // to stop watching it.
+    expect(await stages.workflow('does-not-exist'), isNull);
+
+    // Out of order is refused with the prerequisite key, not a hard failure.
+    expect(
+      await stages.runBaseClassification(game.id),
+      isA<AnalysisPrerequisiteMissing>(),
+    );
+
+    // Stage 1.
+    final started = await stages.runBaseEvaluation(game.id) as AnalysisAccepted;
+    expect(started.stage, AnalysisStage.baseEvaluation);
+    expect(started.run.status, JobStatus.queued);
+    expect(started.run.gameId, game.id);
+    expect(started.run.artifact, isNull);
+    expect(
+      ((await stages.runBaseEvaluation(game.id)) as AnalysisAccepted).run.id,
+      started.run.id,
+      reason: 'a second tap gets the run that is under way',
+    );
+
+    workflow = (await stages.workflow(game.id))!;
+    expect(workflow.activeStage, AnalysisStage.baseEvaluation);
+    expect(workflow.stageOf(AnalysisStage.baseEvaluation)?.runnable, isFalse);
+
+    workflow = await until(game.id, AnalysisStage.baseEvaluation);
+    expect(
+      workflow.stateOf(AnalysisStage.baseEvaluation),
+      AnalysisStageState.ready,
+    );
+    expect(workflow.newestReadyEngineStage, AnalysisStage.baseEvaluation);
+    expect(workflow.engineReady, isFalse);
+    expect(workflow.nextRunnableStage, AnalysisStage.baseClassification);
+    expect(workflow.readyRunIds, {
+      AnalysisStage.baseEvaluation: started.run.id,
+    });
+
+    // The artifact comes by run id, once.
+    final base = (await stages.artifact(started.run.id))!;
+    expect(base.stage, AnalysisStage.baseEvaluation);
+    expect(base.status, JobStatus.done);
+    expect(base.artifact?.json['stage'], 'base_evaluation');
+    expect(base.artifact?.json['nodes'], isA<List<Object?>>());
+    expect(await stages.artifact('run-does-not-exist'), isNull);
+
+    // Stages 2 and 3.
+    expect(
+      await stages.runBaseClassification(game.id, maxMoments: 6),
+      isA<AnalysisAccepted>(),
+    );
+    await until(game.id, AnalysisStage.baseClassification);
+    final deep = await stages.runDeepEvaluation(game.id) as AnalysisAccepted;
+    workflow = await until(game.id, AnalysisStage.deepEvaluation);
+    expect(workflow.engineReady, isTrue);
+    expect(workflow.coachReady, isFalse);
+    expect(workflow.isComplete, isFalse);
+    expect(workflow.nextRunnableStage, AnalysisStage.coaching);
+    expect(workflow.readyRunIds.keys, AnalysisStage.engineStages);
+
+    final packet = (await stages.artifact(deep.run.id))!;
+    expect(packet.artifact?.json['stage'], 'deep_evaluation');
+    expect(
+      (packet.artifact?.json['engine'] as Map).keys,
+      contains('pass1_nodes'),
+      reason: 'stage 3 writes engine flat',
+    );
+    expect(
+      await analysis.analysis(game.id),
+      isNull,
+      reason: 'no document before the coach',
+    );
+    expect((await usage.usage()).dailyUsed, 0, reason: 'the engine is free');
+
+    // The coach.
+    final coach = await stages.runCoaching(
+      game.id,
+      language: 'de',
+      persona: 'calm',
+    ) as AnalysisAccepted;
+    expect(coach.stage, AnalysisStage.coaching);
+    workflow = await until(game.id, AnalysisStage.coaching);
+    expect(workflow.isComplete, isTrue);
+    expect(workflow.coachReady, isTrue);
+    expect(workflow.nextRunnableStage, isNull);
+    final run = workflow.stageOf(AnalysisStage.coaching)!.run!;
+    expect(run.persona, 'calm');
+    expect(run.language, 'de');
+    expect(run.hasArtifact, isTrue);
+
+    final document = (await analysis.analysis(game.id))!;
+    final parsed = document.parsed as AnalysisSupported;
+    expect(parsed.document.language, 'de');
+    expect(parsed.document.plyCount, 80);
+    expect((await games.get(game.id))?.hasAnalysis, isTrue);
+    expect((await usage.usage()).dailyUsed, 1);
+
+    // Feedback on a staged document works like on any other.
+    expect(
+      await analysis.submitFeedback(
+        commentId: parsed.document.comments.first.id,
+        rating: CommentRating.up,
+      ),
+      CommentRating.up,
+    );
+  });
+
+  test('the staged chain refuses: a failing stage, a rate limit, and stale '
+      'moves', () async {
+    final stages = StageApi(executor);
+    await LegalApi(executor).recordAiConsent(version: 1);
+    final game = await importGame('client-1');
+
+    server.backend.applyScenario('rate_limited', const {
+      'retryAfterSeconds': 12,
+    });
+    final limited = await stages.runBaseEvaluation(game.id);
+    expect(limited, isA<AnalysisRateLimited>());
+    expect(
+      (limited as AnalysisRateLimited).retryAfter,
+      const Duration(seconds: 12),
+      reason: 'the engine unions carry retryAfterSeconds since BE-22',
+    );
+
+    server.backend.applyScenario('default', const {});
+    server.backend.applyScenario('stage_fails', const {
+      'stage': 'BASE_EVALUATION',
+    });
+    expect(await stages.runBaseEvaluation(game.id), isA<AnalysisAccepted>());
+    AnalysisWorkflow workflow;
+    do {
+      workflow = (await stages.workflow(game.id))!;
+    } while (workflow.stateOf(AnalysisStage.baseEvaluation).isActive);
+    expect(workflow.failedStage, AnalysisStage.baseEvaluation);
+    expect(
+      workflow.stageOf(AnalysisStage.baseEvaluation)?.run?.failureCode,
+      'stage_input_missing',
+    );
+    expect(
+      workflow.stageOf(AnalysisStage.baseEvaluation)?.runnable,
+      isTrue,
+      reason: 'a failed stage can be run again',
+    );
+
+    // The seeded analysed game has a finished pipeline that goes stale when
+    // its moves change.
+    server.backend.applyScenario('stale', const {});
+    final stale = (await stages.workflow('game-1'))!;
+    expect(
+      stale.stages.map((s) => s.state),
+      everyElement(AnalysisStageState.stale),
+    );
+    expect(stale.isComplete, isFalse);
+    expect(stale.readyRunIds, isEmpty);
+    expect(stale.nextRunnableStage, AnalysisStage.baseEvaluation);
+  });
+
+  test('the fourth coach request of the day reaches the limit', () async {
     await server.close();
     await start(MockOptions(queuedPolls: 0, runningPolls: 0));
-    final analysis = AnalysisApi(executor);
+    final stages = StageApi(executor);
     await LegalApi(executor).recordAiConsent(version: 1);
 
     for (var i = 1; i <= 3; i++) {
       final game = await importGame('client-$i');
-      final job =
-          ((await analysis.request(gameId: game.id)) as AnalysisAccepted).job;
-      expect((await analysis.job(job.id))?.status, JobStatus.done);
+      await engineChain(game.id);
+      expect(await stages.runCoaching(game.id), isA<AnalysisAccepted>());
+      expect((await until(game.id, AnalysisStage.coaching)).coachReady, isTrue);
     }
     final usage = await UsageApi(executor).usage();
     expect(usage.dailyUsed, 3);
@@ -176,7 +386,8 @@ void main() {
     expect(usage.canRequest, isFalse);
 
     final game = await importGame('client-4');
-    final outcome = await analysis.request(gameId: game.id);
+    await engineChain(game.id);
+    final outcome = await stages.runCoaching(game.id);
     final limit = outcome as AnalysisLimitReached;
     expect(limit.window, LimitWindow.day);
     expect(limit.limit, 3);
@@ -186,26 +397,15 @@ void main() {
     expect(limit.resetAt, usage.dailyResetAt);
   });
 
-  test('scenarios: e-mail not verified, failing job, invalid PGN', () async {
-    final analysis = AnalysisApi(executor);
+  test('scenarios: an unconfirmed address refuses the coach, an invalid PGN '
+      'refuses the import', () async {
+    final stages = StageApi(executor);
     server.backend.applyScenario('consent_accepted', const {});
     final game = await importGame('client-1');
+    await engineChain(game.id);
 
     server.backend.applyScenario('email_not_verified', const {});
-    expect(
-      await analysis.request(gameId: game.id),
-      isA<AnalysisEmailNotVerified>(),
-    );
-
-    server.backend.applyScenario('default', const {});
-    server.backend.applyScenario('job_fails', const {});
-    var job =
-        ((await analysis.request(gameId: game.id)) as AnalysisAccepted).job;
-    while (!job.status.isTerminal) {
-      job = (await analysis.job(job.id))!;
-    }
-    expect(job.status, JobStatus.failed);
-    expect(job.failureCode, 'engine_timeout');
+    expect(await stages.runCoaching(game.id), isA<AnalysisEmailNotVerified>());
 
     final invalid = await GamesApi(executor).import(
       metadata: metadata,

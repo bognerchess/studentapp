@@ -1,0 +1,43 @@
+{
+  "data": {
+    "gameAnalysisWorkflow": {
+      "chessGameId": "game-1",
+      "stages": [
+        {
+          "stage": "BASE_EVALUATION",
+          "state": "NOT_RUN",
+          "runnable": true,
+          "blockedBy": null,
+          "usesModel": false,
+          "run": null
+        },
+        {
+          "stage": "BASE_CLASSIFICATION",
+          "state": "NOT_RUN",
+          "runnable": false,
+          "blockedBy": "BASE_EVALUATION",
+          "usesModel": false,
+          "run": null
+        },
+        {
+          "stage": "DEEP_EVALUATION",
+          "state": "NOT_RUN",
+          "runnable": false,
+          "blockedBy": "BASE_CLASSIFICATION",
+          "usesModel": false,
+          "run": null
+        },
+        {
+          "stage": "COACHING",
+          "state": "NOT_RUN",
+          "runnable": false,
+          "blockedBy": "DEEP_EVALUATION",
+          "usesModel": true,
+          "run": null
+        }
+      ],
+      "nextRunnableStage": "BASE_EVALUATION",
+      "isComplete": false
+    }
+  }
+}

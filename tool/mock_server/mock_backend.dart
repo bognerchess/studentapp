@@ -16,13 +16,15 @@ const List<String> kScenarioNames = [
   'email_not_verified',
   'unauthenticated_once',
   'slow',
-  'job_fails',
+  'stage_fails',
+  'rate_limited',
+  'stale',
   'deletion_blocked',
   'fixture',
 ];
 
 /// How the mock behaves. Everything has a default that suits a simulator
-/// session; tests shorten the job and inject a clock.
+/// session; tests shorten the runs and inject a clock.
 class MockOptions {
   MockOptions({
     this.queuedPolls = 1,
@@ -36,13 +38,13 @@ class MockOptions {
     DateTime Function()? now,
   }) : now = now ?? _utcNow;
 
-  /// A job answers QUEUED to this many polls, then RUNNING to [runningPolls]
-  /// polls, then it is finished. A poll is an `AnalysisJob` or a
-  /// `MyActiveAnalysisJobs` query. Ignored when [jobDuration] is set.
+  /// A stage run answers QUEUED to this many polls, then RUNNING to
+  /// [runningPolls] polls, then it is finished. A poll is a
+  /// `GameAnalysisWorkflow` query. Ignored when [jobDuration] is set.
   final int queuedPolls;
   final int runningPolls;
 
-  /// When set, a job goes by the clock instead: QUEUED for the first third,
+  /// When set, a run goes by the clock instead: QUEUED for the first third,
   /// RUNNING until the duration is over.
   final Duration? jobDuration;
 
@@ -62,26 +64,69 @@ class MockOptions {
   static DateTime _utcNow() => DateTime.now().toUtc();
 }
 
-class _Job {
-  _Job({
+/// One run of one pipeline stage: something the worker is on, which answers a
+/// few polls with QUEUED, a few with RUNNING, and is then over. [stage] is the
+/// wire name of `EngineStage`.
+class _StageRun {
+  _StageRun({
     required this.id,
     required this.gameId,
+    required this.stage,
     required this.requestedAt,
     required this.fails,
-    required this.language,
+    this.language,
+    this.persona,
   });
 
   final String id;
   final String gameId;
+  final String stage;
   final DateTime requestedAt;
   final bool fails;
-  final String language;
+
+  /// The coach language; null on a run that does not write text.
+  final String? language;
 
   int polls = 0;
 
-  /// Set once the job is over: `DONE` or `FAILED`.
+  DateTime? startedAt;
+
+  /// Set once the run is over: `DONE` or `FAILED`.
   String? terminalStatus;
   DateTime? finishedAt;
+
+  bool get isActive => terminalStatus == null;
+
+  /// Coach character of a coaching run; null on the engine stages.
+  final String? persona;
+
+  /// True once the stage has produced its result. The artifact itself is read
+  /// from the fixtures when somebody asks for it: it is a hundred kilobytes,
+  /// and most runs are never fetched.
+  bool hasArtifact = false;
+
+  /// The document a finished coaching run wrote; null on the engine stages.
+  _Analysis? analysis;
+
+  /// Set once a newer run of the same stage finished. A superseded run is
+  /// history: its artifact still describes the older moves.
+  DateTime? supersededAt;
+}
+
+/// The pipeline of one game: its runs, and whether the moves have moved on
+/// since they finished.
+class _Workflow {
+  _Workflow(this.gameId);
+
+  final String gameId;
+
+  /// Every run of this game, oldest first; several per stage after a retry.
+  final List<_StageRun> runs = [];
+
+  /// When the moves of the game changed. Every stage that finished before
+  /// that reads STALE: its artifact describes a game that is no longer the
+  /// one on the board.
+  DateTime? movesChangedAt;
 }
 
 class _Analysis {
@@ -128,13 +173,40 @@ class MockBackend {
   static const int legalVersion = 1;
   static const int maxPgnLength = 65536;
 
+  /// The four stages in pipeline order: the wire names of `EngineStage`.
+  static const List<String> stages = [
+    'BASE_EVALUATION',
+    'BASE_CLASSIFICATION',
+    'DEEP_EVALUATION',
+    'COACHING',
+  ];
+
+  /// The slug chess-ai reports as `progressStage`, which is also the name of
+  /// the stage artifact in `test/fixtures/analysis/stages/`.
+  static const Map<String, String> stageSlugs = {
+    'BASE_EVALUATION': 'base-evaluation',
+    'BASE_CLASSIFICATION': 'base-classification',
+    'DEEP_EVALUATION': 'deep-evaluation',
+    'COACHING': 'coaching',
+  };
+
+  /// What a failed stage run reports; the same pair the `stage_failed`
+  /// fixtures carry, so the mock and the widget tests show one text.
+  static const String stageFailureCode = 'stage_input_missing';
+  static const String stageFailureMessage = 'stage failed';
+
   final List<Map<String, dynamic>> _games = [];
-  final Map<String, _Job> _jobs = {};
+  final Map<String, _Workflow> _workflows = {};
   final Map<String, _Analysis> _analyses = {};
   final Map<String, Map<String, dynamic>> _feedback = {};
   final Map<String, Map<String, dynamic>> _devices = {};
   final Map<String, _Consent> _consents = {};
   final Map<String, String> _pinned = {};
+
+  /// One decoded copy of each engine stage artifact, kept because every copy
+  /// is about a hundred kilobytes and nothing ever changes one. Fixture data,
+  /// so it survives [reset].
+  final Map<String, Map<String, dynamic>> _stageArtifacts = {};
 
   int _nextId = 101;
   int _dailyUsed = 0;
@@ -146,9 +218,13 @@ class MockBackend {
   bool emailNotVerified = false;
   bool unauthenticatedOnce = false;
   bool slow = false;
-  bool jobFails = false;
+  bool rateLimited = false;
   bool deletionBlocked = false;
   Duration? _slowDelay;
+
+  /// The stage whose runs fail, or null when they all succeed.
+  String? failingStage;
+  int? _retryAfterSeconds;
 
   Duration get responseDelay =>
       slow ? (_slowDelay ?? options.slowDelay) : Duration.zero;
@@ -166,7 +242,7 @@ class MockBackend {
   void reset() {
     _clearFlags();
     _games.clear();
-    _jobs.clear();
+    _workflows.clear();
     _analyses.clear();
     _feedback.clear();
     _devices.clear();
@@ -185,9 +261,11 @@ class MockBackend {
     emailNotVerified = false;
     unauthenticatedOnce = false;
     slow = false;
-    jobFails = false;
+    rateLimited = false;
     deletionBlocked = false;
+    failingStage = null;
     _slowDelay = null;
+    _retryAfterSeconds = null;
     _pinned.clear();
   }
 
@@ -200,41 +278,48 @@ class MockBackend {
         in (connection['nodes'] as List).cast<Map<String, dynamic>>()) {
       final game = Map<String, dynamic>.of(node);
       final id = game['id'] as String;
-      final job = game.remove('latestAnalysisJob') as Map<String, dynamic>?;
       final analysed = game.remove('hasAnalysis') == true;
       game['rawPgn'] = analysed
           ? _pgnOfDocument(game, document)
           : _pgnOf(game, '1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Bg5 Be7');
       _games.add(game);
-      if (job != null) {
-        final status = job['status'] as String;
-        final seeded = _Job(
-          id: job['id'] as String,
-          gameId: id,
-          requestedAt: DateTime.parse(job['requestedAt'] as String).toUtc(),
-          fails: false,
-          language: 'en',
-        );
-        if (status == 'RUNNING') {
-          seeded.polls = options.queuedPolls + 1;
-        }
-        if (status == 'DONE' || status == 'FAILED') {
-          seeded
-            ..terminalStatus = status
-            ..finishedAt = DateTime.tryParse(job['finishedAt'] as String? ?? '')
-                ?.toUtc();
-        }
-        _jobs[seeded.id] = seeded;
-      }
       if (analysed) {
-        _analyses[id] = _Analysis(
+        final analysis = _Analysis(
           id: 'analysis-$id',
           gameId: id,
           createdAt: DateTime.utc(2026, 9, 12, 18, 34, 10),
           document: document,
           commentIds: _commentIdsOf(document),
         );
+        _analyses[id] = analysis;
+        _seedWorkflow(analysis);
       }
+    }
+  }
+
+  /// A game that already has an analysis also has a finished pipeline behind
+  /// it: four stages, DONE, each with its artifact. That is what the app finds
+  /// for a game it analysed in an earlier session, and what the `stale`
+  /// scenario then invalidates.
+  void _seedWorkflow(_Analysis analysis) {
+    final workflow = _workflows[analysis.gameId] = _Workflow(analysis.gameId);
+    for (final stage in stages) {
+      final coaching = stage == 'COACHING';
+      workflow.runs.add(
+        _StageRun(
+            id: 'run-${stageSlugs[stage]}-${analysis.gameId}',
+            gameId: analysis.gameId,
+            stage: stage,
+            requestedAt: analysis.createdAt,
+            fails: false,
+            language: coaching ? 'en' : null,
+          )
+          ..terminalStatus = 'DONE'
+          ..startedAt = analysis.createdAt
+          ..finishedAt = analysis.createdAt
+          ..hasArtifact = true
+          ..analysis = coaching ? analysis : null,
+      );
     }
   }
 
@@ -261,8 +346,25 @@ class MockBackend {
         slow = true;
         final millis = body['delayMs'];
         _slowDelay = millis is int ? Duration(milliseconds: millis) : null;
-      case 'job_fails':
-        jobFails = true;
+      case 'stage_fails':
+        final stage = body['stage'];
+        if (stage != null && !stages.contains(stage)) {
+          throw FormatException(
+            'unknown stage "$stage"; there are: ${stages.join(', ')}',
+          );
+        }
+        failingStage = stage as String? ?? stages.first;
+      case 'rate_limited':
+        rateLimited = true;
+        final seconds = body['retryAfterSeconds'];
+        _retryAfterSeconds = seconds is int ? seconds : null;
+      case 'stale':
+        // The moves of every game that has a pipeline changed just now, so
+        // every stage that finished earlier reads STALE. A stage run started
+        // after this finishes later and is ready again.
+        for (final workflow in _workflows.values) {
+          workflow.movesChangedAt = options.now();
+        }
       case 'deletion_blocked':
         deletionBlocked = true;
       case 'fixture':
@@ -287,7 +389,12 @@ class MockBackend {
   /// A summary for `GET /__state`.
   Map<String, dynamic> describe() => {
     'games': _games.length,
-    'jobs': {for (final job in _jobs.values) job.id: _peekStatus(job)},
+    'workflows': {
+      for (final workflow in _workflows.values)
+        workflow.gameId: {
+          for (final stage in stages) stage: _stateOf(workflow, stage),
+        },
+    },
     'analyses': _analyses.length,
     'feedback': _feedback.length,
     'devices': _devices.length,
@@ -299,7 +406,8 @@ class MockBackend {
       'email_not_verified': emailNotVerified,
       'unauthenticated_once': unauthenticatedOnce,
       'slow': slow,
-      'job_fails': jobFails,
+      'stage_fails': failingStage,
+      'rate_limited': rateLimited,
       'deletion_blocked': deletionBlocked,
     },
     'pinnedFixtures': _pinned,
@@ -318,6 +426,10 @@ class MockBackend {
     }
     final input = variables['input'];
     final args = input is Map<String, dynamic> ? input : variables;
+    final whole = _responseHandlers[operationName];
+    if (whole != null) {
+      return whole(args);
+    }
     final handler = _handlers[operationName];
     if (handler != null) {
       return {'data': handler(args)};
@@ -342,9 +454,14 @@ class MockBackend {
     'GameById': _gameById,
     'ImportMobileGame': _importMobileGame,
     'DeleteChessGame': _deleteChessGame,
-    'RequestGameAnalysis': _requestGameAnalysis,
-    'AnalysisJob': _analysisJob,
-    'MyActiveAnalysisJobs': _myActiveAnalysisJobs,
+    'EngineStageRun': _engineStageRun,
+    'RunBaseEvaluation': (args) =>
+        _runStage('RunBaseEvaluation', 'BASE_EVALUATION', args),
+    'RunBaseClassification': (args) =>
+        _runStage('RunBaseClassification', 'BASE_CLASSIFICATION', args),
+    'RunDeepEvaluation': (args) =>
+        _runStage('RunDeepEvaluation', 'DEEP_EVALUATION', args),
+    'RunCoaching': (args) => _runStage('RunCoaching', 'COACHING', args),
     'GameAnalysis': _gameAnalysis,
     'SubmitCoachCommentFeedback': _submitFeedback,
     'MyAnalysisUsage': _myAnalysisUsage,
@@ -358,6 +475,12 @@ class MockBackend {
     'RecordConsent': _recordConsent,
     'DeleteMyAccount': _deleteMyAccount,
   };
+
+  /// Handlers that answer with a whole response body instead of just `data`,
+  /// because they may answer with a top-level GraphQL error: a field the
+  /// schema declares non-null has nowhere else to say "not found".
+  late final Map<String, Map<String, dynamic> Function(Map<String, dynamic>)>
+  _responseHandlers = {'GameAnalysisWorkflow': _gameAnalysisWorkflow};
 
   // --------------------------------------------------------------- helpers
 
@@ -388,6 +511,18 @@ class MockBackend {
     {'message': 'web_api_errors.entity_not_found'},
   );
 
+  /// A field the schema declares non-null cannot report "not found" in its
+  /// payload, so the server answers with a top-level GraphQL error. The shape
+  /// is the fixture's; only the message is the key the app matches on.
+  Map<String, dynamic> _topLevelNotFound(String operation) {
+    final response = fixtures.response(operation, 'not_found');
+    for (final error in response['errors'] as List) {
+      (error as Map<String, dynamic>)['message'] =
+          'web_api_errors.entity_not_found';
+    }
+    return response;
+  }
+
   DateTime get _dailyResetAt {
     final now = options.now();
     return DateTime.utc(now.year, now.month, now.day + 1);
@@ -398,55 +533,59 @@ class MockBackend {
     return DateTime.utc(now.year, now.month + 1);
   }
 
-  // ----------------------------------------------------------------- jobs
+  // ------------------------------------------------------------------ runs
 
-  String _peekStatus(_Job job) {
-    final terminal = job.terminalStatus;
+  /// The status of [run] without moving it on. A run that goes by the clock
+  /// may be over by now, which is why even a peek can finish one.
+  String _peekStatus(_StageRun run) {
+    final terminal = run.terminalStatus;
     if (terminal != null) {
       return terminal;
     }
     final duration = options.jobDuration;
     if (duration != null) {
-      final elapsed = options.now().difference(job.requestedAt);
+      final elapsed = options.now().difference(run.requestedAt);
       if (elapsed >= duration) {
-        return _finish(job);
+        return _finish(run);
       }
       return elapsed.inMicroseconds * 3 < duration.inMicroseconds
           ? 'QUEUED'
           : 'RUNNING';
     }
-    if (job.polls <= options.queuedPolls) {
+    if (run.polls <= options.queuedPolls) {
       return 'QUEUED';
     }
-    if (job.polls <= options.queuedPolls + options.runningPolls) {
+    if (run.polls <= options.queuedPolls + options.runningPolls) {
       return 'RUNNING';
     }
-    return _finish(job);
+    return _finish(run);
   }
 
-  String _poll(_Job job) {
-    if (job.terminalStatus == null) {
-      job.polls++;
+  String _poll(_StageRun run) {
+    if (run.isActive) {
+      run.polls++;
     }
-    return _peekStatus(job);
+    return _peekStatus(run);
   }
 
-  String _finish(_Job job) {
-    final status = job.fails ? 'FAILED' : 'DONE';
-    job
+  String _finish(_StageRun run) {
+    final status = run.fails ? 'FAILED' : 'DONE';
+    run
       ..terminalStatus = status
       ..finishedAt = options.now();
-    if (!job.fails) {
-      _analyses[job.gameId] = _freshAnalysis(job);
+    run.startedAt ??= options.now();
+    if (run.fails) {
+      return status;
     }
+    _completeStage(run);
     return status;
   }
 
   /// The forty-move document with ids of its own, so that feedback on one
   /// analysis never shows up on another.
-  _Analysis _freshAnalysis(_Job job) {
+  _Analysis _freshAnalysis(_StageRun run) {
     final original = fixtures.json(analysisFixture)! as Map<String, dynamic>;
-    final number = job.id.hashCode
+    final number = run.id.hashCode
         .toUnsigned(32)
         .toRadixString(16)
         .padLeft(8, '0');
@@ -457,11 +596,11 @@ class MockBackend {
       }
     }
     final document = jsonDecode(text) as Map<String, dynamic>;
-    document['language'] = job.language;
+    document['language'] = run.language ?? 'en';
     document['generated_at'] = _iso(options.now());
     return _Analysis(
-      id: 'analysis-${job.id}',
-      gameId: job.gameId,
+      id: 'analysis-${run.id}',
+      gameId: run.gameId,
       createdAt: options.now(),
       document: document,
       commentIds: _commentIdsOf(document),
@@ -473,46 +612,243 @@ class MockBackend {
       if (comment is Map && comment['id'] is String) comment['id'] as String,
   };
 
-  Map<String, dynamic> _jobJson(_Job job, {bool poll = false}) {
-    final status = poll ? _poll(job) : _peekStatus(job);
-    final ahead = _jobs.values
-        .where(
-          (other) =>
-              other != job &&
-              other.terminalStatus == null &&
-              other.requestedAt.isBefore(job.requestedAt) &&
-              _peekStatus(other) == 'QUEUED',
-        )
-        .length;
-    return {
-      'id': job.id,
-      'chessGameId': job.gameId,
-      'status': status,
-      'stage': status == 'RUNNING'
-          ? (job.polls > options.queuedPolls + 1 ? 'coach' : 'engine')
-          : null,
-      'queuePosition': status == 'QUEUED' ? ahead : null,
-      'requestedAt': _iso(job.requestedAt),
-      'finishedAt': job.finishedAt == null ? null : _iso(job.finishedAt!),
-      'failureCode': status == 'FAILED' ? 'engine_timeout' : null,
+  // ------------------------------------------------------------- pipeline
+
+  /// The newest run of [stage], or null when the stage never ran.
+  _StageRun? _currentRun(_Workflow workflow, String stage) {
+    _StageRun? current;
+    for (final run in workflow.runs) {
+      if (run.stage == stage) {
+        current = run;
+      }
+    }
+    return current;
+  }
+
+  _StageRun? _stageRunWithId(Object? id) {
+    for (final workflow in _workflows.values) {
+      for (final run in workflow.runs) {
+        if (run.id == id) {
+          return run;
+        }
+      }
+    }
+    return null;
+  }
+
+  /// Where [stage] stands: NOT_RUN while it never ran, QUEUED or RUNNING
+  /// while its newest run is under way, FAILED when that run failed, READY
+  /// once its artifact is stored, and STALE when the moves changed after it
+  /// finished.
+  String _stateOf(_Workflow workflow, String stage, {bool poll = false}) {
+    final run = _currentRun(workflow, stage);
+    if (run == null) {
+      return 'NOT_RUN';
+    }
+    final status = poll ? _poll(run) : _peekStatus(run);
+    return switch (status) {
+      'DONE' => _isStale(workflow, run) ? 'STALE' : 'READY',
+      final other => other,
     };
   }
 
-  _Job? _latestJobOf(String gameId) {
-    _Job? latest;
-    for (final job in _jobs.values) {
-      if (job.gameId == gameId &&
-          (latest == null || !job.requestedAt.isBefore(latest.requestedAt))) {
-        latest = job;
-      }
-    }
-    return latest;
+  static bool _isStale(_Workflow workflow, _StageRun run) {
+    final changed = workflow.movesChangedAt;
+    final finished = run.finishedAt;
+    // A run that finished at the very instant the moves changed counts as
+    // fresh: on an injected clock that stands still, a stage started after
+    // the change finishes at the same instant, and it would otherwise never
+    // come out of STALE.
+    return changed != null && finished != null && finished.isBefore(changed);
   }
 
-  List<_Job> get _activeJobs => [
-    for (final job in _jobs.values)
-      if (job.terminalStatus == null) job,
-  ]..sort((a, b) => a.requestedAt.compareTo(b.requestedAt));
+  /// A stage can be started when the stage before it is ready (or there is
+  /// none), nothing of this stage is under way, and it is not ready itself.
+  static bool _isRunnable(List<String> states, int index) {
+    final state = states[index];
+    if (state == 'READY' || state == 'QUEUED' || state == 'RUNNING') {
+      return false;
+    }
+    return index == 0 || states[index - 1] == 'READY';
+  }
+
+  /// The nearest earlier stage that is not ready, which is what the app names
+  /// when it explains why a button is dark.
+  static String? _blockedBy(List<String> states, int index) {
+    for (var earlier = index - 1; earlier >= 0; earlier--) {
+      if (states[earlier] != 'READY') {
+        return stages[earlier];
+      }
+    }
+    return null;
+  }
+
+  /// The whole workflow of one game. This is the poll surface: the runs of
+  /// [workflow] move on by one poll per call.
+  Map<String, dynamic> _workflowJson(_Workflow workflow) {
+    final states = [
+      for (final stage in stages) _stateOf(workflow, stage, poll: true),
+    ];
+    final entries = <Map<String, dynamic>>[];
+    String? next;
+    for (var index = 0; index < stages.length; index++) {
+      final stage = stages[index];
+      final runnable = _isRunnable(states, index);
+      if (runnable && next == null) {
+        next = stage;
+      }
+      final run = _currentRun(workflow, stage);
+      entries.add({
+        'stage': stage,
+        'state': states[index],
+        'runnable': runnable,
+        'blockedBy': _blockedBy(states, index),
+        'usesModel': stage == 'COACHING',
+        'run': run == null ? null : _stageRunSummary(run),
+      });
+    }
+    return {
+      'chessGameId': workflow.gameId,
+      'stages': entries,
+      'nextRunnableStage': next,
+      'isComplete': states.every((state) => state == 'READY'),
+    };
+  }
+
+  /// A run as the workflow reports it: no artifact, but the progress the
+  /// worker would report while it is on it.
+  Map<String, dynamic> _stageRunSummary(_StageRun run) {
+    final status = _peekStatus(run);
+    if (status != 'QUEUED') {
+      run.startedAt ??= options.now();
+    }
+    final progress = status == 'RUNNING' ? _progressOf(run) : null;
+    final coaching = run.stage == 'COACHING';
+    return {
+      'id': run.id,
+      'status': status,
+      'hasArtifact': run.hasArtifact,
+      'progressStage': progress == null ? null : stageSlugs[run.stage],
+      'progressDone': progress?.$1,
+      'progressTotal': progress?.$2,
+      'persona': coaching ? run.persona : null,
+      'language': coaching ? run.language : null,
+      'requestedAt': _iso(run.requestedAt),
+      'startedAt': run.startedAt == null ? null : _iso(run.startedAt!),
+      'finishedAt': run.finishedAt == null ? null : _iso(run.finishedAt!),
+      'failureCode': status == 'FAILED' ? stageFailureCode : null,
+      'failureMessage': status == 'FAILED' ? stageFailureMessage : null,
+    };
+  }
+
+  /// How far a running stage is, as `(done, total)`. There is no worker here,
+  /// so it counts polls: the total is the number of plies the stage goes
+  /// through, and every poll moves the counter on by one step of the
+  /// [MockOptions.runningPolls] the run takes.
+  (int, int) _progressOf(_StageRun run) {
+    final total = _plyCountOf(run.gameId);
+    final steps = options.runningPolls + 1;
+    final polled = (run.polls - options.queuedPolls).clamp(0, steps);
+    return ((total * polled / steps).floor().clamp(0, total), total);
+  }
+
+  /// The run with its artifact, the shape `StageRunFields` selects. Reading a
+  /// run does not move it on: the workflow query is the poll surface.
+  Map<String, dynamic> _stageRunJson(_StageRun run) {
+    final status = _peekStatus(run);
+    return {
+      'id': run.id,
+      'chessGameId': run.gameId,
+      'stage': run.stage,
+      'status': status,
+      'artifact': _artifactOf(run),
+      'supersededAt': run.supersededAt == null ? null : _iso(run.supersededAt!),
+      'finishedAt': run.finishedAt == null ? null : _iso(run.finishedAt!),
+      'failureCode': status == 'FAILED' ? stageFailureCode : null,
+      'failureMessage': status == 'FAILED' ? stageFailureMessage : null,
+    };
+  }
+
+  /// What a finished run produced, null while it is still under way.
+  Object? _artifactOf(_StageRun run) {
+    if (!run.hasArtifact) {
+      return null;
+    }
+    final analysis = run.analysis;
+    return analysis == null
+        ? _stageArtifact(run.stage)
+        : _coachingArtifact(analysis);
+  }
+
+  /// The artifact of an engine stage: the fixture derived from the very game
+  /// the seeded analysis describes, so a stage result and the document always
+  /// tell the same story. Shared between runs and never changed.
+  Map<String, dynamic> _stageArtifact(String stage) =>
+      _stageArtifacts[stage] ??=
+          fixtures.json('analysis/stages/${stageSlugs[stage]}.json')!
+              as Map<String, dynamic>;
+
+  /// The coaching artifact wraps the document the stage wrote, which is the
+  /// same one `GameAnalysis` then serves.
+  static Map<String, dynamic> _coachingArtifact(_Analysis analysis) => {
+    'artifact_version': 1,
+    'stage': 'coaching',
+    'document': analysis.document,
+    'coach': {'provider': 'azure', 'model': 'gpt-4.1'},
+    'llm': {
+      'calls': 4,
+      'tokens_in': 8200,
+      'tokens_out': 1400,
+      'cost_usd_est': 0.021,
+      'regenerations': 0,
+      'fallbacks': 0,
+    },
+    'engine_calls': 0,
+  };
+
+  /// A finished stage stores its artifact and pushes the earlier run of the
+  /// same stage into history. The coaching stage also writes the analysis
+  /// document, which is what makes `GameAnalysis`, `hasAnalysis` and the
+  /// comment feedback work on a staged analysis exactly as on a job.
+  void _completeStage(_StageRun run) {
+    run.hasArtifact = true;
+    if (run.stage == 'COACHING') {
+      final analysis = _freshAnalysis(run);
+      _analyses[run.gameId] = analysis;
+      run.analysis = analysis;
+    }
+    for (final other in _workflows[run.gameId]?.runs ?? const <_StageRun>[]) {
+      if (other != run &&
+          other.stage == run.stage &&
+          other.terminalStatus == 'DONE') {
+        other.supersededAt = options.now();
+      }
+    }
+  }
+
+  /// The coaching runs that are queued or running. Each one occupies a
+  /// worker, so each one counts against the queue cap.
+  int get _activeModelRuns => _workflows.values
+      .expand((workflow) => workflow.runs)
+      .where((run) => run.stage == 'COACHING' && run.isActive)
+      .length;
+
+  /// Looks at the newest coaching run of [gameId], which is what finishes one
+  /// that goes by the clock and so writes its document.
+  void _peekCoaching(String gameId) {
+    final workflow = _workflows[gameId];
+    if (workflow != null) {
+      final run = _currentRun(workflow, 'COACHING');
+      if (run != null) {
+        _peekStatus(run);
+      }
+    }
+  }
+
+  int _plyCountOf(String gameId) {
+    final pgn = _gameWithId(gameId)?['rawPgn'] as String?;
+    return pgn == null ? 0 : _MockPgn.parse(pgn).sans.length;
+  }
 
   // ---------------------------------------------------------------- games
 
@@ -521,15 +857,14 @@ class MockBackend {
     bool detail = false,
   }) {
     final id = game['id'] as String;
-    final job = _latestJobOf(id);
-    // Peek first: a job that finishes by the clock creates its analysis here.
-    final jobJson = job == null ? null : _jobJson(job);
+    // Peek first: a coaching run that finishes by the clock writes its
+    // document here.
+    _peekCoaching(id);
     return {
       for (final MapEntry(:key, :value) in game.entries)
         if (detail || key != 'rawPgn') key: value,
       if (detail) ...{'startingFen': null, 'site': null, 'round': null},
       'hasAnalysis': _analyses.containsKey(id),
-      'latestAnalysisJob': jobJson,
     };
   }
 
@@ -730,7 +1065,7 @@ class MockBackend {
       return _notFound('DeleteChessGame');
     }
     _games.remove(game);
-    _jobs.removeWhere((_, job) => job.gameId == id);
+    _workflows.remove(id);
     final analysis = _analyses.remove(id);
     _feedback.removeWhere(
       (commentId, _) => analysis?.commentIds.contains(commentId) ?? false,
@@ -745,90 +1080,141 @@ class MockBackend {
 
   // ------------------------------------------------------------- analysis
 
-  Map<String, dynamic> _requestGameAnalysis(Map<String, dynamic> input) {
-    const operation = 'RequestGameAnalysis';
-    final gameId = input['chessGameId'];
+  // -------------------------------------------------------- staged analysis
+
+  Map<String, dynamic> _gameAnalysisWorkflow(Map<String, dynamic> args) {
+    final gameId = args['gameId'];
+    if (gameId is! String || _gameWithId(gameId) == null) {
+      return _topLevelNotFound('GameAnalysisWorkflow');
+    }
+    // A game nobody has analysed has no workflow of its own; the four
+    // NOT_RUN stages are what an empty one reads as. Only a started run puts
+    // one into the state.
+    final workflow = _workflows[gameId] ?? _Workflow(gameId);
+    return {
+      'data': {'gameAnalysisWorkflow': _workflowJson(workflow)},
+    };
+  }
+
+  Map<String, dynamic> _engineStageRun(Map<String, dynamic> args) {
+    final run = _stageRunWithId(args['id']);
+    return {'engineStageRun': run == null ? null : _stageRunJson(run)};
+  }
+
+  /// The one path behind the four `run*` mutations: the gates in the order the
+  /// backend applies them, then a new run of [stage].
+  ///
+  /// The three engine stages are free; only coaching is metered, which is why
+  /// the e-mail, consent, queue and quota gates below are its own. Every stage
+  /// goes through the rate limit, which is the fair-use guard the backend puts
+  /// in front of all four.
+  Map<String, dynamic> _runStage(
+    String operation,
+    String stage,
+    Map<String, dynamic> input,
+  ) {
+    final coaching = stage == 'COACHING';
+    if (rateLimited) {
+      return _errorOf(operation, 'rate_limited', {
+        if (_retryAfterSeconds != null) 'retryAfterSeconds': _retryAfterSeconds,
+      });
+    }
     final language = (input['language'] as String? ?? 'en').toLowerCase();
-    if (!coachLanguages.contains(language)) {
+    if (coaching && !coachLanguages.contains(language)) {
       return _inputInvalid(operation, 'Language');
     }
-    if (_gameWithId(gameId) == null) {
+    final gameId = input['chessGameId'];
+    if (gameId is! String || _gameWithId(gameId) == null) {
       return _notFound(operation);
     }
-    if (emailNotVerified) {
-      return _errorOf(operation, 'email_not_verified');
-    }
-    if (_consents['AI_CONSENT']?.acceptedVersion != legalVersion) {
-      return _errorOf(operation, 'ai_consent_required', {
-        'requiredVersion': legalVersion,
+    if (_plyCountOf(gameId) == 0) {
+      // No game of this mock can get here: its importer refuses a PGN without
+      // moves. The real backend can hold such a game, and the app has a text
+      // for it, so the answer is written down.
+      return _errorOf(operation, 'input_invalid', {
+        'message': 'web_api_errors.pgn_invalid',
+        'propertyName': 'chessGameId',
       });
     }
-    for (final job in _activeJobs) {
-      // Looking at a job that goes by the clock may finish it.
-      _peekStatus(job);
-      // Asking twice is not an error: the job that is under way is the answer.
-      if (job.gameId == gameId && job.terminalStatus == null) {
-        return {
-          'requestGameAnalysis': {'analysisJob': _jobJson(job), 'errors': null},
-        };
+    final workflow = _workflows[gameId] ?? _Workflow(gameId);
+    final earlier = stages.indexOf(stage) - 1;
+    if (earlier >= 0 && _stateOf(workflow, stages[earlier]) != 'READY') {
+      return _errorOf(operation, 'prerequisite_missing');
+    }
+    if (coaching) {
+      if (emailNotVerified) {
+        return _errorOf(operation, 'email_not_verified');
+      }
+      if (_consents['AI_CONSENT']?.acceptedVersion != legalVersion) {
+        return _errorOf(operation, 'ai_consent_required', {
+          'requiredVersion': legalVersion,
+        });
       }
     }
-    if (_activeJobs.length >= options.maxQueuedJobs) {
-      return _errorOf(operation, 'queue_full', {
-        'maxQueuedJobs': options.maxQueuedJobs,
-      });
+    final current = _currentRun(workflow, stage);
+    if (current != null) {
+      // Looking at a run that goes by the clock may finish it.
+      _peekStatus(current);
+      // Tapping twice is not an error: the run under way is the answer.
+      if (current.isActive) {
+        return _stagePayload(operation, current);
+      }
     }
-    if (_dailyUsed >= options.dailyLimit) {
-      return _errorOf(operation, 'limit_reached', {
-        'window': 'DAY',
-        'limit': options.dailyLimit,
-        'used': _dailyUsed,
-        'resetAt': _iso(_dailyResetAt),
-      });
+    if (coaching) {
+      if (_activeModelRuns >= options.maxQueuedJobs) {
+        return _errorOf(operation, 'queue_full', {
+          'maxQueuedJobs': options.maxQueuedJobs,
+        });
+      }
+      if (_dailyUsed >= options.dailyLimit) {
+        return _errorOf(operation, 'limit_reached', {
+          'window': 'DAY',
+          'limit': options.dailyLimit,
+          'used': _dailyUsed,
+          'resetAt': _iso(_dailyResetAt),
+        });
+      }
+      if (_monthlyUsed >= options.monthlyLimit) {
+        return _errorOf(operation, 'limit_reached_month', {
+          'limit': options.monthlyLimit,
+          'used': _monthlyUsed,
+          'resetAt': _iso(_monthlyResetAt),
+        });
+      }
     }
-    if (_monthlyUsed >= options.monthlyLimit) {
-      return _errorOf(operation, 'limit_reached_month', {
-        'limit': options.monthlyLimit,
-        'used': _monthlyUsed,
-        'resetAt': _iso(_monthlyResetAt),
-      });
-    }
-    final job = _Job(
-      id: _newId('job'),
-      gameId: gameId as String,
+    final run = _StageRun(
+      id: _newId('run'),
+      gameId: gameId,
+      stage: stage,
       requestedAt: options.now(),
-      fails: jobFails,
-      language: language,
+      fails: failingStage == stage,
+      language: coaching ? language : null,
+      persona: coaching ? input['persona'] as String? : null,
     );
-    _jobs[job.id] = job;
-    _dailyUsed++;
-    _monthlyUsed++;
-    return {
-      'requestGameAnalysis': {'analysisJob': _jobJson(job), 'errors': null},
-    };
+    workflow.runs.add(run);
+    _workflows[gameId] = workflow;
+    if (coaching) {
+      _dailyUsed++;
+      _monthlyUsed++;
+    }
+    return _stagePayload(operation, run);
   }
 
-  Map<String, dynamic> _analysisJob(Map<String, dynamic> args) {
-    final job = _jobs[args['id']];
-    return {'analysisJob': job == null ? null : _jobJson(job, poll: true)};
-  }
-
-  Map<String, dynamic> _myActiveAnalysisJobs(Map<String, dynamic> args) {
-    final polled = [for (final job in _activeJobs) _jobJson(job, poll: true)];
-    return {
-      'myActiveAnalysisJobs': [
-        for (final job in polled)
-          if (job['status'] == 'QUEUED' || job['status'] == 'RUNNING') job,
-      ],
-    };
-  }
+  /// `{runBaseEvaluation: {engineStageRun: ..., errors: null}}`: the payload
+  /// field is the mutation name with a small first letter.
+  Map<String, dynamic> _stagePayload(String operation, _StageRun run) => {
+    '${operation[0].toLowerCase()}${operation.substring(1)}': {
+      'engineStageRun': _stageRunJson(run),
+      'errors': null,
+    },
+  };
 
   Map<String, dynamic> _gameAnalysis(Map<String, dynamic> args) {
     final gameId = args['gameId'];
-    // A job that finishes by the clock has to be looked at to finish.
-    final job = gameId is String ? _latestJobOf(gameId) : null;
-    if (job != null) {
-      _peekStatus(job);
+    // A coaching run that finishes by the clock has to be looked at before it
+    // writes its document.
+    if (gameId is String) {
+      _peekCoaching(gameId);
     }
     final analysis = _analyses[gameId];
     if (analysis == null) {
@@ -889,10 +1275,13 @@ class MockBackend {
       'monthlyLimit': options.monthlyLimit,
       'monthlyUsed': _monthlyUsed,
       'monthlyResetAt': _iso(_monthlyResetAt),
-      'queuedJobs': _activeJobs.where((job) {
-        final status = _peekStatus(job);
-        return status == 'QUEUED' || status == 'RUNNING';
-      }).length,
+      // The coaching runs that are queued or running, which is what the
+      // queue cap here counts. The real server counts `analysis_job` rows
+      // only, so on the staged path it reports 0 (a known gap, recorded in
+      // WP-60 and in BE-22's handoff). The mock reports the number it
+      // actually enforces: a session that sees "0 queued" and then an
+      // AnalysisQueueFullError would look like a bug in the app.
+      'queuedJobs': _activeModelRuns,
       'maxQueuedJobs': options.maxQueuedJobs,
     },
   };
@@ -1068,7 +1457,7 @@ class MockBackend {
     // The account is gone. The mock goes on as a fresh, empty account, so
     // that a simulator session can continue without a restart.
     _games.clear();
-    _jobs.clear();
+    _workflows.clear();
     _analyses.clear();
     _feedback.clear();
     _devices.clear();

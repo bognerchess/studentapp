@@ -3,18 +3,18 @@
 // Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
-import 'package:bogner_chess/core/api/games_api.dart';
 import 'package:bogner_chess/core/auth/auth_state.dart';
 import 'package:bogner_chess/core/chess/board_thumbnail.dart';
 import 'package:bogner_chess/core/storage/app_database.dart';
 import 'package:bogner_chess/core/storage/storage_providers.dart';
 import 'package:bogner_chess/core/ui/widgets/error_retry.dart';
-import 'package:bogner_chess/features/analysis_status/domain/job_tracker_providers.dart';
 import 'package:bogner_chess/features/game_detail/ui/game_detail_ids.dart';
 import 'package:bogner_chess/features/game_detail/ui/game_detail_screen.dart';
 import 'package:bogner_chess/features/library/ui/library_row_tile.dart';
+import 'package:bogner_chess/features/usage/usage.dart';
 import 'package:bogner_chess/router.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
@@ -23,6 +23,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../helpers/fixture_link.dart';
 import '../../helpers/pump_app.dart';
 import '../../helpers/pump_screen.dart';
+import '../../helpers/workflow_fixtures.dart';
 
 const owner = kFakeAuthSub;
 
@@ -50,14 +51,14 @@ Future<void> pumpFrames(WidgetTester tester, [int frames = 8]) async {
   }
 }
 
-/// Answers `RequestGameAnalysis` with an accepted job for the game that was
-/// asked about (the fixture always names `game-10`).
-void acceptRequests(FixtureLink api) {
-  api.respond('RequestGameAnalysis', (variables) {
-    final body = api.store.response('RequestGameAnalysis', 'default');
+/// Answers `RunCoaching` with an accepted run for the game that was asked
+/// about (the fixture always names `game-1`).
+void acceptCoaching(FixtureLink api) {
+  api.respond('RunCoaching', (variables) {
+    final body = api.store.response('RunCoaching', 'default');
     final payload =
-        (body['data'] as Map)['requestGameAnalysis'] as Map<String, dynamic>;
-    (payload['analysisJob'] as Map)['chessGameId'] =
+        (body['data'] as Map)['runCoaching'] as Map<String, dynamic>;
+    (payload['engineStageRun'] as Map)['chessGameId'] =
         (variables['input'] as Map)['chessGameId'];
     return body;
   });
@@ -94,11 +95,11 @@ void main() {
 
   setUp(() {
     db = openWidgetTestDatabase();
-    api = FixtureLink({'MyActiveAnalysisJobs': 'empty'});
+    api = FixtureLink();
     // GameById has one fixture; the screen is opened for several games, so
     // the answer is built from the list fixture of the requested id.
     api.respond('GameById', (variables) => gameById(api, variables['id']));
-    acceptRequests(api);
+    acceptCoaching(api);
   });
   tearDown(() => db.close());
 
@@ -131,9 +132,42 @@ void main() {
     await pumpFrames(tester);
   }
 
-  Future<void> tapAnalyse(WidgetTester tester) async {
-    await tester.tap(find.bySemanticsIdentifier(GameDetailIds.analyse));
+  Future<void> tapId(WidgetTester tester, String identifier) async {
+    await tester.tap(find.bySemanticsIdentifier(identifier));
     await pumpFrames(tester);
+  }
+
+  Future<void> tapAnalyse(WidgetTester tester) =>
+      tapId(tester, GameDetailIds.analyse);
+
+  Future<void> tapAskCoach(WidgetTester tester) =>
+      tapId(tester, GameDetailIds.askCoach);
+
+  /// The state text of one stage row, as the strip prints it.
+  String stateOfRow(WidgetTester tester, AnalysisStage stage) {
+    final row = find.bySemanticsIdentifier(GameDetailIds.stageRow(stage));
+    return tester
+        .widgetList<Text>(find.descendant(of: row, matching: find.byType(Text)))
+        .last
+        .data!;
+  }
+
+  /// Opens a game whose pipeline stands at [scenario].
+  Future<void> openAt(
+    WidgetTester tester,
+    String scenario, {
+    String gameId = freshGame,
+    void Function(List<Map<String, dynamic>> stages)? patch,
+    Locale locale = const Locale('en'),
+  }) async {
+    await openGame(
+      tester,
+      gameId: gameId,
+      locale: locale,
+      more: [
+        tracking(gameId, workflowFixture(api.store, scenario, patch: patch)),
+      ],
+    );
   }
 
   group('header', () {
@@ -208,151 +242,378 @@ void main() {
     });
   });
 
-  group('states', () {
-    testWidgets('not analysed: the button and the usage line', (tester) async {
+  group('the stage strip', () {
+    testWidgets('nothing run: the hint and the free button', (tester) async {
       await openGame(tester);
       expect(find.bySemanticsIdentifier(GameDetailIds.analyse), findsOneWidget);
-      expect(find.textContaining('2 of 3 analyses left today'), findsOneWidget);
+      expect(
+        find.textContaining('marks the positions worth a closer look'),
+        findsOneWidget,
+      );
+      expect(
+        find.bySemanticsIdentifier(UsageSummary.semanticsId),
+        findsNothing,
+        reason: 'the engine stages are free, so no quota is shown',
+      );
+      expect(
+        find.bySemanticsIdentifier(GameDetailIds.stageStrip),
+        findsNothing,
+      );
     });
 
-    testWidgets('an account without limits sees no counts', (tester) async {
-      api.use('MyAnalysisUsage', 'unlimited');
-      await openGame(tester);
-      expect(find.textContaining('analyses left'), findsNothing);
-      expect(find.bySemanticsIdentifier(GameDetailIds.analyse), findsOneWidget);
-    });
+    testWidgets('running: a row per stage, and a bar on the one that moves', (
+      tester,
+    ) async {
+      await openAt(tester, 'running');
 
-    testWidgets('analysed: open analysis leads to the review', (tester) async {
-      await openGame(tester, gameId: analysedGame);
+      expect(
+        find.bySemanticsIdentifier(GameDetailIds.stageStrip),
+        findsOneWidget,
+      );
+      expect(find.text('Analysing your game'), findsOneWidget);
+      expect(find.text('Engine'), findsOneWidget);
+      expect(find.text('Key positions'), findsOneWidget);
+      expect(find.text('Deep analysis'), findsOneWidget);
+      expect(find.text('Coach'), findsOneWidget);
+      expect(stateOfRow(tester, AnalysisStage.baseEvaluation), 'Ready');
+      expect(
+        stateOfRow(tester, AnalysisStage.baseClassification),
+        'Running\u2026',
+      );
+      expect(stateOfRow(tester, AnalysisStage.deepEvaluation), 'Not started');
+      expect(stateOfRow(tester, AnalysisStage.coaching), 'Not started');
+      // Nothing is known about how far it is, so the bar is indeterminate.
+      expect(
+        tester
+            .widget<LinearProgressIndicator>(
+              find.byType(LinearProgressIndicator),
+            )
+            .value,
+        isNull,
+      );
+      expect(
+        find.textContaining('You can leave the app'),
+        findsOneWidget,
+        reason: 'the hint stays',
+      );
+      // Stage 1 is stored, so there is already something to read.
       expect(
         find.bySemanticsIdentifier(GameDetailIds.openAnalysis),
         findsOneWidget,
       );
-      expect(find.text('Your analysis is ready.'), findsOneWidget);
-
-      await tester.tap(find.bySemanticsIdentifier(GameDetailIds.openAnalysis));
-      await pumpFrames(tester);
-      expect(navigatedTo(tester), AppRoutes.gameReview(analysedGame));
     });
 
-    testWidgets('queued: position and the "you can leave" line', (
+    testWidgets('a stage that reports progress counts it out', (tester) async {
+      await openAt(
+        tester,
+        'running',
+        patch: (stages) {
+          (stages[1]['run'] as Map)
+            ..['progressDone'] = 12
+            ..['progressTotal'] = 40;
+        },
+      );
+
+      expect(stateOfRow(tester, AnalysisStage.baseClassification), '12 of 40');
+      expect(
+        tester
+            .widget<LinearProgressIndicator>(
+              find.byType(LinearProgressIndicator),
+            )
+            .value,
+        closeTo(0.3, 0.001),
+      );
+    });
+
+    testWidgets('a queued stage waits, without a bar', (tester) async {
+      await openAt(
+        tester,
+        'running',
+        patch: (stages) => stages[1]['state'] = 'QUEUED',
+      );
+
+      expect(stateOfRow(tester, AnalysisStage.baseClassification), 'Waiting');
+      expect(find.byType(LinearProgressIndicator), findsNothing);
+    });
+
+    testWidgets('engine ready: the coach, what it costs and the quota', (
       tester,
     ) async {
-      api.respond(
-        'GameById',
-        (variables) => gameById(
-          api,
-          variables['id'],
-          patch: (game) {
-            game['hasAnalysis'] = false;
-            (game['latestAnalysisJob'] as Map)
-              ..['status'] = 'QUEUED'
-              ..['queuePosition'] = 2
-              ..['finishedAt'] = null;
-          },
-        ),
-      );
-      await openGame(tester, gameId: analysedGame);
+      await openAt(tester, 'engine_ready');
 
-      expect(find.text('Waiting in the queue'), findsOneWidget);
-      expect(find.text('2 games are ahead of yours.'), findsOneWidget);
+      expect(
+        find.bySemanticsIdentifier(GameDetailIds.askCoach),
+        findsOneWidget,
+      );
       expect(
         find.text(
-          "You can leave the app. We'll notify you when the analysis is ready.",
+          'The coach writes about your key moments. This is the only step '
+          'that counts against your quota.',
         ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('2 of 3 analyses left today'), findsOneWidget);
+      expect(stateOfRow(tester, AnalysisStage.deepEvaluation), 'Ready');
+      expect(stateOfRow(tester, AnalysisStage.coaching), 'Not started');
+      expect(
+        find.bySemanticsIdentifier(GameDetailIds.openAnalysis),
         findsOneWidget,
       );
       expect(find.bySemanticsIdentifier(GameDetailIds.analyse), findsNothing);
     });
 
-    testWidgets('running: the stage, in words', (tester) async {
-      api.respond(
-        'GameById',
-        (variables) => gameById(
-          api,
-          variables['id'],
-          patch: (game) {
-            game['hasAnalysis'] = false;
-            (game['latestAnalysisJob'] as Map)
-              ..['status'] = 'RUNNING'
-              ..['stage'] = 'coach'
-              ..['finishedAt'] = null;
-          },
-        ),
-      );
-      await openGame(tester, gameId: analysedGame);
-      expect(find.text('Analysing your game'), findsOneWidget);
-      expect(find.text('The coach is writing the comments.'), findsOneWidget);
-    });
-
-    testWidgets('failed: the refund is explained and a retry offered', (
+    testWidgets('coach ready: the ready message, and no coach button', (
       tester,
     ) async {
-      api.respond(
-        'GameById',
-        (variables) => gameById(
-          api,
-          variables['id'],
-          patch: (game) {
-            game['hasAnalysis'] = false;
-            (game['latestAnalysisJob'] as Map)
-              ..['status'] = 'FAILED'
-              ..['failureCode'] = 'engine_timeout';
-          },
-        ),
-      );
-      await openGame(tester, gameId: analysedGame);
+      await openAt(tester, 'all_ready');
 
-      expect(find.text('The analysis failed'), findsOneWidget);
+      expect(find.text('Your analysis is ready.'), findsOneWidget);
+      expect(find.bySemanticsIdentifier(GameDetailIds.askCoach), findsNothing);
+      await tapId(tester, GameDetailIds.openAnalysis);
+      expect(navigatedTo(tester), AppRoutes.gameReview(freshGame));
+    });
+
+    testWidgets('a failed stage: what happened, and a retry of that step', (
+      tester,
+    ) async {
+      await openAt(tester, 'stage_failed');
+
+      expect(find.text('This step failed'), findsOneWidget);
+      expect(
+        find.text('An earlier step has to run again.'),
+        findsOneWidget,
+        reason: 'the fixture fails with stage_input_missing',
+      );
+      expect(stateOfRow(tester, AnalysisStage.deepEvaluation), 'Failed');
+      expect(
+        find.bySemanticsIdentifier(GameDetailIds.retryStage),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a failure code this build does not know: the generic text', (
+      tester,
+    ) async {
+      await openAt(
+        tester,
+        'stage_failed',
+        patch: (stages) =>
+            (stages[2]['run'] as Map)['failureCode'] = 'gremlins',
+      );
       expect(
         find.textContaining('does not count towards your limit'),
         findsOneWidget,
       );
-      await tester.tap(find.bySemanticsIdentifier(GameDetailIds.retryAnalysis));
-      await pumpFrames(tester);
-      expect(api.requestsOf('RequestGameAnalysis'), hasLength(1));
+    });
+
+    testWidgets('stale: the moves changed, and the way to start over', (
+      tester,
+    ) async {
+      await openAt(tester, 'stale');
+
+      expect(find.text('Your moves changed'), findsOneWidget);
+      expect(
+        find.text('The analysis was made for the earlier moves.'),
+        findsOneWidget,
+      );
+      expect(
+        find.bySemanticsIdentifier(GameDetailIds.reanalyse),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a cold open reads the pipeline off the cached row', (
+      tester,
+    ) async {
+      // Nothing is being tracked: the app was killed and started again. The
+      // summary the tracker left next to the game is what the card shows.
+      await db.gamesCacheDao.upsertPage(owner, [
+        CachedGameInput(
+          gameId: freshGame,
+          summaryJson: jsonEncode({
+            'v': 2,
+            'id': freshGame,
+            'playerColor': 'white',
+            'result': '0-1',
+            'hasAnalysis': false,
+            'workflow': {
+              'states': {
+                'BASE_EVALUATION': 'READY',
+                'BASE_CLASSIFICATION': 'READY',
+                'DEEP_EVALUATION': 'READY',
+                'COACHING': 'NOT_RUN',
+              },
+              'isComplete': false,
+            },
+          }),
+          updatedAt: DateTime.utc(2026, 8),
+        ),
+      ], fetchedAt: DateTime.utc(2026, 8));
+
+      await openGame(tester);
+      expect(
+        find.bySemanticsIdentifier(GameDetailIds.askCoach),
+        findsOneWidget,
+      );
+      expect(stateOfRow(tester, AnalysisStage.deepEvaluation), 'Ready');
+    });
+
+    testWidgets(
+      'a game analysed elsewhere: the ready card without a workflow',
+      (tester) async {
+        await openGame(tester, gameId: analysedGame);
+        expect(find.text('Your analysis is ready.'), findsOneWidget);
+        expect(
+          find.bySemanticsIdentifier(GameDetailIds.openAnalysis),
+          findsOneWidget,
+        );
+      },
+    );
+  });
+
+  group('starting the free chain', () {
+    /// The chain is started by the tracker, not by the button: the button
+    /// writes the row and the poll that follows fires the stage the server
+    /// says is next. So these tests need a tracker that polls.
+    Future<void> open(
+      WidgetTester tester, {
+      String scenario = 'not_run',
+      Locale locale = const Locale('en'),
+    }) async {
+      api.use('GameAnalysisWorkflow', scenario);
+      await openGame(tester, locale: locale, more: pollingOverrides());
+    }
+
+    testWidgets('Analyse starts the base evaluation and records the game', (
+      tester,
+    ) async {
+      await open(tester);
+      await tapAnalyse(tester);
+
+      final request = api.requestsOf('RunBaseEvaluation').single;
+      expect((request.variables['input'] as Map)['chessGameId'], freshGame);
+      // Written before the mutation went out, so an app kill resumes it.
+      final row = await db.pendingWorkflowsDao.get(owner, freshGame);
+      expect(row!.targetStage, 'DEEP_EVALUATION');
+      expect(api.requestsOf('RunCoaching'), isEmpty);
+    });
+
+    testWidgets('a pipeline already past stage 1 starts where it stands', (
+      tester,
+    ) async {
+      // "Analyse" on a game whose base evaluation is stored must not run
+      // stage 1 again; the server's nextRunnableStage decides.
+      await open(tester, scenario: 'stage_failed');
+      await tapAnalyse(tester);
+
+      expect(api.requestsOf('RunBaseEvaluation'), isEmpty);
+      expect(api.requestsOf('RunDeepEvaluation'), hasLength(1));
+    });
+
+    testWidgets('retrying a failed step starts the chain again', (
+      tester,
+    ) async {
+      api.use('GameAnalysisWorkflow', 'stage_failed');
+      await openGame(
+        tester,
+        more: [
+          tracking(freshGame, workflowFixture(api.store, 'stage_failed')),
+          ...pollingOverrides(),
+        ],
+      );
+      await tapId(tester, GameDetailIds.retryStage);
+
+      expect(api.requestsOf('RunDeepEvaluation'), hasLength(1));
+    });
+
+    testWidgets('rate limited: a line with the wait', (tester) async {
+      api.use('RunBaseEvaluation', 'rate_limited');
+      await open(tester);
+      await tapAnalyse(tester);
+
+      expect(
+        find.text('Too many requests. Try again in 42 seconds.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a missing prerequisite points at the earlier step', (
+      tester,
+    ) async {
+      api.use('RunBaseEvaluation', 'prerequisite_missing');
+      await open(tester);
+      await tapAnalyse(tester);
+
+      expect(find.text('An earlier step has to run again.'), findsOneWidget);
+    });
+
+    testWidgets('offline: a line, and the button stays', (tester) async {
+      api.fail('RunBaseEvaluation', const SocketException('offline'));
+      await open(tester);
+      await tapAnalyse(tester);
+
+      expect(
+        find.text("You're offline. Connect to the internet and try again."),
+        findsOneWidget,
+      );
+      expect(find.bySemanticsIdentifier(GameDetailIds.analyse), findsOneWidget);
+    });
+
+    testWidgets('a refused stage: a line, and the button stays', (
+      tester,
+    ) async {
+      api.use('RunBaseEvaluation', 'technical_error');
+      await open(tester);
+      await tapAnalyse(tester);
+
+      expect(
+        find.text('The analysis could not be requested. Try again.'),
+        findsOneWidget,
+      );
+      expect(find.bySemanticsIdentifier(GameDetailIds.analyse), findsOneWidget);
     });
   });
 
-  group('requesting an analysis', () {
-    testWidgets('accepted: the job is tracked and the card shows progress', (
+  group('asking the coach', () {
+    /// A game whose three engine stages are stored: the one state in which
+    /// the coach button is there.
+    Future<void> open(
+      WidgetTester tester, {
+      Locale locale = const Locale('en'),
+    }) => openAt(tester, 'engine_ready', locale: locale);
+
+    testWidgets('accepted: the run is followed and the usage asked again', (
       tester,
     ) async {
-      await openGame(tester);
-      await tapAnalyse(tester);
+      await open(tester);
+      await tapAskCoach(tester);
 
-      final request = api.requestsOf('RequestGameAnalysis').single;
-      final input = request.variables['input'] as Map;
+      final input =
+          api.requestsOf('RunCoaching').single.variables['input'] as Map;
       expect(input['chessGameId'], freshGame);
       expect(input['language'], 'en');
-      expect(input['deviceId'], isNotEmpty);
-
-      expect(find.bySemanticsIdentifier(GameDetailIds.jobCard), findsOneWidget);
-      expect(find.text('Waiting in the queue'), findsOneWidget);
-      // The tracker knows it, and the usage was asked again.
-      final tracked = containerOf(tester).read(trackedJobsProvider);
-      expect(tracked[freshGame]!.status, JobStatus.queued);
+      // The tracker was told to follow the coaching stage.
+      final row = await db.pendingWorkflowsDao.get(owner, freshGame);
+      expect(row!.targetStage, 'COACHING');
       expect(api.requestsOf('MyAnalysisUsage').length, greaterThan(1));
     });
 
     testWidgets('the coach language follows the device language', (
       tester,
     ) async {
-      await openGame(tester, locale: const Locale('de'));
-      await tester.tap(find.bySemanticsIdentifier(GameDetailIds.analyse));
-      await pumpFrames(tester);
+      await open(tester, locale: const Locale('de'));
+      await tapAskCoach(tester);
       final input =
-          api.requestsOf('RequestGameAnalysis').single.variables['input']
-              as Map;
+          api.requestsOf('RunCoaching').single.variables['input'] as Map;
       expect(input['language'], 'de');
     });
 
     testWidgets('limit reached: a sheet says what, when and what stays free', (
       tester,
     ) async {
-      api.use('RequestGameAnalysis', 'limit_reached');
-      await openGame(tester);
-      await tapAnalyse(tester);
+      api.use('RunCoaching', 'limit_reached');
+      await open(tester);
+      await tapAskCoach(tester);
 
       expect(
         find.bySemanticsIdentifier(GameDetailIds.limitSheet),
@@ -379,22 +640,32 @@ void main() {
         findsOneWidget,
       );
 
-      await tester.tap(find.bySemanticsIdentifier(GameDetailIds.sheetClose));
-      await pumpFrames(tester);
+      await tapId(tester, GameDetailIds.sheetClose);
       expect(find.text('Daily limit reached'), findsNothing);
-      expect(find.bySemanticsIdentifier(GameDetailIds.analyse), findsOneWidget);
+      expect(
+        find.bySemanticsIdentifier(GameDetailIds.askCoach),
+        findsOneWidget,
+      );
     });
 
     testWidgets('at the limit the request still goes out', (tester) async {
       // The server counts limit pressure when it refuses, so the app must
       // not decide on its own that a request is pointless.
-      api.use('MyAnalysisUsage', 'limit_reached');
-      api.use('RequestGameAnalysis', 'limit_reached');
-      await openGame(tester);
+      api
+        ..use('MyAnalysisUsage', 'limit_reached')
+        ..use('RunCoaching', 'limit_reached');
+      await open(tester);
       expect(find.textContaining('No analyses left today'), findsOneWidget);
+      final button = tester.widget<FilledButton>(
+        find.descendant(
+          of: find.bySemanticsIdentifier(GameDetailIds.askCoach),
+          matching: find.byType(FilledButton),
+        ),
+      );
+      expect(button.onPressed, isNotNull, reason: 'never a gate');
 
-      await tapAnalyse(tester);
-      expect(api.requestsOf('RequestGameAnalysis'), hasLength(1));
+      await tapAskCoach(tester);
+      expect(api.requestsOf('RunCoaching'), hasLength(1));
       expect(
         find.bySemanticsIdentifier(GameDetailIds.limitSheet),
         findsOneWidget,
@@ -402,16 +673,16 @@ void main() {
     });
 
     testWidgets('a monthly limit names the month', (tester) async {
-      api.use('RequestGameAnalysis', 'limit_reached_month');
-      await openGame(tester);
-      await tapAnalyse(tester);
+      api.use('RunCoaching', 'limit_reached_month');
+      await open(tester);
+      await tapAskCoach(tester);
       expect(find.text('Monthly limit reached'), findsOneWidget);
     });
 
     testWidgets('queue full: how many at a time', (tester) async {
-      api.use('RequestGameAnalysis', 'queue_full');
-      await openGame(tester);
-      await tapAnalyse(tester);
+      api.use('RunCoaching', 'queue_full');
+      await open(tester);
+      await tapAskCoach(tester);
       expect(find.text('Too many analyses at once'), findsOneWidget);
       expect(
         find.textContaining('Only 2 of your games can be analysed at a time'),
@@ -420,9 +691,9 @@ void main() {
     });
 
     testWidgets('rate limited: a line with the wait', (tester) async {
-      api.use('RequestGameAnalysis', 'rate_limited');
-      await openGame(tester);
-      await tapAnalyse(tester);
+      api.use('RunCoaching', 'rate_limited');
+      await open(tester);
+      await tapAskCoach(tester);
       expect(
         find.text('Too many requests. Try again in 42 seconds.'),
         findsOneWidget,
@@ -432,79 +703,76 @@ void main() {
     testWidgets('e-mail not verified: explain, re-check, then it goes', (
       tester,
     ) async {
-      api.use('RequestGameAnalysis', 'email_not_verified');
-      await openGame(tester);
-      await tapAnalyse(tester);
+      api.use('RunCoaching', 'email_not_verified');
+      await open(tester);
+      await tapAskCoach(tester);
 
       expect(find.text('Confirm your e-mail address'), findsOneWidget);
 
       // Still not verified: the sheet stays and says so.
-      await tester.tap(find.bySemanticsIdentifier(GameDetailIds.emailRecheck));
-      await pumpFrames(tester);
+      await tapId(tester, GameDetailIds.emailRecheck);
       expect(find.text('Your address is not confirmed yet.'), findsOneWidget);
-      expect(api.requestsOf('RequestGameAnalysis'), hasLength(2));
+      expect(api.requestsOf('RunCoaching'), hasLength(2));
 
       // The user opened the link: the next request is accepted.
-      acceptRequests(api);
-      await tester.tap(find.bySemanticsIdentifier(GameDetailIds.emailRecheck));
-      await pumpFrames(tester);
+      acceptCoaching(api);
+      await tapId(tester, GameDetailIds.emailRecheck);
       expect(find.text('Confirm your e-mail address'), findsNothing);
-      expect(find.bySemanticsIdentifier(GameDetailIds.jobCard), findsOneWidget);
+      expect(api.requestsOf('RunCoaching'), hasLength(3));
     });
 
     testWidgets('AI consent: the screen opens and the request is repeated', (
       tester,
     ) async {
-      api.use('RequestGameAnalysis', 'ai_consent_required');
-      await openGame(tester);
-      await tapAnalyse(tester);
+      api.use('RunCoaching', 'ai_consent_required');
+      await open(tester);
+      await tapAskCoach(tester);
 
       expect(navigatedTo(tester), AppRoutes.consentAi);
-      expect(api.requestsOf('RequestGameAnalysis'), hasLength(1));
+      expect(api.requestsOf('RunCoaching'), hasLength(1));
 
       // The consent screen pops with true (WP-30 records the consent).
-      acceptRequests(api);
+      acceptCoaching(api);
       popNavigatedTo(tester, true);
       await pumpFrames(tester);
 
-      expect(api.requestsOf('RequestGameAnalysis'), hasLength(2));
-      expect(find.bySemanticsIdentifier(GameDetailIds.jobCard), findsOneWidget);
+      expect(api.requestsOf('RunCoaching'), hasLength(2));
     });
 
     testWidgets('AI consent declined: nothing is requested again', (
       tester,
     ) async {
-      api.use('RequestGameAnalysis', 'ai_consent_required');
-      await openGame(tester);
-      await tapAnalyse(tester);
+      api.use('RunCoaching', 'ai_consent_required');
+      await open(tester);
+      await tapAskCoach(tester);
 
       popNavigatedTo(tester, false);
       await pumpFrames(tester);
-      expect(api.requestsOf('RequestGameAnalysis'), hasLength(1));
+      expect(api.requestsOf('RunCoaching'), hasLength(1));
       expect(
         find.text('The analysis needs your consent to AI processing.'),
         findsOneWidget,
       );
-      expect(find.bySemanticsIdentifier(GameDetailIds.analyse), findsOneWidget);
     });
 
     testWidgets('offline: a line, and the button stays', (tester) async {
-      api.fail('RequestGameAnalysis', const SocketException('offline'));
-      await openGame(tester);
-      await tapAnalyse(tester);
+      api.fail('RunCoaching', const SocketException('offline'));
+      await open(tester);
+      await tapAskCoach(tester);
       expect(
         find.text("You're offline. Connect to the internet and try again."),
         findsOneWidget,
       );
-      expect(find.bySemanticsIdentifier(GameDetailIds.analyse), findsOneWidget);
+      expect(
+        find.bySemanticsIdentifier(GameDetailIds.askCoach),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('a refused request: a line, and the button stays', (
-      tester,
-    ) async {
-      api.use('RequestGameAnalysis', 'technical_error');
-      await openGame(tester);
-      await tapAnalyse(tester);
+    testWidgets('a refused request: a line', (tester) async {
+      api.use('RunCoaching', 'technical_error');
+      await open(tester);
+      await tapAskCoach(tester);
       expect(
         find.text('The analysis could not be requested. Try again.'),
         findsOneWidget,
@@ -562,8 +830,10 @@ void main() {
 
   group('languages and sizes', () {
     testWidgets('German', (tester) async {
-      await openGame(tester, locale: const Locale('de'));
-      expect(find.text('Partie analysieren'), findsOneWidget);
+      await openAt(tester, 'engine_ready', locale: const Locale('de'));
+      expect(find.text('Coach fragen'), findsOneWidget);
+      expect(find.text('Tiefenanalyse'), findsOneWidget);
+      expect(find.text('Schlüsselstellungen'), findsOneWidget);
       expect(
         find.textContaining('Heute noch 2 von 3 Analysen'),
         findsOneWidget,
@@ -572,8 +842,8 @@ void main() {
       expect(find.text('0-1 · Du hast verloren'), findsOneWidget);
       expect(find.text('Schlussstellung'), findsOneWidget);
 
-      api.use('RequestGameAnalysis', 'limit_reached');
-      await tapAnalyse(tester);
+      api.use('RunCoaching', 'limit_reached');
+      await tapAskCoach(tester);
       expect(find.text('Tageslimit erreicht'), findsOneWidget);
       expect(
         find.text(
@@ -589,7 +859,7 @@ void main() {
         testWidgets('$locale ${brightness.name}: text scale 1.3 on the SE', (
           tester,
         ) async {
-          api.use('RequestGameAnalysis', 'limit_reached');
+          api.use('RunCoaching', 'limit_reached');
           await openGame(
             tester,
             gameId: analysedGame,
@@ -597,6 +867,13 @@ void main() {
             brightness: brightness,
             textScale: 1.3,
             screen: kIphoneSe,
+            // The tallest card: four stage rows, the coach hint and the quota.
+            more: [
+              tracking(
+                analysedGame,
+                workflowFixture(api.store, 'engine_ready'),
+              ),
+            ],
           );
           expect(tester.takeException(), isNull);
           expect(
@@ -609,11 +886,20 @@ void main() {
             brightness,
           );
 
-          // The tallest sheet, on the smallest screen.
-          await tester.tap(
-            find.bySemanticsIdentifier(GameDetailIds.openAnalysis),
+          // The tallest sheet, on the smallest screen. The card with four
+          // stage rows, the coach hint and the quota pushes the buttons off
+          // an SE, so scroll to them the way a finger would.
+          await tester.scrollUntilVisible(
+            find.bySemanticsIdentifier(GameDetailIds.askCoach),
+            200,
+            scrollable: find.byType(Scrollable).first,
           );
           await pumpFrames(tester);
+          await tapAskCoach(tester);
+          expect(
+            find.bySemanticsIdentifier(GameDetailIds.limitSheet),
+            findsOneWidget,
+          );
           expect(tester.takeException(), isNull);
         });
       }

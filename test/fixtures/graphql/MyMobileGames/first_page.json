@@ -22,17 +22,7 @@
           "whiteElo": 1650,
           "blackElo": 1712,
           "created": "2026-09-12T18:30:00.000Z",
-          "hasAnalysis": true,
-          "latestAnalysisJob": {
-            "id": "job-1",
-            "chessGameId": "game-1",
-            "status": "DONE",
-            "stage": null,
-            "queuePosition": null,
-            "requestedAt": "2026-09-12T18:31:00.000Z",
-            "finishedAt": "2026-09-12T18:34:10.000Z",
-            "failureCode": null
-          }
+          "hasAnalysis": true
         },
         {
           "id": "game-2",
@@ -49,17 +39,7 @@
           "whiteElo": 1820,
           "blackElo": 1650,
           "created": "2026-09-05T20:05:00.000Z",
-          "hasAnalysis": false,
-          "latestAnalysisJob": {
-            "id": "job-2",
-            "chessGameId": "game-2",
-            "status": "RUNNING",
-            "stage": "engine",
-            "queuePosition": null,
-            "requestedAt": "2026-09-19T10:00:00.000Z",
-            "finishedAt": null,
-            "failureCode": null
-          }
+          "hasAnalysis": false
         }
       ]
     }

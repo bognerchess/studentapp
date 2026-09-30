@@ -9,7 +9,7 @@ import 'package:bogner_chess/core/app_info.dart';
 import 'package:bogner_chess/core/auth/auth_state.dart';
 import 'package:bogner_chess/core/storage/app_database.dart';
 import 'package:bogner_chess/core/storage/storage_providers.dart';
-import 'package:bogner_chess/features/analysis_status/domain/job_tracker_providers.dart';
+import 'package:bogner_chess/features/analysis_status/domain/workflow_tracker_providers.dart';
 import 'package:bogner_chess/features/consent/ui/first_run_consent_prompt.dart';
 import 'package:bogner_chess/router.dart';
 import 'package:drift/drift.dart' show DatabaseConnection, driftRuntimeOptions;
@@ -52,16 +52,29 @@ class TestAuthNotifier extends AuthStateNotifier {
 /// A `jobTrackerUiMountedProvider` that never reports the tree as mounted.
 ///
 /// `AnalysisNotices` lives in `app.dart`, so every `pumpApp` mounts it and the
-/// job poller starts. Its next poll is a pending `Timer`, and Flutter fails any
-/// test that ends with one. Tests about the tracker itself pass
-/// `jobPolling: true`; for everything else an idle poller is what the screen
+/// workflow poller starts. Its next poll is a pending `Timer`, and Flutter
+/// fails any test that ends with one. Tests about the tracker itself pass
+/// `polling: true`; for everything else an idle poller is what the screen
 /// under test would see anyway.
-class _NeverMounted extends JobTrackerUiMounted {
+class _NeverMountedWorkflows extends WorkflowTrackerUiMounted {
   @override
   bool build() => false;
 
   @override
   void set({required bool mounted}) {}
+}
+
+/// Lets the analysis poller run in a test that pumps only one screen: the
+/// staged chain is started by the *tracker*, not by the button, so a test
+/// about "Analyse" needs a tracker that polls. `pumpApp` has `polling` for the
+/// same reason.
+List<Override> pollingOverrides() => [
+  workflowTrackerUiMountedProvider.overrideWith(_AlwaysMountedWorkflows.new),
+];
+
+class _AlwaysMountedWorkflows extends WorkflowTrackerUiMounted {
+  @override
+  bool build() => true;
 }
 
 /// Logical screen sizes of the smallest and a current supported iPhone.
@@ -112,7 +125,7 @@ List<Override> backendOverrides({List<Override> unless = const []}) {
 /// out with real auth. [overrides] come last, for example
 /// `authRepositoryProvider.overrideWithValue(FakeAuthRepository(...))`.
 /// [firstRunPrompts] lets the one-time analytics question open.
-/// [jobPolling] lets the analysis job poller run (off by default).
+/// [polling] lets the analysis poller run (off by default).
 /// API and database come from [backendOverrides] unless [overrides] bring
 /// their own.
 Future<void> pumpApp(
@@ -124,7 +137,7 @@ Future<void> pumpApp(
   double textScale = 1.0,
   Size screen = kIphone17Pro,
   bool firstRunPrompts = false,
-  bool jobPolling = false,
+  bool polling = false,
   List<Override> overrides = const [],
   bool settle = true,
 }) async {
@@ -135,6 +148,12 @@ Future<void> pumpApp(
   tester.platformDispatcher.textScaleFactorTestValue = textScale;
   addTearDown(tester.view.reset);
   addTearDown(tester.platformDispatcher.clearAllTestValues);
+
+  // A provider the caller brings its own override for is left alone; two
+  // overrides of the same provider in one scope is an assertion, not a
+  // last-one-wins.
+  bool overridden(Object provider) =>
+      overrides.any((o) => identical(o.origin, provider));
 
   await tester.pumpWidget(
     ProviderScope(
@@ -150,9 +169,11 @@ Future<void> pumpApp(
         // screen of every test with working storage.
         if (!firstRunPrompts)
           firstRunConsentPromptEnabledProvider.overrideWithValue(false),
-        // The job poller would leave a pending timer in every test.
-        if (!jobPolling)
-          jobTrackerUiMountedProvider.overrideWith(_NeverMounted.new),
+        // The poller would leave a pending timer in every test.
+        if (!polling && !overridden(workflowTrackerUiMountedProvider))
+          workflowTrackerUiMountedProvider.overrideWith(
+            _NeverMountedWorkflows.new,
+          ),
         ...overrides,
       ],
       child: const BognerChessApp(),

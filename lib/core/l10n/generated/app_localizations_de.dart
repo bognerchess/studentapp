@@ -1886,4 +1886,143 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get analysisNoticeView => 'Ansehen';
+
+  @override
+  String get gameDetailStagedHint =>
+      'Die Engine geht jeden Zug durch und markiert die Stellungen, die einen genaueren Blick wert sind. Das dauert ein paar Minuten und ist kostenlos.';
+
+  @override
+  String get gameDetailStageStripLabel => 'Schritte der Analyse';
+
+  @override
+  String get gameDetailStageNameEngine => 'Engine';
+
+  @override
+  String get gameDetailStageNameKeyPositions => 'Schlüsselstellungen';
+
+  @override
+  String get gameDetailStageNameDeep => 'Tiefenanalyse';
+
+  @override
+  String get gameDetailStageNameCoach => 'Coach';
+
+  @override
+  String get gameDetailStageStateNotRun => 'Noch nicht gestartet';
+
+  @override
+  String get gameDetailStageStateWaiting => 'Wartet';
+
+  @override
+  String get gameDetailStageStateRunning => 'Läuft…';
+
+  @override
+  String gameDetailStageStateProgress(int done, int total) {
+    return '$done von $total';
+  }
+
+  @override
+  String get gameDetailStageStateReady => 'Fertig';
+
+  @override
+  String get gameDetailStageStateFailed => 'Fehlgeschlagen';
+
+  @override
+  String get gameDetailStageStateStale => 'Veraltet';
+
+  @override
+  String gameDetailStageRowSemantics(String stage, String state) {
+    return '$stage: $state';
+  }
+
+  @override
+  String get gameDetailAskCoach => 'Coach fragen';
+
+  @override
+  String get gameDetailAskCoachHint =>
+      'Der Coach schreibt über deine Schlüsselmomente. Nur dieser Schritt zählt zu deinem Limit.';
+
+  @override
+  String get gameDetailStepFailedTitle => 'Dieser Schritt ist fehlgeschlagen';
+
+  @override
+  String get gameDetailRetryStage => 'Schritt noch einmal versuchen';
+
+  @override
+  String get gameDetailFailureInputMissing =>
+      'Ein früherer Schritt muss noch einmal laufen.';
+
+  @override
+  String get gameDetailFailureInvalidPgn =>
+      'Wir konnten die Züge dieser Partie nicht lesen.';
+
+  @override
+  String get gameDetailFailureTimeout =>
+      'Es hat zu lange gedauert. Versuch es noch einmal.';
+
+  @override
+  String get gameDetailFailureTooManyAttempts =>
+      'Zu viele Versuche. Versuch es später noch einmal.';
+
+  @override
+  String get gameDetailStaleTitle => 'Deine Züge haben sich geändert';
+
+  @override
+  String get gameDetailStaleMessage =>
+      'Die Analyse wurde für die früheren Züge gemacht.';
+
+  @override
+  String get gameDetailReanalyse => 'Noch einmal analysieren';
+
+  @override
+  String get analysisNoticeEngineReady =>
+      'Die Engine-Analyse deiner Partie ist bereit.';
+
+  @override
+  String analysisNoticeEngineReadyOpponent(String name) {
+    return 'Deine Partie gegen $name wurde von der Engine analysiert.';
+  }
+
+  @override
+  String get analysisNoticeStageFailed =>
+      'Ein Schritt der Analyse ist fehlgeschlagen.';
+
+  @override
+  String get analysisNoticeStale =>
+      'Deine Züge haben sich geändert, darum wurde die Analyse gestoppt.';
+
+  @override
+  String get reviewStageRunning => 'Die Analyse läuft…';
+
+  @override
+  String get reviewStageLookingForKeyPositions =>
+      'Engine-Analyse fertig. Wir suchen die Schlüsselstellungen…';
+
+  @override
+  String get reviewStageDeepRunning =>
+      'Schlüsselstellungen markiert. Die Tiefenanalyse läuft…';
+
+  @override
+  String get reviewStageDeepReady => 'Tiefenanalyse fertig.';
+
+  @override
+  String get reviewStageCoachWriting => 'Dein Coach schreibt…';
+
+  @override
+  String get reviewStageFailed => 'Dieser Schritt ist fehlgeschlagen.';
+
+  @override
+  String get reviewStageStale =>
+      'Deine Züge haben sich seit dieser Analyse geändert.';
+
+  @override
+  String get reviewAskCoach => 'Coach fragen';
+
+  @override
+  String get reviewStageRetry => 'Noch einmal versuchen';
+
+  @override
+  String get reviewSummaryNoCoach => 'Der Coach hat noch nichts geschrieben.';
+
+  @override
+  String get libraryStatusEngineReady => 'Engine-Analyse';
 }

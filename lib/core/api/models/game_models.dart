@@ -3,7 +3,7 @@
 // Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
 
 import 'package:bogner_chess/core/api/api_error.dart';
-import 'package:bogner_chess/core/api/models/analysis_models.dart';
+import 'package:bogner_chess/core/api/models/stage_models.dart';
 import 'package:bogner_chess/core/game/game_metadata.dart';
 import 'package:flutter/foundation.dart';
 
@@ -29,7 +29,7 @@ class GameSummary {
     this.timeControlTag,
     this.plyCount,
     this.createdAt,
-    this.latestJob,
+    this.workflow,
   });
 
   /// The server's id of the game.
@@ -72,8 +72,12 @@ class GameSummary {
   /// True once a finished analysis can be fetched.
   final bool hasAnalysis;
 
-  /// The most recently requested analysis job of this game.
-  final JobInfo? latestJob;
+  /// Where the staged pipeline of this game stood the last time this device
+  /// looked. Null for a game nothing has ever analysed on this device, and
+  /// for a row written by a build before this one: the server's list does not
+  /// carry it, only `gameAnalysisWorkflow` does, so it is written by the
+  /// workflow tracker and cached next to the game.
+  final GameWorkflowSummary? workflow;
 
   /// [timeControlTag] the way players write it ("10+5").
   TimeControl? get timeControl => TimeControl.fromPgnTag(timeControlTag);
@@ -86,7 +90,7 @@ class GameSummary {
   @override
   String toString() =>
       'GameSummary($id, ${playerColor.name}, ${result.pgn}, '
-      'analysis: $hasAnalysis, job: ${latestJob?.status.name})';
+      'analysis: $hasAnalysis, pipeline: ${workflow?.states.length ?? 0})';
 }
 
 /// A game with its moves.
@@ -109,7 +113,7 @@ class GameDetail extends GameSummary {
     super.timeControlTag,
     super.plyCount,
     super.createdAt,
-    super.latestJob,
+    super.workflow,
     this.startingFen,
     this.site,
     this.round,
@@ -117,6 +121,31 @@ class GameDetail extends GameSummary {
 
   /// The PGN as it was imported.
   final String pgn;
+
+  /// The same game with [workflow] attached. The server's game types carry no
+  /// pipeline, so this is how the cached one is put back on a fresh fetch.
+  GameDetail withWorkflow(GameWorkflowSummary? workflow) => GameDetail(
+    id: id,
+    playerColor: playerColor,
+    result: result,
+    hasAnalysis: hasAnalysis,
+    pgn: pgn,
+    clientGameId: clientGameId,
+    whiteName: whiteName,
+    blackName: blackName,
+    opponentName: opponentName,
+    whiteRating: whiteRating,
+    blackRating: blackRating,
+    playedDate: playedDate,
+    eventName: eventName,
+    timeControlTag: timeControlTag,
+    plyCount: plyCount,
+    createdAt: createdAt,
+    workflow: workflow,
+    startingFen: startingFen,
+    site: site,
+    round: round,
+  );
 
   /// Null for the standard starting position.
   final String? startingFen;

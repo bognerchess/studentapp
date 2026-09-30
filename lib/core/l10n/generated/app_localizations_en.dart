@@ -1869,4 +1869,140 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get analysisNoticeView => 'View';
+
+  @override
+  String get gameDetailStagedHint =>
+      'The engine goes through every move and marks the positions worth a closer look. It takes a couple of minutes and is free.';
+
+  @override
+  String get gameDetailStageStripLabel => 'Analysis steps';
+
+  @override
+  String get gameDetailStageNameEngine => 'Engine';
+
+  @override
+  String get gameDetailStageNameKeyPositions => 'Key positions';
+
+  @override
+  String get gameDetailStageNameDeep => 'Deep analysis';
+
+  @override
+  String get gameDetailStageNameCoach => 'Coach';
+
+  @override
+  String get gameDetailStageStateNotRun => 'Not started';
+
+  @override
+  String get gameDetailStageStateWaiting => 'Waiting';
+
+  @override
+  String get gameDetailStageStateRunning => 'Running…';
+
+  @override
+  String gameDetailStageStateProgress(int done, int total) {
+    return '$done of $total';
+  }
+
+  @override
+  String get gameDetailStageStateReady => 'Ready';
+
+  @override
+  String get gameDetailStageStateFailed => 'Failed';
+
+  @override
+  String get gameDetailStageStateStale => 'Out of date';
+
+  @override
+  String gameDetailStageRowSemantics(String stage, String state) {
+    return '$stage: $state';
+  }
+
+  @override
+  String get gameDetailAskCoach => 'Ask the coach';
+
+  @override
+  String get gameDetailAskCoachHint =>
+      'The coach writes about your key moments. This is the only step that counts against your quota.';
+
+  @override
+  String get gameDetailStepFailedTitle => 'This step failed';
+
+  @override
+  String get gameDetailRetryStage => 'Try this step again';
+
+  @override
+  String get gameDetailFailureInputMissing =>
+      'An earlier step has to run again.';
+
+  @override
+  String get gameDetailFailureInvalidPgn =>
+      'We could not read the moves of this game.';
+
+  @override
+  String get gameDetailFailureTimeout => 'It took too long. Try again.';
+
+  @override
+  String get gameDetailFailureTooManyAttempts =>
+      'Too many attempts. Try again later.';
+
+  @override
+  String get gameDetailStaleTitle => 'Your moves changed';
+
+  @override
+  String get gameDetailStaleMessage =>
+      'The analysis was made for the earlier moves.';
+
+  @override
+  String get gameDetailReanalyse => 'Analyse again';
+
+  @override
+  String get analysisNoticeEngineReady =>
+      'The engine analysis of your game is ready.';
+
+  @override
+  String analysisNoticeEngineReadyOpponent(String name) {
+    return 'Your game against $name has been analysed by the engine.';
+  }
+
+  @override
+  String get analysisNoticeStageFailed => 'A step of the analysis failed.';
+
+  @override
+  String get analysisNoticeStale =>
+      'Your moves changed, so the analysis stopped.';
+
+  @override
+  String get reviewStageRunning => 'The analysis is running…';
+
+  @override
+  String get reviewStageLookingForKeyPositions =>
+      'Engine analysis ready. Looking for key positions…';
+
+  @override
+  String get reviewStageDeepRunning =>
+      'Key positions marked. Deep analysis running…';
+
+  @override
+  String get reviewStageDeepReady => 'Deep analysis ready.';
+
+  @override
+  String get reviewStageCoachWriting => 'Your coach is writing…';
+
+  @override
+  String get reviewStageFailed => 'This step failed.';
+
+  @override
+  String get reviewStageStale => 'Your moves changed since this analysis.';
+
+  @override
+  String get reviewAskCoach => 'Ask the coach';
+
+  @override
+  String get reviewStageRetry => 'Try again';
+
+  @override
+  String get reviewSummaryNoCoach => 'The coach has not written yet.';
+
+  @override
+  String get libraryStatusEngineReady => 'Engine analysis';
 }

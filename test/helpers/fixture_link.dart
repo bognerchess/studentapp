@@ -30,11 +30,11 @@ typedef FixtureResponder = FutureOr<Map<String, dynamic>> Function(
 /// `test/fixtures/graphql/<Operation>/<scenario>.json`: the API layer without
 /// a network, a token or a server, for widget and repository tests.
 ///
-///     final api = FixtureLink({'RequestGameAnalysis': 'limit_reached'});
+///     final api = FixtureLink({'RunCoaching': 'limit_reached'});
 ///     await pumpApp(tester, overrides: api.overrides);
 ///     ...
-///     api.use('RequestGameAnalysis', 'accepted');       // change it later
-///     expect(api.requestsOf('RequestGameAnalysis').single.variables, ...);
+///     api.use('RunCoaching', 'default');               // change it later
+///     expect(api.requestsOf('RunCoaching').single.variables, ...);
 ///
 /// An operation without a chosen scenario is answered with its `default`
 /// fixture; without one the request fails and names the scenarios that exist.

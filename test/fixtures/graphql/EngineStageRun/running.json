@@ -1,0 +1,15 @@
+{
+  "data": {
+    "engineStageRun": {
+      "id": "run-de",
+      "chessGameId": "game-1",
+      "stage": "DEEP_EVALUATION",
+      "status": "RUNNING",
+      "artifact": null,
+      "supersededAt": null,
+      "finishedAt": null,
+      "failureCode": null,
+      "failureMessage": null
+    }
+  }
+}

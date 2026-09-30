@@ -10,7 +10,7 @@ import 'package:bogner_chess/core/game/game_metadata.dart';
 import 'package:bogner_chess/core/game/library_refresh.dart';
 import 'package:bogner_chess/core/storage/app_database.dart' show DraftState;
 import 'package:bogner_chess/core/storage/storage_providers.dart';
-import 'package:bogner_chess/features/analysis_status/domain/job_tracker_providers.dart';
+import 'package:bogner_chess/features/analysis_status/domain/workflow_tracker_providers.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -134,8 +134,8 @@ class LibraryController extends Notifier<LibrarySyncState> {
     final filter = state.filter;
     final startedAt = games.now();
     state = state.copyWith(refreshing: true);
-    // Jobs first seen elsewhere (another device, the submit queue).
-    unawaited(ref.read(jobTrackerProvider).refreshNow());
+    // Pipelines first seen elsewhere (the submit queue, an earlier session).
+    unawaited(ref.read(workflowTrackerProvider).refreshNow());
     try {
       final page = await games.fetchPage(
         owner,
@@ -310,7 +310,7 @@ final libraryRowsProvider = Provider.autoDispose<List<LibraryRow>?>((ref) {
     return null;
   }
   final filter = ref.watch(libraryControllerProvider.select((s) => s.filter));
-  final tracked = ref.watch(trackedJobsProvider);
+  final workflows = ref.watch(trackedWorkflowsProvider);
   return [
     for (final draft in drafts)
       if (filter.matchesDate(draft.playedDate) &&
@@ -321,6 +321,14 @@ final libraryRowsProvider = Provider.autoDispose<List<LibraryRow>?>((ref) {
           ]))
         draft,
     for (final game in games)
-      LibraryGameRow(game, job: newestJob(tracked[game.id], game.latestJob)),
+      LibraryGameRow(
+        game,
+        // The tracker's live copy while it is watching; the row falls back to
+        // what the cache remembers.
+        workflow: switch (workflows[game.id]) {
+          null => null,
+          final workflow => GameWorkflowSummary.of(workflow),
+        },
+      ),
   ];
 });

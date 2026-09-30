@@ -16,8 +16,7 @@
         "whiteElo": 1650,
         "blackElo": 1712,
         "created": "2026-09-19T10:00:00.000Z",
-        "hasAnalysis": false,
-        "latestAnalysisJob": null
+        "hasAnalysis": false
       },
       "errors": null
     }

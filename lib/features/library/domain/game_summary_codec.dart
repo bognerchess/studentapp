@@ -11,9 +11,17 @@ import 'package:bogner_chess/core/game/game_metadata.dart';
 ///
 /// The format is private to the app (version key `v`). Reading is tolerant:
 /// a row this build cannot read is null and simply does not show until the
-/// next refresh replaces it.
+/// next refresh replaces it. Version 2 added `workflow`, so a version-1 row
+/// reads as a game whose pipeline this device knows nothing about — which is
+/// exactly what it was.
+///
+/// A version-1 row also carries a `job` key, the whole-game analysis job of
+/// the path WP-60 replaced. It is read past: that job is transient state of a
+/// pipeline that no longer exists in this app, and the badge never depended on
+/// it (`hasAnalysis` and `workflow` decide). The next refresh writes the row
+/// without the key.
 abstract final class GameSummaryCodec {
-  static const int version = 1;
+  static const int version = 2;
 
   static String encode(GameSummary game) => jsonEncode(toJson(game));
 
@@ -33,21 +41,7 @@ abstract final class GameSummaryCodec {
     'timeControl': game.timeControlTag,
     'createdAt': game.createdAt?.toUtc().toIso8601String(),
     'hasAnalysis': game.hasAnalysis,
-    'job': switch (game.latestJob) {
-      null => null,
-      final job => jobToJson(job),
-    },
-  };
-
-  static Map<String, Object?> jobToJson(JobInfo job) => {
-    'id': job.id,
-    'gameId': job.gameId,
-    'status': job.status.name,
-    'stage': job.stage,
-    'queuePosition': job.queuePosition,
-    'requestedAt': job.requestedAt.toUtc().toIso8601String(),
-    'finishedAt': job.finishedAt?.toUtc().toIso8601String(),
-    'failureCode': job.failureCode,
+    'workflow': game.workflow?.toJson(),
   };
 
   static GameSummary? decode(String text) {
@@ -81,31 +75,16 @@ abstract final class GameSummaryCodec {
       timeControlTag: _string(json['timeControl']),
       createdAt: _instant(json['createdAt']),
       hasAnalysis: json['hasAnalysis'] == true,
-      latestJob: switch (json['job']) {
-        final Map<String, dynamic> job => jobFromJson(job),
-        _ => null,
-      },
+      workflow: workflowFromJson(json['workflow']),
     );
   }
 
-  static JobInfo? jobFromJson(Map<String, dynamic> json) {
-    final id = _string(json['id']);
-    final gameId = _string(json['gameId']);
-    final requestedAt = _instant(json['requestedAt']);
-    if (id == null || gameId == null || requestedAt == null) {
-      return null;
-    }
-    return JobInfo(
-      id: id,
-      gameId: gameId,
-      status: JobStatus.values.asNameMap()[json['status']] ?? JobStatus.unknown,
-      stage: _string(json['stage']),
-      queuePosition: _int(json['queuePosition']),
-      requestedAt: requestedAt,
-      finishedAt: _instant(json['finishedAt']),
-      failureCode: _string(json['failureCode']),
-    );
-  }
+  /// The pipeline summary of a row, or null: a version-1 row has no key, and
+  /// damaged content reads as "nothing known" rather than failing the row.
+  static GameWorkflowSummary? workflowFromJson(Object? value) =>
+      value is Map<String, dynamic>
+      ? GameWorkflowSummary.fromJson(value)
+      : null;
 
   static String? _string(Object? value) =>
       value is String && value.isNotEmpty ? value : null;
@@ -116,11 +95,12 @@ abstract final class GameSummaryCodec {
       value is String ? DateTime.tryParse(value)?.toUtc() : null;
 }
 
-/// [game] with another job and analysis flag; everything else unchanged.
+/// [game] with another pipeline summary and analysis flag; everything else
+/// unchanged.
 GameSummary gameSummaryWith(
   GameSummary game, {
-  required JobInfo? latestJob,
   required bool hasAnalysis,
+  GameWorkflowSummary? workflow,
 }) {
   return GameSummary(
     id: game.id,
@@ -138,6 +118,6 @@ GameSummary gameSummaryWith(
     plyCount: game.plyCount,
     createdAt: game.createdAt,
     hasAnalysis: hasAnalysis,
-    latestJob: latestJob,
+    workflow: workflow ?? game.workflow,
   );
 }

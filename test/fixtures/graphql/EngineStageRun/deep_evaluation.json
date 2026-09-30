@@ -1,0 +1,129 @@
+{
+  "data": {
+    "engineStageRun": {
+      "id": "run-de",
+      "chessGameId": "game-1",
+      "stage": "DEEP_EVALUATION",
+      "status": "DONE",
+      "artifact": {
+        "artifact_version": 1,
+        "stage": "deep_evaluation",
+        "context": {
+          "language": "en",
+          "student_color": "black",
+          "rating_band": "1000-1200",
+          "result": "1-0",
+          "ply_count": 21,
+          "opening_name": "Caro-Kann Defence"
+        },
+        "nodes": [
+          {
+            "ply": 1,
+            "move_number": 1,
+            "color": "white",
+            "san": "e4",
+            "uci": "e2e4",
+            "fen_before": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+            "fen_after": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
+            "eval_before": {
+              "cp": 35
+            },
+            "eval_after": {
+              "cp": 37
+            },
+            "win_pct_before": 54.7,
+            "win_pct_after": 55.0,
+            "win_pct_loss": 0.0,
+            "classification": "book",
+            "is_critical": false,
+            "best": null,
+            "variations": [],
+            "comment_ids": []
+          },
+          {
+            "ply": 2,
+            "move_number": 1,
+            "color": "black",
+            "san": "c6",
+            "uci": "c7c6",
+            "fen_before": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
+            "fen_after": "rnbqkbnr/pp1ppppp/2p5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+            "eval_before": {
+              "cp": 37
+            },
+            "eval_after": {
+              "cp": 28
+            },
+            "win_pct_before": 45.0,
+            "win_pct_after": 46.2,
+            "win_pct_loss": 0.0,
+            "classification": "book",
+            "is_critical": false,
+            "best": {
+              "san": "e5",
+              "uci": "e7e5",
+              "eval": {
+                "cp": 37
+              }
+            },
+            "variations": [],
+            "comment_ids": []
+          },
+          {
+            "ply": 3,
+            "move_number": 2,
+            "color": "white",
+            "san": "d4",
+            "uci": "d2d4",
+            "fen_before": "rnbqkbnr/pp1ppppp/2p5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+            "fen_after": "rnbqkbnr/pp1ppppp/2p5/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq - 0 2",
+            "eval_before": {
+              "cp": 28
+            },
+            "eval_after": {
+              "cp": 30
+            },
+            "win_pct_before": 53.8,
+            "win_pct_after": 54.0,
+            "win_pct_loss": 0.0,
+            "classification": "book",
+            "is_critical": false,
+            "best": null,
+            "variations": [],
+            "comment_ids": []
+          }
+        ],
+        "moments": [
+          {
+            "ply": 10,
+            "kind": "critical_moment",
+            "phase": "opening",
+            "moves_before_san": [],
+            "motifs": [],
+            "material_balance": 0,
+            "peer_move_san": null,
+            "peer_move_prob": null,
+            "selection_score": 9.7
+          }
+        ],
+        "dropped": [],
+        "accuracy": {
+          "white": 97.2,
+          "black": 85.0
+        },
+        "engine": {
+          "name": "Stockfish 19",
+          "pass1_nodes": 400000,
+          "pass2_nodes": 3000000,
+          "pass2_multipv": 3,
+          "human_model": "maia3-5m"
+        },
+        "engine_calls": 12
+      },
+      "supersededAt": null,
+      "finishedAt": "2026-09-19T10:01:00.000Z",
+      "failureCode": null,
+      "failureMessage": null
+    }
+  }
+}

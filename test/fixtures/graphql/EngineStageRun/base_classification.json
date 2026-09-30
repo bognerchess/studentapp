@@ -1,0 +1,33 @@
+{
+  "data": {
+    "engineStageRun": {
+      "id": "run-bc",
+      "chessGameId": "game-1",
+      "stage": "BASE_CLASSIFICATION",
+      "status": "DONE",
+      "artifact": {
+        "artifact_version": 1,
+        "stage": "base_classification",
+        "selections": [
+          {
+            "ply": 10,
+            "kind": "critical_moment",
+            "score": 9.7,
+            "reason": "mistake"
+          },
+          {
+            "ply": 16,
+            "kind": "critical_moment",
+            "score": 26.4,
+            "reason": "blunder"
+          }
+        ],
+        "sharpness": {}
+      },
+      "supersededAt": null,
+      "finishedAt": "2026-09-19T10:01:00.000Z",
+      "failureCode": null,
+      "failureMessage": null
+    }
+  }
+}

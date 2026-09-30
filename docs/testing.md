@@ -140,10 +140,10 @@ there):
 - **`FixtureLink`** (`test/helpers/fixture_link.dart`) is a `gql` link that answers from those
   files. Widget tests and repository tests put it under the API layer with one override:
 
-      final api = FixtureLink({'RequestGameAnalysis': 'limit_reached'});
+      final api = FixtureLink({'RunCoaching': 'limit_reached'});
       await pumpApp(tester, overrides: api.overrides);      // apiLinkProvider -> api
-      api.use('RequestGameAnalysis', 'default');            // change the answer later
-      api.respond('AnalysisJob', (variables) => {...});     // or compute it
+      api.use('RunCoaching', 'default');                    // change the answer later
+      api.respond('GameAnalysisWorkflow', (variables) => {...});   // or compute it
       api.fail('MyMobileGames', const SocketException('offline'));
       expect(api.requestsOf('ImportMobileGame').single.variables, ...);
 
@@ -151,13 +151,50 @@ there):
   for and no HTTP happens, which matters: **a test file that contains `testWidgets` cannot make real
   HTTP requests** (the test binding answers them all with status 400).
 - **The mock server** (`tool/mock_server`, a `shelf` app) is the same data behind real HTTP, with
-  memory: imported games, jobs that go QUEUED, RUNNING, DONE, a daily limit of three, the consent
-  flow, feedback. `dart run tool/mock_server/main.dart --port 5299` runs it for the simulator and for
+  memory: imported games, the analysis pipeline, a daily limit of three, the consent flow, feedback.
+  `dart run tool/mock_server/main.dart --port 5299` runs it for the simulator and for
   `integration_test` (`config/fake.json` points there); `--help` lists the options and the scenarios
   of `POST /__scenario`. Tests without `testWidgets` start it in-process on a free port:
   `final server = await MockServer.start();` (see `test/core/api/repositories_mock_server_test.dart`).
   It is development tooling and imports nothing but `dart:io` and `shelf`; `test/tool/mock_server_test.dart`
   is its own test.
+
+  **The four stages.** `gameAnalysisWorkflow` reports `BASE_EVALUATION`,
+  `BASE_CLASSIFICATION`, `DEEP_EVALUATION` and `COACHING` per game, and derives
+  `runnable`, `blockedBy`, `nextRunnableStage` and `isComplete` the way the
+  backend does, so a scenario the server could not send cannot be set up here
+  either. A run is **poll-counted**: it answers `QUEUED` to the first poll,
+  `RUNNING` to the next two and is then over (`--job-polls`, or `--job-seconds`
+  to go by the clock instead), and one poll is one `GameAnalysisWorkflow`
+  query — so the pipeline only moves while something is asking. The three
+  engine stages are free; only `runCoaching` is metered and only it can be
+  refused for quota, consent or an unconfirmed address. A finished coaching run
+  writes the forty-move document with comment ids of its own, which is what
+  makes `gameAnalysis`, `hasAnalysis` and `submitCoachCommentFeedback` work on
+  a staged analysis. `engineStageRun` hands out the artifact of a finished run
+  (the engine stages from `test/fixtures/analysis/stages/`, coaching the
+  document it wrote) and does **not** move the run on.
+
+  **The scenarios** (`POST /__scenario {"name": …}`): `default` clears the
+  flags, `reset` forgets everything; `limit_reached`, `consent_required`,
+  `consent_accepted`, `email_not_verified` and `deletion_blocked` set up one
+  refusal each; `unauthenticated_once` answers the next request with a 401;
+  `slow [delayMs]` delays every answer; `fixture` pins one operation to any
+  fixture. Three belong to the pipeline:
+
+  - `stage_fails [stage]` — every run of that stage fails, with
+    `stage_input_missing`; the stage defaults to `BASE_EVALUATION`, so
+    `{"name": "stage_fails", "stage": "DEEP_EVALUATION"}` is how the failed
+    step and its retry are seen on a game that already has two stages stored.
+  - `rate_limited [retryAfterSeconds]` — all four `run*` mutations answer
+    `RateLimitedError`, the fair-use guard on the engine commands.
+  - `stale` — the moves of every game that has a pipeline changed just now, so
+    every stage that finished earlier reads `STALE` and the document, while
+    still readable, is about other moves. A stage started after that finishes
+    later and is `READY` again.
+
+  `GET /__state` lists the pipeline of every game with its four states, which
+  is the quickest way to see where a simulator session stands.
 - **`fixtures_test.dart`** runs every fixture through the generated `fromJson` and through the
   repository of its operation, and fails when an operation has no `default` or an error union has a
   member without a fixture. `schema_pin_test.dart` pins `graphql/schema.graphql` to the backend's

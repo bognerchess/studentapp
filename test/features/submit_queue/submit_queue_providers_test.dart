@@ -2,9 +2,8 @@
 // Copyright (C) 2026 Bogner Chess
 // Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
 
-import 'package:bogner_chess/core/analysis/analysis_job_sink.dart';
-import 'package:bogner_chess/core/api/analysis_api.dart';
 import 'package:bogner_chess/core/api/api_providers.dart';
+import 'package:bogner_chess/core/api/stage_api.dart';
 import 'package:bogner_chess/core/auth/auth_state.dart';
 import 'package:bogner_chess/core/connectivity/connectivity.dart';
 import 'package:bogner_chess/core/game/game_metadata.dart';
@@ -32,7 +31,7 @@ Future<void> _settle() =>
 void main() {
   late AppDatabase db;
   late FakeGamesApi games;
-  late FakeAnalysisApi analysis;
+  late FakeStageApi stages;
   late FakeConnectivity connectivity;
 
   ProviderContainer container({AuthState auth = const SignedOut()}) {
@@ -40,7 +39,7 @@ void main() {
       overrides: [
         appDatabaseProvider.overrideWithValue(db),
         gamesApiProvider.overrideWithValue(games),
-        analysisApiProvider.overrideWithValue(analysis),
+        stageApiProvider.overrideWithValue(stages),
         connectivityProvider.overrideWithValue(connectivity),
         apiLanguageTagProvider.overrideWithValue(() => 'de-CH'),
         authStateProvider.overrideWith(() => TestAuthNotifier(auth)),
@@ -53,14 +52,14 @@ void main() {
   setUp(() {
     db = openTestDatabase(FakeClock());
     games = FakeGamesApi();
-    analysis = FakeAnalysisApi();
+    stages = FakeStageApi();
     connectivity = FakeConnectivity();
   });
 
   tearDown(() => db.close());
 
-  test('signing in is a trigger; the library is told, the job is recorded, '
-      'the coach speaks the system language', () async {
+  test('signing in is a trigger; the library is told and the pipeline '
+      'recorded', () async {
     await db.draftsDao.create(
       alice,
       pgn: '1. e4',
@@ -84,9 +83,12 @@ void main() {
     await _settle();
 
     expect(games.calls, hasLength(1));
-    expect(analysis.calls.single.language, 'de');
+    expect(stages.started.single, 'game-1');
     expect(c.read(libraryRefreshProvider), 1);
-    expect((await db.pendingJobsDao.getActive(alice)).single.gameId, 'game-1');
+    expect(
+      (await db.pendingWorkflowsDao.getActive(alice)).single.gameId,
+      'game-1',
+    );
     expect(events.single, isA<GameUploaded>());
     expect(statuses.any((s) => s.uploading), isTrue);
     expect(statuses.last, SubmitQueueStatus.idle);
@@ -117,7 +119,8 @@ void main() {
   });
 
   test('analysisHoldProvider: the reason by server game id', () async {
-    analysis.outcomes.add(const AnalysisQueueFull(2));
+    // Fair use on the engine command: the one refusal this path can meet.
+    stages.outcomes.add(const AnalysisRateLimited(Duration(seconds: 30)));
     final c = container(auth: const SignedIn(alice));
     await c
         .read(submitQueueProvider)
@@ -136,34 +139,10 @@ void main() {
       fireImmediately: true,
     );
     await _settle();
-    expect(holds.last, AnalysisHold.queueFull);
+    expect(holds.last, AnalysisHold.rateLimited);
     final other = c.listen(analysisHoldProvider('game-2'), (_, _) {});
     await _settle();
     expect(other.read().value, isNull);
-  });
-
-  test('the default job sink ignores a job when nobody is signed in', () async {
-    final c = container();
-    c
-        .read(analysisJobSinkProvider)
-        .track(
-          JobInfo(
-            id: 'job-1',
-            gameId: 'game-1',
-            status: JobStatus.running,
-            requestedAt: DateTime.utc(2026),
-          ),
-        );
-    await _settle();
-    expect(await db.pendingJobsDao.getActive(alice), isEmpty);
-  });
-
-  test('coachLanguageOf', () {
-    expect(coachLanguageOf('de-CH'), 'de');
-    expect(coachLanguageOf('de'), 'de');
-    expect(coachLanguageOf('en_US'), 'en');
-    expect(coachLanguageOf('fr-CH'), 'en');
-    expect(coachLanguageOf(''), 'en');
   });
 
   test('the banner sentence for every state, in both languages', () async {

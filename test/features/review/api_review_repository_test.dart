@@ -8,6 +8,15 @@ import 'dart:io';
 import 'package:bogner_chess/core/analysis/analysis_parser.dart';
 import 'package:bogner_chess/core/api/analysis_api.dart' as api;
 import 'package:bogner_chess/core/api/games_api.dart';
+import 'package:bogner_chess/core/api/stage_api.dart'
+    show
+        AnalysisStage,
+        AnalysisStageState,
+        AnalysisWorkflow,
+        JobStatus,
+        StageApi,
+        StageRunSummary,
+        WorkflowStage;
 import 'package:bogner_chess/core/storage/app_database.dart';
 import 'package:bogner_chess/features/library/data/cached_games_repository.dart';
 import 'package:bogner_chess/features/review/data/api_review_repository.dart';
@@ -31,6 +40,10 @@ void main() {
   late ApiReviewRepository repository;
   String? owner;
 
+  /// What the tracker would be holding: null means "not watching this game",
+  /// which is the cold open the repository answers with one query.
+  final Map<String, AnalysisWorkflow> tracked = {};
+
   setUp(() {
     clock = FakeClock();
     db = openTestDatabase(clock);
@@ -38,16 +51,34 @@ void main() {
     final executor = linkExecutor(link);
     games = CachedGamesRepository(api: GamesApi(executor), db: db);
     owner = alice;
+    tracked.clear();
     repository = ApiReviewRepository(
       analysisApi: api.AnalysisApi(executor),
+      stageApi: StageApi(executor),
       games: games,
       db: db,
       owner: () => owner,
+      trackedWorkflow: (gameId) => tracked[gameId],
     );
   });
   tearDown(() => db.close());
 
   int fetches() => link.requestsOf('GameAnalysis').length;
+  int workflowQueries() => link.requestsOf('GameAnalysisWorkflow').length;
+
+  /// The engine assembly the tracker would have written, so that the coach
+  /// document has something to win against.
+  Future<void> cacheEngineAssembly() async {
+    await db.analysisCacheDao.putEngine(
+      alice,
+      'game-1',
+      schemaVersion: 1,
+      schemaMinor: 0,
+      payload: jsonEncode(link.store.json('analysis/v1/short-game.json')),
+      stage: 'DEEP_EVALUATION',
+      stageRunIds: jsonEncode({'DEEP_EVALUATION': 'run-de'}),
+    );
+  }
 
   test('cache miss: fetched, stored with its schema version, header from the '
       'library, feedback from the server', () async {
@@ -91,48 +122,117 @@ void main() {
     expect(data.header.black, 'Jonas Keller');
   });
 
-  test('a newer finished job makes the cached copy stale', () async {
-    await games.fetchPage(alice, fetchedAt: games.now());
-    await repository.load('game-1');
-    expect(fetches(), 1);
+  group('the engine assembly and the coach document', () {
+    test('a cached engine assembly is shown, and says so', () async {
+      await cacheEngineAssembly();
+      link.use('GameAnalysisWorkflow', 'engine_ready');
 
-    // The game is analysed again, later.
-    clock.advance(const Duration(hours: 1));
-    await games.applyJob(
-      alice,
-      JobInfo(
-        id: 'job-again',
-        gameId: 'game-1',
-        status: JobStatus.done,
-        requestedAt: clock().subtract(const Duration(minutes: 3)),
-        finishedAt: clock(),
-      ),
-      hasAnalysis: true,
-    );
-    await repository.load('game-1');
-    expect(fetches(), 2);
+      final data = await repository.load('game-1');
+      expect(data.result, isA<AnalysisSupported>());
+      expect(data.source, AnalysisSource.engine);
+      expect(fetches(), 0, reason: 'the coach has not written');
+    });
 
-    // Now the copy is as new as the job.
-    await repository.load('game-1');
-    expect(fetches(), 2);
-  });
+    test('a ready coaching stage beats the engine assembly', () async {
+      await cacheEngineAssembly();
+      link.use('GameAnalysisWorkflow', 'all_ready');
 
-  test('stale but offline: the cached copy is shown', () async {
-    await games.fetchPage(alice, fetchedAt: games.now());
-    await repository.load('game-1');
-    clock.advance(const Duration(hours: 1));
-    await games.applyJob(
-      alice,
-      JobInfo(
-        id: 'job-again',
-        gameId: 'game-1',
-        status: JobStatus.done,
-        requestedAt: clock(),
-        finishedAt: clock(),
-      ),
-    );
-    link.fail('GameAnalysis', const SocketException('offline'));
-    expect((await repository.load('game-1')).result, isA<AnalysisSupported>());
+      final data = await repository.load('game-1');
+      expect(data.source, AnalysisSource.coach);
+      expect(fetches(), 1);
+      // And the run it was fetched for is recorded, so the next open is free.
+      final row = (await db.analysisCacheDao.get(alice, 'game-1'))!;
+      expect(row.source, AnalysisSource.coach);
+      expect(jsonDecode(row.stageRunIds!), {'COACHING': 'run-co'});
+
+      await repository.load('game-1');
+      expect(fetches(), 1);
+    });
+
+    test('a newer coaching run makes the coach document stale', () async {
+      await cacheEngineAssembly();
+      link.use('GameAnalysisWorkflow', 'all_ready');
+      await repository.load('game-1');
+      expect(fetches(), 1);
+
+      // The user asked the coach again; a new run is ready.
+      link.respond('GameAnalysisWorkflow', (_) {
+        final body = link.store.response('GameAnalysisWorkflow', 'all_ready');
+        final workflow =
+            (body['data'] as Map)['gameAnalysisWorkflow']
+                as Map<String, Object?>;
+        final stages = workflow['stages'] as List;
+        ((stages.last as Map)['run'] as Map)['id'] = 'run-co-2';
+        return body;
+      });
+      await repository.load('game-1');
+      expect(fetches(), 2);
+      final row = (await db.analysisCacheDao.get(alice, 'game-1'))!;
+      expect(jsonDecode(row.stageRunIds!), {'COACHING': 'run-co-2'});
+    });
+
+    test('a coach row without a recorded run is left alone', () async {
+      // What the whole-game path writes, and what a build before this one
+      // wrote: no run id to compare, and already the best kind of document.
+      await db.analysisCacheDao.putCoach(
+        alice,
+        'game-1',
+        schemaVersion: 1,
+        schemaMinor: 0,
+        payload: jsonEncode(link.store.json('analysis/v1/short-game.json')),
+      );
+      link.use('GameAnalysisWorkflow', 'all_ready');
+
+      expect((await repository.load('game-1')).source, AnalysisSource.coach);
+      expect(fetches(), 0);
+    });
+
+    test('the tracker knows the workflow: no query of our own', () async {
+      await cacheEngineAssembly();
+      tracked['game-1'] = _engineReady;
+
+      final data = await repository.load('game-1');
+      expect(data.source, AnalysisSource.engine);
+      expect(workflowQueries(), 0);
+      expect(fetches(), 0);
+    });
+
+    test('nothing cached: the document is fetched without asking the '
+        'pipeline first', () async {
+      await repository.load('game-1');
+      expect(fetches(), 1);
+      expect(
+        workflowQueries(),
+        0,
+        reason: 'the answer could not have changed what happens',
+      );
+    });
+
+    test('stale but offline: the cached copy is shown', () async {
+      await cacheEngineAssembly();
+      link
+        ..use('GameAnalysisWorkflow', 'all_ready')
+        ..fail('GameAnalysis', const SocketException('offline'));
+
+      final data = await repository.load('game-1');
+      expect(data.result, isA<AnalysisSupported>());
+      expect(data.source, AnalysisSource.engine);
+    });
+
+    test('the pipeline cannot be reached: the cached copy is shown', () async {
+      await cacheEngineAssembly();
+      link.fail('GameAnalysisWorkflow', const SocketException('offline'));
+
+      expect((await repository.load('game-1')).source, AnalysisSource.engine);
+      expect(fetches(), 0);
+    });
+
+    test('a game that is gone: no workflow, the cached copy stands', () async {
+      await cacheEngineAssembly();
+      link.use('GameAnalysisWorkflow', 'not_found');
+
+      expect((await repository.load('game-1')).source, AnalysisSource.engine);
+    });
   });
 
   test('nothing cached and offline: the error is thrown', () async {
@@ -179,7 +279,7 @@ void main() {
 
     // And without a connection the header is simply empty.
     await db.gamesCacheDao.remove(alice, 'game-1');
-    await db.analysisCacheDao.put(
+    await db.analysisCacheDao.putCoach(
       alice,
       'game-1',
       schemaVersion: 1,
@@ -216,3 +316,33 @@ void main() {
     },
   );
 }
+
+/// What the tracker holds for a game whose three engine stages are stored and
+/// whose coach has not been asked.
+final AnalysisWorkflow _engineReady = AnalysisWorkflow(
+  gameId: 'game-1',
+  isComplete: false,
+  nextRunnableStage: AnalysisStage.coaching,
+  stages: [
+    for (final (stage, state) in const [
+      (AnalysisStage.baseEvaluation, AnalysisStageState.ready),
+      (AnalysisStage.baseClassification, AnalysisStageState.ready),
+      (AnalysisStage.deepEvaluation, AnalysisStageState.ready),
+      (AnalysisStage.coaching, AnalysisStageState.notRun),
+    ])
+      WorkflowStage(
+        stage: stage,
+        state: state,
+        runnable: stage == AnalysisStage.coaching,
+        usesModel: stage.usesModel,
+        run: state == AnalysisStageState.ready
+            ? StageRunSummary(
+                id: 'run-${stage.name}',
+                status: JobStatus.done,
+                hasArtifact: true,
+                requestedAt: DateTime.utc(2026, 9, 19, 10),
+              )
+            : null,
+      ),
+  ],
+);

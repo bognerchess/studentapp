@@ -12,19 +12,25 @@
 //     --dart-define-from-file=config/fake.json \
 //     -t lib/features/game_detail/dev/flow_demo.dart
 //   xcrun simctl launch <udid> com.bognerchess.mobile \
-//     -AppleLanguages "(de)" -flow_demo "game:game-3,request,wait:8,open"
+//     -AppleLanguages "(de)" -flow_demo "game:game-3,analyse,wait:8,open"
 //
 // `-flow_demo` is a comma-separated list of steps, one second apart:
 //
 //   game:<id>     open the game screen of <id>
 //   review:<id>   open the review of <id>
-//   request       press "Analyse this game" on the open game screen (the
-//                 real flow, sheets included)
+//   analyse       press "Analyse this game" on the open game screen: the
+//                 three free engine stages, the real flow
+//   coach         press "Ask the coach" on the open game screen (the real
+//                 flow, sheets and the consent round trip included)
 //   open          press "Open analysis" on the open game screen
 //   search:<text> type into the library's search field
 //   refresh       pull to refresh the library
 //   back          pop the top route
 //   wait:<n>      wait n more seconds
+//
+// The mock server's scenarios are set from the host while the app runs
+// (`curl -X POST localhost:5299/__scenario -d '{"name": "stage_fails"}'`), so
+// one script can walk through a refusal as well as the happy path.
 //
 // Launch arguments of the form `-key value` end up in NSUserDefaults, which
 // is where shared_preferences reads from.
@@ -70,8 +76,10 @@ Future<void> main() async {
         unawaited(router.push(AppRoutes.game(argument)));
       case 'review':
         unawaited(router.push(AppRoutes.gameReview(argument)));
-      case 'request' when openGame != null:
-        _request(container, openGame);
+      case 'analyse' when openGame != null:
+        _onGame(container, openGame, runFreeChain);
+      case 'coach' when openGame != null:
+        _onGame(container, openGame, runCoachRequest);
       case 'open' when openGame != null:
         unawaited(router.push(AppRoutes.gameReview(openGame)));
       case 'search':
@@ -92,7 +100,12 @@ Future<void> main() async {
   }
 }
 
-void _request(ProviderContainer container, String gameId) {
+/// Runs one of the request flows on [gameId] the way its button does.
+void _onGame(
+  ProviderContainer container,
+  String gameId,
+  Future<void> Function(BuildContext, GameDetailController) flow,
+) {
   // Below the root navigator, as the button's own context is.
   final context = rootNavigatorKey.currentState!.overlay!.context;
   // Keep the controller alive for the duration of the request.
@@ -101,7 +114,7 @@ void _request(ProviderContainer container, String gameId) {
     (_, _) {},
   );
   unawaited(
-    runAnalysisRequest(
+    flow(
       context,
       container.read(gameDetailControllerProvider(gameId).notifier),
     ).whenComplete(subscription.close),

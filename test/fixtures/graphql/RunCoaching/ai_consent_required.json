@@ -1,0 +1,14 @@
+{
+  "data": {
+    "runCoaching": {
+      "engineStageRun": null,
+      "errors": [
+        {
+          "__typename": "AiConsentRequiredError",
+          "message": "web_api_errors.ai_consent_required",
+          "requiredVersion": 1
+        }
+      ]
+    }
+  }
+}

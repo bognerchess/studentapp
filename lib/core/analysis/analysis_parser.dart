@@ -436,7 +436,9 @@ final class _Run {
     // rights and en passant cannot differ from the main line.
     final kind = VariationKind.fromWire(kindRaw);
     final Position? start = switch (kind) {
-      VariationKind.bestLine || VariationKind.alternative =>
+      VariationKind.bestLine ||
+      VariationKind.alternative ||
+      VariationKind.peerLine =>
         _samePlacement(startFen, before) ? before : null,
       VariationKind.refutation =>
         _samePlacement(startFen, after) ? after : null,

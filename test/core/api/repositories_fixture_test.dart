@@ -81,17 +81,15 @@ void main() {
       expect(first.plyCount, isNull);
       expect(first.createdAt, DateTime.utc(2026, 9, 12, 18, 30));
       expect(first.hasAnalysis, isTrue);
-      expect(first.latestJob?.status, JobStatus.done);
       expect(
-        first.latestJob?.finishedAt,
-        DateTime.utc(2026, 9, 12, 18, 34, 10),
+        first.workflow,
+        isNull,
+        reason: 'the list carries no pipeline; the tracker caches it',
       );
 
       final second = page.games[1];
       expect(second.playerColor, PlayerColor.black);
       expect(second.result, GameResult.draw);
-      expect(second.latestJob?.status, JobStatus.running);
-      expect(second.latestJob?.stage, 'engine');
       expect(second.hasAnalysis, isFalse);
 
       final third = page.games[2];
@@ -99,7 +97,6 @@ void main() {
       expect(third.eventName, isNull);
       expect(third.whiteName, isNull);
       expect(third.displayOpponentName, 'Anonymous');
-      expect(third.latestJob, isNull);
       expect(third.toString(), isNot(contains('Anonymous')));
     });
 
@@ -148,9 +145,6 @@ void main() {
         expect(game.playerColor, PlayerColor.white);
         expect(game.result, GameResult.unknown);
         expect(game.playedDate, isNull);
-        expect(game.latestJob?.status, JobStatus.unknown);
-        expect(game.latestJob?.status.isActive, isTrue);
-        expect(game.latestJob?.queuePosition, isNull);
       },
     );
 
@@ -169,7 +163,6 @@ void main() {
       expect(game.plyCount, 15);
       expect(game.startingFen, isNull);
       expect(game.hasAnalysis, isTrue);
-      expect(game.latestJob?.id, 'job-1');
     });
 
     test('null when the game does not exist', () async {
@@ -376,170 +369,6 @@ void main() {
         (await games().delete('game-1') as DeleteGameFailed).error,
         const ApiNetworkError(),
       );
-    });
-  });
-
-  group('AnalysisApi.request', () {
-    Future<RequestAnalysisOutcome> requestWith(String scenario) {
-      link.use('RequestGameAnalysis', scenario);
-      return analysis().request(
-        gameId: 'game-10',
-        language: 'DE',
-        deviceId: 'd-1',
-      );
-    }
-
-    test('accepted', () async {
-      final outcome = await requestWith('default') as AnalysisAccepted;
-      expect(outcome.job.id, 'job-10');
-      expect(outcome.job.gameId, 'game-10');
-      expect(outcome.job.status, JobStatus.queued);
-      expect(outcome.job.queuePosition, 0);
-      expect(outcome.job.requestedAt, DateTime.utc(2026, 9, 19, 10));
-      expect(link.requests.single.variables, {
-        'input': {
-          'chessGameId': 'game-10',
-          'deviceId': 'd-1',
-          'language': 'de',
-        },
-      });
-    });
-
-    test(
-      'limit reached, by day, by month and by a window of the future',
-      () async {
-        final day = await requestWith('limit_reached') as AnalysisLimitReached;
-        expect(day.window, LimitWindow.day);
-        expect(day.limit, 3);
-        expect(day.used, 3);
-        expect(day.resetAt, DateTime.utc(2026, 9, 19, 22));
-
-        final month =
-            await requestWith('limit_reached_month') as AnalysisLimitReached;
-        expect(month.window, LimitWindow.month);
-        expect(month.limit, 30);
-
-        final week = await requestWith(
-          'limit_reached_unknown_window',
-        ) as AnalysisLimitReached;
-        expect(week.window, LimitWindow.unknown);
-        expect(
-          week.resetAt,
-          DateTime.utc(2026, 9, 20, 22),
-          reason: 'offset to UTC',
-        );
-      },
-    );
-
-    test('the other typed outcomes', () async {
-      expect(
-        (await requestWith('queue_full') as AnalysisQueueFull).maxQueuedJobs,
-        2,
-      );
-      expect(
-        (await requestWith('rate_limited') as AnalysisRateLimited).retryAfter,
-        const Duration(seconds: 42),
-      );
-      expect(
-        await requestWith('email_not_verified'),
-        isA<AnalysisEmailNotVerified>(),
-      );
-      expect(
-        (await requestWith(
-          'ai_consent_required',
-        ) as AnalysisAiConsentRequired).requiredVersion,
-        1,
-      );
-    });
-
-    test('generic and unknown errors are failures', () async {
-      expect(
-        (await requestWith('business_error') as AnalysisRequestFailed).error,
-        const ApiRejected(
-          typename: 'BusinessError',
-          messageKey: 'web_api_errors.analysis_already_in_progress',
-        ),
-      );
-      expect(
-        (await requestWith('input_invalid') as AnalysisRequestFailed).error,
-        isA<ApiRejected>().having(
-          (e) => e.propertyName,
-          'property',
-          'Language',
-        ),
-      );
-      expect(
-        (await requestWith('unknown_error') as AnalysisRequestFailed).error,
-        const ApiRejected(typename: 'SomethingNewError'),
-      );
-      link.fail('RequestGameAnalysis', const SocketException('offline'));
-      final offline = await analysis().request(gameId: 'g');
-      expect((offline as AnalysisRequestFailed).error.isRetryable, isTrue);
-    });
-
-    test('a typed error without its fields degrades to a failure', () async {
-      link.respond(
-        'RequestGameAnalysis',
-        (_) => {
-          'data': {
-            'requestGameAnalysis': {
-              'analysisJob': null,
-              'errors': [
-                {'__typename': 'AnalysisLimitReachedError'},
-              ],
-            },
-          },
-        },
-      );
-      // The generated fromJson insists on the fields the schema promises, so
-      // this is a malformed response rather than a limit.
-      final outcome = await analysis().request(gameId: 'g');
-      expect((outcome as AnalysisRequestFailed).error, isA<ApiServerError>());
-    });
-  });
-
-  group('AnalysisApi jobs', () {
-    test('every status', () async {
-      for (final (scenario, status) in [
-        ('default', JobStatus.queued),
-        ('running', JobStatus.running),
-        ('done', JobStatus.done),
-        ('failed', JobStatus.failed),
-        ('unknown_status', JobStatus.unknown),
-      ]) {
-        link.use('AnalysisJob', scenario);
-        expect((await analysis().job('job-1'))?.status, status);
-      }
-    });
-
-    test('details', () async {
-      link.use('AnalysisJob', 'default');
-      expect((await analysis().job('job-1'))?.queuePosition, 2);
-
-      link.use('AnalysisJob', 'running');
-      final running = (await analysis().job('job-1'))!;
-      expect(running.stage, 'coach');
-      expect(running.queuePosition, isNull, reason: 'only while queued');
-      expect(running.status.isActive, isTrue);
-
-      link.use('AnalysisJob', 'failed');
-      final failed = (await analysis().job('job-1'))!;
-      expect(failed.failureCode, 'engine_timeout');
-      expect(failed.status.isTerminal, isTrue);
-      expect(failed.finishedAt, DateTime.utc(2026, 9, 19, 10, 3, 30));
-
-      link.use('AnalysisJob', 'not_found');
-      expect(await analysis().job('nope'), isNull);
-    });
-
-    test('active jobs', () async {
-      final jobs = await analysis().activeJobs();
-      expect(jobs.map((j) => (j.id, j.status)), [
-        ('job-2', JobStatus.running),
-        ('job-3', JobStatus.queued),
-      ]);
-      link.use('MyActiveAnalysisJobs', 'empty');
-      expect(await analysis().activeJobs(), isEmpty);
     });
   });
 

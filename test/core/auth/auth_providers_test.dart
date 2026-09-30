@@ -125,7 +125,7 @@ void main() {
 
       for (final owner in [kFakeAuthSub, 'somebody-else']) {
         await db.draftsDao.create(owner, pgn: '1. e4');
-        await db.analysisCacheDao.put(
+        await db.analysisCacheDao.putCoach(
           owner,
           'game-$owner',
           schemaVersion: 1,

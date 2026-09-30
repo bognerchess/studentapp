@@ -3,6 +3,7 @@
 // Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
 
 import 'package:bogner_chess/core/api/analysis_api.dart';
+import 'package:bogner_chess/core/api/stage_api.dart' show AnalysisStage;
 import 'package:bogner_chess/core/l10n/l10n.dart';
 import 'package:bogner_chess/core/ui/theme.dart';
 import 'package:bogner_chess/router.dart';
@@ -13,19 +14,36 @@ import '../domain/game_detail_controller.dart';
 import 'game_detail_ids.dart';
 import 'game_texts.dart';
 
-/// Requests the analysis of the [controller]'s game and explains whatever
-/// comes back. [context] must be below a navigator and a scaffold messenger.
+/// Starts the three free engine stages of the [controller]'s game.
 ///
-/// Accepted: nothing to say, the screen turns into the progress card. AI
+/// There is nothing to explain when it works: the card turns into the stage
+/// strip and fills in as each stage lands. The engine stages cannot be
+/// refused for quota, consent or an unconfirmed address — only fair use and a
+/// plain failure are left, and both are one line.
+Future<void> runFreeChain(
+  BuildContext context,
+  GameDetailController controller,
+) async {
+  final outcome = await controller.startFreeChain();
+  if (outcome != null && context.mounted) {
+    await _explain(context, controller, outcome);
+  }
+}
+
+/// Asks the coach to write about the [controller]'s game and explains
+/// whatever comes back. [context] must be below a navigator and a scaffold
+/// messenger.
+///
+/// Accepted: nothing to say, the card shows the coach step running. AI
 /// consent missing: the consent screen opens; when it pops with `true` the
 /// request is sent once more. Everything else is a sheet or a snack bar.
-Future<void> runAnalysisRequest(
+Future<void> runCoachRequest(
   BuildContext context,
   GameDetailController controller,
 ) async {
   // The coach writes in the language the app is showing.
   final language = Localizations.localeOf(context).languageCode;
-  var outcome = await controller.requestAnalysis(languageCode: language);
+  var outcome = await controller.askCoach(languageCode: language);
   if (outcome is AnalysisAiConsentRequired) {
     if (!context.mounted) {
       return;
@@ -38,10 +56,24 @@ Future<void> runAnalysisRequest(
       _snack(context, context.l10n.gameDetailConsentNeeded);
       return;
     }
-    outcome = await controller.requestAnalysis(languageCode: language);
+    outcome = await controller.askCoach(languageCode: language);
   }
   if (context.mounted) {
     await _explain(context, controller, outcome);
+  }
+}
+
+/// Runs the stage that stopped the pipeline once more. An engine stage needs
+/// no explaining; coaching is the metered one, so it goes the long way.
+Future<void> runStageRetry(
+  BuildContext context,
+  GameDetailController controller,
+  AnalysisStage stage,
+) async {
+  if (stage.usesModel) {
+    await runCoachRequest(context, controller);
+  } else {
+    await runFreeChain(context, controller);
   }
 }
 
@@ -54,6 +86,10 @@ Future<void> _explain(
   switch (outcome) {
     case AnalysisAccepted():
       return;
+    case AnalysisPrerequisiteMissing():
+      // The stage before this one is not stored (any more). Running the free
+      // chain again is what fixes it, and the card offers exactly that.
+      _snack(context, l10n.gameDetailFailureInputMissing);
     case AnalysisLimitReached():
       await _showSheet<void>(
         context,
@@ -246,7 +282,7 @@ class _EmailSheetState extends State<_EmailSheet> {
       _busy = true;
       _stillUnverified = false;
     });
-    final outcome = await widget.controller.recheckEmailAndRequest(
+    final outcome = await widget.controller.recheckEmailAndAskCoach(
       languageCode: _language,
     );
     if (!mounted) {

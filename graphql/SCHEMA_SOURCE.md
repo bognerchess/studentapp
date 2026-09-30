@@ -8,9 +8,25 @@ reach. Nothing else from the backend is copied here. Never edit the copy.
 | | |
 | --- | --- |
 | Source | backend repository, `contracts/mobile-schema.graphql` (generated there by `scripts/export-mobile-schema.sh`) |
-| Backend commit | `c2a61b8` (branch `mobile-mvp`) |
-| Copied on | 2026-09-20 |
-| SHA-256 | `96803b4c0e4cae0933d9a0072a0a99ac4fc930542e83d2f437f71a7369e37df8` |
+| Backend commit | `41c2bbb` (branch `feat/staged-coaching-document`; the engine-stage rate limit and the message keys, BE-22/A3) |
+| Copied on | 2026-09-30 |
+| SHA-256 | `9c84b3f2d1d5c103e446e3a348c6fefb25a7a38919ce6c40cfdd8c2393b90d3d` |
+
+Both copies of this branch are **purely additive** over the ones before them; no diff removes a
+line. `48cd383` (2026-09-29) added the staged analysis surface — `engineStageRun`,
+`engineStageRunsForGame`, `gameAnalysisWorkflow`, the four `run*` commands with their payloads,
+inputs and error unions, the `EngineStage` and `AnalysisStageState` enums, and `progressDone` /
+`progressTotal` on `AnalysisJob`. `41c2bbb` (2026-09-30) adds `RateLimitedError` to
+`RunBaseEvaluationError`, `RunBaseClassificationError` and `RunDeepEvaluationError` and rewords one
+description; `graphql/operations/stages.graphql` now selects `retryAfterSeconds` on all four
+commands, so a rate-limited engine stage carries the server's number instead of the one-minute
+fallback.
+
+The same backend change also turned three raw English sentences into message keys:
+`api_errors.entity_not_found` for a game that is gone, `web_api_errors.stage_prerequisite_missing`
+for a stage asked for before the one it builds on, and `web_api_errors.pgn_invalid` — sent as an
+`InputValidationError` on `chessGameId` — for a game without moves. The first two are mapped in
+`stage_api.dart`; the third is a plain failure, like every other validation error.
 
 `test/core/api/schema_pin_test.dart` pins the checksum, so a change of the file is always a
 deliberate refresh and never an accident.

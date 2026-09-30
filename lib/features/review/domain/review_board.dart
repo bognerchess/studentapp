@@ -142,5 +142,7 @@ BoardArrowStyle lineArrowStyle(VariationKind kind) => switch (kind) {
   VariationKind.bestLine => BoardArrowStyle.best,
   VariationKind.alternative => BoardArrowStyle.alternative,
   VariationKind.refutation => BoardArrowStyle.danger,
-  VariationKind.unknown => BoardArrowStyle.hint,
+  // Informational, like an unknown kind: the hint style, never the best-move
+  // green.
+  VariationKind.peerLine || VariationKind.unknown => BoardArrowStyle.hint,
 };

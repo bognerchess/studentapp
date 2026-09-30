@@ -4,6 +4,7 @@
 
 import 'package:bogner_chess/core/analysis/analysis_parser.dart';
 import 'package:bogner_chess/core/analysis/analysis_view.dart';
+import 'package:bogner_chess/core/chess/san_localizer.dart';
 import 'package:bogner_chess/core/l10n/l10n.dart';
 import 'package:bogner_chess/core/ui/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,9 +21,13 @@ import 'review_l10n.dart';
 /// (on a move the coach said nothing about) one engine fact and the way to
 /// the next key moment. A horizontal swipe moves between key moments.
 class CoachTab extends ConsumerWidget {
-  const CoachTab({super.key, required this.gameId});
+  const CoachTab({super.key, required this.gameId, required this.onAskCoach});
 
   final String gameId;
+
+  /// Starts the coaching stage. The last button of an engine-only analysis
+  /// is this rather than "See your lessons": there are no lessons yet.
+  final VoidCallback onAskCoach;
 
   /// Fling speed, in logical pixels per second, that counts as a swipe.
   static const double _swipeVelocity = 250;
@@ -87,8 +92,10 @@ class CoachTab extends ConsumerWidget {
         document: document,
         node: node,
         hasNextMoment: controller.nextMomentPly != null,
+        hasCoachText: controller.hasCoachText,
         onNextMoment: controller.nextMoment,
         onOpenSummary: () => controller.setTab(ReviewTab.summary),
+        onAskCoach: onAskCoach,
       );
     }
 
@@ -234,7 +241,7 @@ class CommentCard extends StatelessWidget {
             ),
             if (comment.title.isNotEmpty) ...[
               Text(
-                comment.title,
+                context.displaySanInText(comment.title),
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                   height: 1.2,
@@ -244,7 +251,15 @@ class CommentCard extends StatelessWidget {
             ],
             Text.rich(
               TextSpan(
-                children: emphasizeMoves(comment.text, comment.movesMentioned),
+                // Both sides of the match are localised, so the German
+                // reader still gets the German move in semi-bold.
+                children: emphasizeMoves(
+                  context.displaySanInText(comment.text),
+                  [
+                    for (final move in comment.movesMentioned)
+                      context.displaySan(move),
+                  ],
+                ),
               ),
               style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
             ),
@@ -404,10 +419,11 @@ class _LineButton extends StatelessWidget {
     final l10n = context.l10n;
     final name = label.isEmpty
         ? l10n.reviewLineKind(variation.kind.name)
-        : label;
+        : context.displaySanInText(label);
+    final first = context.displaySan(variation.moves.first.san);
     return ReviewIdentified(
       identifier: identifier,
-      label: l10n.reviewShowLine('$name, ${variation.moves.first.san}'),
+      label: l10n.reviewShowLine('$name, $first'),
       onTap: onTap,
       child: ActionChip(
         onPressed: onTap,
@@ -417,7 +433,7 @@ class _LineButton extends StatelessWidget {
           size: 18,
           color: lineColor(context, variation.kind),
         ),
-        label: Text('$name · ${variation.moves.first.san}'),
+        label: Text('$name · $first'),
       ),
     );
   }
@@ -475,8 +491,10 @@ class _EngineFact extends StatelessWidget {
     required this.document,
     required this.node,
     required this.hasNextMoment,
+    required this.hasCoachText,
     required this.onNextMoment,
     required this.onOpenSummary,
+    required this.onAskCoach,
   });
 
   final AnalysisDocument document;
@@ -484,8 +502,14 @@ class _EngineFact extends StatelessWidget {
   /// Null on the start position.
   final AnalysisNode? node;
   final bool hasNextMoment;
+
+  /// False on an engine assembly: the last button then asks the coach
+  /// instead of opening a summary that has no lessons in it.
+  final bool hasCoachText;
+
   final VoidCallback onNextMoment;
   final VoidCallback onOpenSummary;
+  final VoidCallback onAskCoach;
 
   @override
   Widget build(BuildContext context) {
@@ -528,7 +552,7 @@ class _EngineFact extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Text(
-              node.moveLabel,
+              context.displaySanInText(node.moveLabel),
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -543,7 +567,8 @@ class _EngineFact extends StatelessWidget {
         const SizedBox(height: AppSpacing.xs),
         Text(
           [
-            if (showBest) l10n.reviewFactBetterWas(best.san),
+            if (showBest)
+              l10n.reviewFactBetterWas(context.displaySan(best.san)),
             '${l10n.evalWords(node.evalAfter)}.',
           ].join(' '),
           style: theme.textTheme.bodyMedium?.copyWith(
@@ -554,12 +579,27 @@ class _EngineFact extends StatelessWidget {
       ];
     }
 
-    final nextLabel = !hasNextMoment
-        ? l10n.reviewOpenSummary
-        : node == null
-        ? l10n.reviewFirstMoment
-        : l10n.reviewNextMoment;
-    final onNext = hasNextMoment ? onNextMoment : onOpenSummary;
+    final terminal = !hasCoachText
+        ? (
+            l10n.reviewAskCoach,
+            ReviewIds.stageAskCoach,
+            Icons.school,
+            onAskCoach,
+          )
+        : (
+            l10n.reviewOpenSummary,
+            ReviewIds.coachNext,
+            Icons.school,
+            onOpenSummary,
+          );
+    final (nextLabel, nextId, nextIcon, onNext) = hasNextMoment
+        ? (
+            node == null ? l10n.reviewFirstMoment : l10n.reviewNextMoment,
+            ReviewIds.coachNext,
+            Icons.keyboard_double_arrow_right,
+            onNextMoment,
+          )
+        : terminal;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -574,15 +614,13 @@ class _EngineFact extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.sm + 4),
         ReviewIdentified(
-          identifier: ReviewIds.coachNext,
+          identifier: nextId,
           label: nextLabel,
           onTap: onNext,
           child: FilledButton.tonalIcon(
             onPressed: onNext,
             style: FilledButton.styleFrom(minimumSize: const Size(64, 44)),
-            icon: Icon(
-              hasNextMoment ? Icons.keyboard_double_arrow_right : Icons.school,
-            ),
+            icon: Icon(nextIcon),
             label: Text(nextLabel),
           ),
         ),
