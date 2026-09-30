@@ -52,6 +52,26 @@ class ReviewScreen extends ConsumerWidget {
     final data = ref.watch(reviewDataProvider(gameId));
     void retry() => ref.invalidate(reviewDataProvider(gameId));
 
+    // A stage that landed is a document with more in it — or, on a screen
+    // that was opened before the first one was stored, the first document
+    // there is. This listen sits here, above every state of the screen: in
+    // the body it would only run once something had loaded, and a review
+    // opened while the engine was still on stage 1 would stay on "nothing
+    // available" although the assembly arrived seconds later.
+    //
+    // The run ids are compared as one string, because two equal maps are not
+    // `==` and the tracker hands over a new map on every poll.
+    ref.listen(
+      trackedWorkflowsProvider.select(
+        (workflows) => _readyRunIds(workflows[gameId]),
+      ),
+      (previous, next) {
+        if (previous != next) {
+          ref.invalidate(reviewDataProvider(gameId));
+        }
+      },
+    );
+
     // A document that is being reloaded — a stage landed, so there is more to
     // show — keeps the screen up. Only a load with nothing to show at all
     // falls back to the skeleton, or the reader would watch it flash three
@@ -69,6 +89,17 @@ class ReviewScreen extends ConsumerWidget {
         _ => const _Frame(child: _Skeleton()),
       },
     };
+  }
+
+  /// The ready run ids as one comparable string; null when no pipeline of
+  /// this game is being watched.
+  static String? _readyRunIds(AnalysisWorkflow? workflow) {
+    if (workflow == null) return null;
+    final parts = [
+      for (final MapEntry(:key, :value) in workflow.readyRunIds.entries)
+        '${key.name}:$value',
+    ]..sort();
+    return parts.join(',');
   }
 }
 
@@ -193,17 +224,6 @@ class _ReviewBodyState extends ConsumerState<_ReviewBody> {
     unawaited(runFreeChain(context, controller));
   }
 
-  /// The ready run ids as one comparable string; null when no pipeline of
-  /// this game is being watched.
-  static String? _readyRunIds(AnalysisWorkflow? workflow) {
-    if (workflow == null) return null;
-    final parts = [
-      for (final MapEntry(:key, :value) in workflow.readyRunIds.entries)
-        '${key.name}:$value',
-    ]..sort();
-    return parts.join(',');
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -223,20 +243,6 @@ class _ReviewBodyState extends ConsumerState<_ReviewBody> {
           ..showSnackBar(SnackBar(content: Text(l10n.reviewFeedbackFailed)));
       }
     });
-
-    // A stage that landed is a document with more in it. The run ids are
-    // compared as one string, because two equal maps are not `==` and the
-    // tracker hands over a new map on every poll.
-    ref.listen(
-      trackedWorkflowsProvider.select(
-        (workflows) => _readyRunIds(workflows[widget.gameId]),
-      ),
-      (previous, next) {
-        if (previous != null && previous != next) {
-          ref.invalidate(reviewDataProvider(widget.gameId));
-        }
-      },
-    );
 
     final workflow = ref.watch(trackedWorkflowsProvider)[widget.gameId];
     final stage = _StageBannerState.of(workflow, controller.data.source);

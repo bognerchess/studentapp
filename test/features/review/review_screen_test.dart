@@ -646,6 +646,32 @@ void main() {
       expect(find.byType(CoachTab), findsOneWidget);
     });
 
+    testWidgets('a stage that lands reloads a screen that had nothing to '
+        'show', (tester) async {
+      // Opened while the engine was still on its first stage: there is no
+      // document yet, so the screen is the error state. The listen that
+      // notices the assembly has to sit above that state, or the screen stays
+      // there although the document arrived seconds later.
+      final store = FixtureStore();
+      final harness = await pumpReview(
+        tester,
+        loadError: StateError('not available'),
+        source: AnalysisSource.engine,
+        workflow: workflowFixture(store, 'running'),
+      );
+      expect(find.byType(ErrorRetry), findsOneWidget);
+      expect(harness.repository.loads, hasLength(1));
+
+      harness.repository.error = null;
+      workflowsOf(containerOf(tester))
+          .report(kReviewGameId, workflowFixture(store, 'engine_ready'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ErrorRetry), findsNothing);
+      expect(find.byType(BoardView), findsOneWidget);
+      expect(harness.repository.loads, hasLength(2));
+    });
+
     testWidgets('a game that ends in mate says so in words', (tester) async {
       await pumpReview(tester, fixture: kShortGame);
       await tester.tapReview(ReviewIds.last);
