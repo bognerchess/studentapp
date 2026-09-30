@@ -7,93 +7,19 @@ import 'package:bogner_chess/core/api/api_error.dart';
 import 'package:bogner_chess/core/api/models/stage_models.dart';
 import 'package:flutter/foundation.dart';
 
-/// Where an analysis job is. The server folds its internal states into these
-/// four; a value this build does not know reads as [unknown] and is treated
-/// as still active, so that the poller keeps asking.
-enum JobStatus {
-  queued,
-  running,
-  done,
-  failed,
-  unknown;
-
-  bool get isTerminal => this == done || this == failed;
-  bool get isActive => !isTerminal;
-}
-
-@immutable
-class JobInfo {
-  const JobInfo({
-    required this.id,
-    required this.gameId,
-    required this.status,
-    required this.requestedAt,
-    this.stage,
-    this.queuePosition,
-    this.finishedAt,
-    this.failureCode,
-  });
-
-  final String id;
-  final String gameId;
-  final JobStatus status;
-
-  /// The pipeline stage while the job runs, e.g. "engine". Free text from the
-  /// server; show it only through a known mapping.
-  final String? stage;
-
-  /// Queued jobs of the account ahead of this one (0 = next). Null unless
-  /// [status] is [JobStatus.queued].
-  final int? queuePosition;
-
-  final DateTime requestedAt;
-  final DateTime? finishedAt;
-
-  /// A machine-readable reason when [status] is [JobStatus.failed].
-  final String? failureCode;
-
-  @override
-  bool operator ==(Object other) =>
-      other is JobInfo &&
-      other.id == id &&
-      other.gameId == gameId &&
-      other.status == status &&
-      other.stage == stage &&
-      other.queuePosition == queuePosition &&
-      other.requestedAt == requestedAt &&
-      other.finishedAt == finishedAt &&
-      other.failureCode == failureCode;
-
-  @override
-  int get hashCode => Object.hash(id, gameId, status, stage, queuePosition);
-
-  @override
-  String toString() =>
-      'JobInfo($id, game $gameId, ${status.name}'
-      '${stage == null ? '' : ', $stage'}'
-      '${queuePosition == null ? '' : ', position $queuePosition'}'
-      '${failureCode == null ? '' : ', $failureCode'})';
-}
-
 /// The window of a quota. A value this build does not know reads as [unknown].
 enum LimitWindow { day, month, unknown }
 
-/// What `AnalysisApi.request` came to. Everything but [AnalysisRequestFailed]
-/// is a decision of the server, not a fault.
+/// What one of the four stage commands came to. Everything but
+/// [AnalysisRequestFailed] is a decision of the server, not a fault.
 sealed class RequestAnalysisOutcome {
   const RequestAnalysisOutcome();
 }
 
-/// Queued. Also the answer when the game already had an active job.
+/// The stage run was queued. Also the answer when a run of that stage was
+/// already under way.
 final class AnalysisAccepted extends RequestAnalysisOutcome {
-  const AnalysisAccepted(this.job);
-  final JobInfo job;
-}
-
-/// A stage run was queued. The staged answer to [AnalysisAccepted]: the
-/// whole-game path goes in B12 of WP-60 and this takes its name.
-final class AnalysisStageAccepted extends RequestAnalysisOutcome {
-  const AnalysisStageAccepted(this.run);
+  const AnalysisAccepted(this.run);
   final StageRun run;
 
   AnalysisStage get stage => run.stage;

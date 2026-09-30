@@ -4,27 +4,11 @@
 
 import 'package:bogner_chess/core/api/generated/operations/fragments.graphql.dart';
 import 'package:bogner_chess/core/api/generated/operations/games.graphql.dart';
-import 'package:bogner_chess/core/api/generated/schema.graphql.dart';
 import 'package:bogner_chess/core/api/mappers/enum_mappers.dart';
-import 'package:bogner_chess/core/api/models/analysis_models.dart';
 import 'package:bogner_chess/core/api/models/game_models.dart';
 import 'package:bogner_chess/core/api/scalars.dart';
 import 'package:bogner_chess/core/game/game_metadata.dart';
 import 'package:dartchess/dartchess.dart' show PgnGame;
-
-JobInfo jobOf(Fragment$JobFields job) => JobInfo(
-  id: job.id,
-  gameId: job.chessGameId,
-  status: jobStatusOf(job.status),
-  stage: _text(job.stage),
-  // The position only means something while the job waits.
-  queuePosition: job.status == Enum$AnalysisJobStatus.QUEUED
-      ? job.queuePosition
-      : null,
-  requestedAt: job.requestedAt,
-  finishedAt: job.finishedAt,
-  failureCode: _text(job.failureCode),
-);
 
 GameSummary gameSummaryOf(Fragment$GameFields game) => GameSummary(
   id: game.id,
@@ -41,10 +25,6 @@ GameSummary gameSummaryOf(Fragment$GameFields game) => GameSummary(
   timeControlTag: _text(game.timeControl),
   createdAt: game.created,
   hasAnalysis: game.hasAnalysis,
-  latestJob: switch (game.latestAnalysisJob) {
-    null => null,
-    final job => jobOf(job),
-  },
 );
 
 GameDetail gameDetailOf(Query$GameById$myChessGameById game) {
@@ -64,7 +44,6 @@ GameDetail gameDetailOf(Query$GameById$myChessGameById game) {
     timeControlTag: summary.timeControlTag,
     createdAt: summary.createdAt,
     hasAnalysis: summary.hasAnalysis,
-    latestJob: summary.latestJob,
     // The server's game types carry no workflow; `gameAnalysisWorkflow` is
     // its own query, and the tracker is what caches what it says.
     workflow: summary.workflow,

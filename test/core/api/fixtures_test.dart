@@ -60,18 +60,6 @@ final Map<String, _Operation> _operations = {
     parse: Mutation$DeleteChessGame.fromJson,
     call: (e) => GamesApi(e).delete('game-1'),
   ),
-  'RequestGameAnalysis': (
-    parse: Mutation$RequestGameAnalysis.fromJson,
-    call: (e) => AnalysisApi(e).request(gameId: 'game-1'),
-  ),
-  'AnalysisJob': (
-    parse: Query$AnalysisJob.fromJson,
-    call: (e) => AnalysisApi(e).job('job-1'),
-  ),
-  'MyActiveAnalysisJobs': (
-    parse: Query$MyActiveAnalysisJobs.fromJson,
-    call: (e) => AnalysisApi(e).activeJobs(),
-  ),
   'GameAnalysis': (
     parse: Query$GameAnalysis.fromJson,
     call: (e) => AnalysisApi(e).analysis('game-1'),
@@ -175,21 +163,6 @@ const Map<String, Set<String>> _errorUnions = {
     'BusinessError',
     'InputValidationError',
   },
-  'RequestGameAnalysis': {
-    'AnalysisLimitReachedError',
-    'AnalysisQueueFullError',
-    'RateLimitedError',
-    'EmailNotVerifiedError',
-    'AiConsentRequiredError',
-    'BusinessError',
-    'InputValidationError',
-    'TechnicalError',
-  },
-  // The three engine commands: `RateLimitedError` is not a member of their
-  // unions in the vendored schema yet (BE-22 adds it, and the operations then
-  // select `retryAfterSeconds`). It is listed and has a fixture, because the
-  // backend may well ship A3 before this app re-vendors, and the mapping has
-  // to hold when it does.
   'RunBaseEvaluation': {'RateLimitedError', ..._generic},
   'RunBaseClassification': {'RateLimitedError', ..._generic},
   'RunDeepEvaluation': {'RateLimitedError', ..._generic},

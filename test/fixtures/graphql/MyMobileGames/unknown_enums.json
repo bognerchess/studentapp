@@ -22,17 +22,7 @@
           "whiteElo": 1650,
           "blackElo": 1712,
           "created": "2026-09-12T18:30:00.000Z",
-          "hasAnalysis": false,
-          "latestAnalysisJob": {
-            "id": "job-9",
-            "chessGameId": "game-9",
-            "status": "PAUSED",
-            "stage": null,
-            "queuePosition": 4,
-            "requestedAt": "2026-09-19T10:00:00.000Z",
-            "finishedAt": null,
-            "failureCode": null
-          }
+          "hasAnalysis": false
         }
       ]
     }

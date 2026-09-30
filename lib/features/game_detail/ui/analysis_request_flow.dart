@@ -85,7 +85,6 @@ Future<void> _explain(
   final l10n = context.l10n;
   switch (outcome) {
     case AnalysisAccepted():
-    case AnalysisStageAccepted():
       return;
     case AnalysisPrerequisiteMissing():
       // The stage before this one is not stored (any more). Running the free

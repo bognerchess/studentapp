@@ -138,10 +138,8 @@ void main() {
     );
 
     // Ask the coach, poll until the document is there.
-    final accepted = await stages.runCoaching(
-      game.id,
-      language: 'de',
-    ) as AnalysisStageAccepted;
+    final accepted =
+        await stages.runCoaching(game.id, language: 'de') as AnalysisAccepted;
     expect(accepted.stage, AnalysisStage.coaching);
     expect(accepted.run.status, JobStatus.queued);
     expect(await analysis.analysis(game.id), isNull);
@@ -224,16 +222,13 @@ void main() {
     );
 
     // Stage 1.
-    final started =
-        await stages.runBaseEvaluation(game.id) as AnalysisStageAccepted;
+    final started = await stages.runBaseEvaluation(game.id) as AnalysisAccepted;
     expect(started.stage, AnalysisStage.baseEvaluation);
     expect(started.run.status, JobStatus.queued);
     expect(started.run.gameId, game.id);
     expect(started.run.artifact, isNull);
     expect(
-      ((await stages.runBaseEvaluation(
-        game.id,
-      )) as AnalysisStageAccepted).run.id,
+      ((await stages.runBaseEvaluation(game.id)) as AnalysisAccepted).run.id,
       started.run.id,
       reason: 'a second tap gets the run that is under way',
     );
@@ -265,11 +260,10 @@ void main() {
     // Stages 2 and 3.
     expect(
       await stages.runBaseClassification(game.id, maxMoments: 6),
-      isA<AnalysisStageAccepted>(),
+      isA<AnalysisAccepted>(),
     );
     await until(game.id, AnalysisStage.baseClassification);
-    final deep =
-        await stages.runDeepEvaluation(game.id) as AnalysisStageAccepted;
+    final deep = await stages.runDeepEvaluation(game.id) as AnalysisAccepted;
     workflow = await until(game.id, AnalysisStage.deepEvaluation);
     expect(workflow.engineReady, isTrue);
     expect(workflow.coachReady, isFalse);
@@ -296,7 +290,7 @@ void main() {
       game.id,
       language: 'de',
       persona: 'calm',
-    ) as AnalysisStageAccepted;
+    ) as AnalysisAccepted;
     expect(coach.stage, AnalysisStage.coaching);
     workflow = await until(game.id, AnalysisStage.coaching);
     expect(workflow.isComplete, isTrue);
@@ -345,10 +339,7 @@ void main() {
     server.backend.applyScenario('stage_fails', const {
       'stage': 'BASE_EVALUATION',
     });
-    expect(
-      await stages.runBaseEvaluation(game.id),
-      isA<AnalysisStageAccepted>(),
-    );
+    expect(await stages.runBaseEvaluation(game.id), isA<AnalysisAccepted>());
     AnalysisWorkflow workflow;
     do {
       workflow = (await stages.workflow(game.id))!;
@@ -386,7 +377,7 @@ void main() {
     for (var i = 1; i <= 3; i++) {
       final game = await importGame('client-$i');
       await engineChain(game.id);
-      expect(await stages.runCoaching(game.id), isA<AnalysisStageAccepted>());
+      expect(await stages.runCoaching(game.id), isA<AnalysisAccepted>());
       expect((await until(game.id, AnalysisStage.coaching)).coachReady, isTrue);
     }
     final usage = await UsageApi(executor).usage();

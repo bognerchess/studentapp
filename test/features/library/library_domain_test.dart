@@ -5,28 +5,9 @@
 import 'package:bogner_chess/core/api/games_api.dart';
 import 'package:bogner_chess/core/game/game_metadata.dart';
 import 'package:bogner_chess/core/storage/app_database.dart' show DraftState;
-import 'package:bogner_chess/features/analysis_status/domain/job_tracker_providers.dart'
-    show newestJob;
 import 'package:bogner_chess/features/library/domain/game_summary_codec.dart';
 import 'package:bogner_chess/features/library/domain/library_models.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-JobInfo job(
-  String id,
-  JobStatus status, {
-  DateTime? requestedAt,
-  String? stage,
-  int? queuePosition,
-}) => JobInfo(
-  id: id,
-  gameId: 'g',
-  status: status,
-  stage: stage,
-  queuePosition: queuePosition,
-  requestedAt: requestedAt ?? DateTime.utc(2026, 9, 19, 10),
-  finishedAt: status.isTerminal ? DateTime.utc(2026, 9, 19, 10, 5) : null,
-  failureCode: status == JobStatus.failed ? 'engine_timeout' : null,
-);
 
 /// A pipeline summary with [states] set and everything else not run.
 GameWorkflowSummary flow(
@@ -58,7 +39,6 @@ void main() {
       timeControlTag: '5400+30',
       createdAt: DateTime.utc(2026, 9, 12, 18, 30),
       hasAnalysis: true,
-      latestJob: job('j1', JobStatus.running, stage: 'coach'),
       workflow: flow(_engineReady),
     );
 
@@ -78,7 +58,6 @@ void main() {
       expect(back.timeControlTag, '5400+30');
       expect(back.createdAt, full.createdAt);
       expect(back.hasAnalysis, isTrue);
-      expect(back.latestJob, full.latestJob);
       expect(back.workflow, full.workflow);
     });
 
@@ -87,9 +66,12 @@ void main() {
       expect(GameSummaryCodec.toJson(full)['v'], 2);
     });
 
-    test('a version-1 row reads as a game with no pipeline known', () {
-      // What a build before WP-60 wrote: no `workflow` key at all. The row
-      // still shows, and the tracker fills the pipeline in on the next poll.
+    test('a version-1 row reads as a game with no pipeline known, and its '
+        'job is dropped', () {
+      // What a build before WP-60 wrote: no `workflow` key, and a `job` one
+      // for the whole-game path this app no longer drives. The row still
+      // shows, the job is read past, and the tracker fills the pipeline in on
+      // the next poll.
       final back = GameSummaryCodec.decode(
         '{"v":1,"id":"g","playerColor":"white","result":"1-0",'
         '"hasAnalysis":true,'
@@ -98,7 +80,7 @@ void main() {
       )!;
       expect(back.workflow, isNull);
       expect(back.hasAnalysis, isTrue);
-      expect(back.latestJob!.id, 'j');
+      expect(GameSummaryCodec.toJson(back).containsKey('job'), isFalse);
       expect(
         statusOfGame(hasAnalysis: back.hasAnalysis, workflow: back.workflow),
         LibraryStatus.analysisReady,
@@ -136,7 +118,6 @@ void main() {
       final back = GameSummaryCodec.decode(GameSummaryCodec.encode(bare))!;
       expect(back.whiteName, isNull);
       expect(back.playedDate, isNull);
-      expect(back.latestJob, isNull);
       expect(back.result, GameResult.unknown);
       expect(back.hasAnalysis, isFalse);
     });
@@ -155,16 +136,10 @@ void main() {
       )!;
       expect(back.playerColor, PlayerColor.white);
       expect(back.result, GameResult.unknown);
-      expect(back.latestJob!.status, JobStatus.unknown);
     });
 
-    test('gameSummaryWith changes job and flag only', () {
-      final changed = gameSummaryWith(
-        full,
-        latestJob: job('j2', JobStatus.done),
-        hasAnalysis: false,
-      );
-      expect(changed.latestJob!.id, 'j2');
+    test('gameSummaryWith changes the flag only', () {
+      final changed = gameSummaryWith(full, hasAnalysis: false);
       expect(changed.hasAnalysis, isFalse);
       expect(changed.whiteName, full.whiteName);
       expect(changed.playedDate, full.playedDate);
@@ -174,7 +149,6 @@ void main() {
     test('gameSummaryWith replaces the pipeline when given one', () {
       final changed = gameSummaryWith(
         full,
-        latestJob: full.latestJob,
         hasAnalysis: true,
         workflow: flow({AnalysisStage.coaching: AnalysisStageState.running}),
       );
@@ -186,35 +160,9 @@ void main() {
   });
 
   group('status', () {
-    test('of a game', () {
+    test('of a game nothing on this device has analysed', () {
       expect(statusOfGame(hasAnalysis: false), LibraryStatus.notAnalysed);
       expect(statusOfGame(hasAnalysis: true), LibraryStatus.analysisReady);
-      expect(
-        statusOfGame(hasAnalysis: false, job: job('j', JobStatus.queued)),
-        LibraryStatus.analysing,
-      );
-      expect(
-        statusOfGame(hasAnalysis: false, job: job('j', JobStatus.unknown)),
-        LibraryStatus.analysing,
-      );
-      expect(
-        statusOfGame(hasAnalysis: false, job: job('j', JobStatus.done)),
-        LibraryStatus.analysisReady,
-      );
-      expect(
-        statusOfGame(hasAnalysis: false, job: job('j', JobStatus.failed)),
-        LibraryStatus.analysisFailed,
-      );
-      // A failed re-analysis leaves the old analysis usable.
-      expect(
-        statusOfGame(hasAnalysis: true, job: job('j', JobStatus.failed)),
-        LibraryStatus.analysisReady,
-      );
-      // A running re-analysis shows as running.
-      expect(
-        statusOfGame(hasAnalysis: true, job: job('j', JobStatus.running)),
-        LibraryStatus.analysing,
-      );
     });
 
     test('of a game whose pipeline this device knows', () {
@@ -323,37 +271,6 @@ void main() {
         LibraryStatus.waitingToUpload,
       );
       expect(statusOfDraft(DraftState.failed), LibraryStatus.uploadFailed);
-    });
-  });
-
-  group('newestJob', () {
-    test('one side missing', () {
-      final a = job('a', JobStatus.running);
-      expect(newestJob(null, null), isNull);
-      expect(newestJob(a, null), a);
-      expect(newestJob(null, a), a);
-    });
-
-    test(
-      'same job: the tracker knows more, unless the server says it ended',
-      () {
-        final tracked = job('a', JobStatus.running, stage: 'coach');
-        expect(newestJob(tracked, job('a', JobStatus.queued)), tracked);
-        final done = job('a', JobStatus.done);
-        expect(newestJob(tracked, done), done);
-        expect(newestJob(done, job('a', JobStatus.running)), done);
-      },
-    );
-
-    test('different jobs: the later request wins', () {
-      final old = job('a', JobStatus.failed);
-      final newer = job(
-        'b',
-        JobStatus.queued,
-        requestedAt: DateTime.utc(2026, 9, 20),
-      );
-      expect(newestJob(old, newer), newer);
-      expect(newestJob(newer, old), newer);
     });
   });
 

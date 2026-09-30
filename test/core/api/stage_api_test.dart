@@ -333,8 +333,8 @@ void main() {
         test('accepted: the queued run comes back', () async {
           final outcome = await call(api());
 
-          expect(outcome, isA<AnalysisStageAccepted>());
-          final run = (outcome as AnalysisStageAccepted).run;
+          expect(outcome, isA<AnalysisAccepted>());
+          final run = (outcome as AnalysisAccepted).run;
           expect(run.id, 'run-new');
           expect(run.status, JobStatus.queued);
           expect(run.artifact, isNull);
@@ -426,7 +426,7 @@ void main() {
           persona: 'house',
         );
 
-        expect(outcome, isA<AnalysisStageAccepted>());
+        expect(outcome, isA<AnalysisAccepted>());
         expect(link.requestsOf('RunCoaching').single.variables['input'], {
           'chessGameId': 'game-1',
           'persona': 'house',
@@ -502,6 +502,26 @@ void main() {
         await api().runCoaching('game-1'),
         isA<AnalysisPrerequisiteMissing>(),
       );
+    });
+
+    test('a typed error without its fields degrades to a failure', () async {
+      link.respond(
+        'RunCoaching',
+        (_) => {
+          'data': {
+            'runCoaching': {
+              'engineStageRun': null,
+              'errors': [
+                {'__typename': 'AnalysisLimitReachedError'},
+              ],
+            },
+          },
+        },
+      );
+      // The generated fromJson insists on the fields the schema promises, so
+      // this is a malformed response rather than a limit.
+      final outcome = await api().runCoaching('game-1');
+      expect((outcome as AnalysisRequestFailed).error, isA<ApiServerError>());
     });
   });
 }

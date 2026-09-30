@@ -334,7 +334,6 @@ const documentNodeQueryMyMobileGames = DocumentNode(
       ),
     ),
     fragmentDefinitionGameFields,
-    fragmentDefinitionJobFields,
   ],
 );
 
@@ -653,7 +652,6 @@ const documentNodeQueryGameById = DocumentNode(
       ),
     ),
     fragmentDefinitionGameFields,
-    fragmentDefinitionJobFields,
   ],
 );
 
@@ -674,7 +672,6 @@ class Query$GameById$myChessGameById implements Fragment$GameFields {
     this.blackElo,
     required this.created,
     required this.hasAnalysis,
-    this.latestAnalysisJob,
     required this.rawPgn,
     this.startingFen,
     this.site,
@@ -697,7 +694,6 @@ class Query$GameById$myChessGameById implements Fragment$GameFields {
     final l$blackElo = json['blackElo'];
     final l$created = json['created'];
     final l$hasAnalysis = json['hasAnalysis'];
-    final l$latestAnalysisJob = json['latestAnalysisJob'];
     final l$rawPgn = json['rawPgn'];
     final l$startingFen = json['startingFen'];
     final l$site = json['site'];
@@ -720,11 +716,6 @@ class Query$GameById$myChessGameById implements Fragment$GameFields {
       blackElo: (l$blackElo as int?),
       created: dateTimeFromJson(l$created),
       hasAnalysis: (l$hasAnalysis as bool),
-      latestAnalysisJob: l$latestAnalysisJob == null
-          ? null
-          : Fragment$JobFields.fromJson(
-              (l$latestAnalysisJob as Map<String, dynamic>),
-            ),
       rawPgn: (l$rawPgn as String),
       startingFen: (l$startingFen as String?),
       site: (l$site as String?),
@@ -761,8 +752,6 @@ class Query$GameById$myChessGameById implements Fragment$GameFields {
   final DateTime created;
 
   final bool hasAnalysis;
-
-  final Fragment$JobFields? latestAnalysisJob;
 
   final String rawPgn;
 
@@ -806,8 +795,6 @@ class Query$GameById$myChessGameById implements Fragment$GameFields {
     _resultData['created'] = dateTimeToJson(l$created);
     final l$hasAnalysis = hasAnalysis;
     _resultData['hasAnalysis'] = l$hasAnalysis;
-    final l$latestAnalysisJob = latestAnalysisJob;
-    _resultData['latestAnalysisJob'] = l$latestAnalysisJob?.toJson();
     final l$rawPgn = rawPgn;
     _resultData['rawPgn'] = l$rawPgn;
     final l$startingFen = startingFen;
@@ -836,7 +823,6 @@ class Query$GameById$myChessGameById implements Fragment$GameFields {
     final l$blackElo = blackElo;
     final l$created = created;
     final l$hasAnalysis = hasAnalysis;
-    final l$latestAnalysisJob = latestAnalysisJob;
     final l$rawPgn = rawPgn;
     final l$startingFen = startingFen;
     final l$site = site;
@@ -857,7 +843,6 @@ class Query$GameById$myChessGameById implements Fragment$GameFields {
       l$blackElo,
       l$created,
       l$hasAnalysis,
-      l$latestAnalysisJob,
       l$rawPgn,
       l$startingFen,
       l$site,
@@ -947,11 +932,6 @@ class Query$GameById$myChessGameById implements Fragment$GameFields {
     final l$hasAnalysis = hasAnalysis;
     final lOther$hasAnalysis = other.hasAnalysis;
     if (l$hasAnalysis != lOther$hasAnalysis) {
-      return false;
-    }
-    final l$latestAnalysisJob = latestAnalysisJob;
-    final lOther$latestAnalysisJob = other.latestAnalysisJob;
-    if (l$latestAnalysisJob != lOther$latestAnalysisJob) {
       return false;
     }
     final l$rawPgn = rawPgn;
@@ -1274,7 +1254,6 @@ const documentNodeMutationImportMobileGame = DocumentNode(
       ),
     ),
     fragmentDefinitionGameFields,
-    fragmentDefinitionJobFields,
   ],
 );
 

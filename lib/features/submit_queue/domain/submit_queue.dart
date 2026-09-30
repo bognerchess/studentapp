@@ -418,7 +418,7 @@ class SubmitQueue {
       );
       final outcome = await _stages().runBaseEvaluation(gameId);
       switch (outcome) {
-        case AnalysisStageAccepted():
+        case AnalysisAccepted():
           analysis = SubmittedAnalysis.started;
         case AnalysisRateLimited():
           // Fair use on the engine commands. The game is saved; the user
@@ -428,7 +428,6 @@ class SubmitQueue {
         // queue cap, the e-mail check and the consent cannot come back here.
         // Their enum values stay for the coach path on the game screen.
         case AnalysisPrerequisiteMissing():
-        case AnalysisAccepted():
         case AnalysisLimitReached():
         case AnalysisQueueFull():
         case AnalysisEmailNotVerified():

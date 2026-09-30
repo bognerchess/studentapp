@@ -106,7 +106,7 @@ class FakeStageApi implements StageApi {
   Future<RequestAnalysisOutcome> runBaseEvaluation(String gameId) async {
     started.add(gameId);
     if (outcomes.isNotEmpty) return outcomes.removeAt(0);
-    return AnalysisStageAccepted(
+    return AnalysisAccepted(
       StageRun(
         id: 'run-${started.length}',
         gameId: gameId,

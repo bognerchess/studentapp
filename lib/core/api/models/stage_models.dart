@@ -4,8 +4,24 @@
 
 import 'dart:convert';
 
-import 'package:bogner_chess/core/api/models/analysis_models.dart';
 import 'package:flutter/foundation.dart';
+
+/// Where one run of one stage is. The server folds its internal states into
+/// these four; a value this build does not know reads as [unknown] and is
+/// treated as still active, so that the poller keeps asking.
+///
+/// Named after `AnalysisJobStatus`, the enum the schema still calls it, which
+/// the stage commands share with the web client's whole-game jobs.
+enum JobStatus {
+  queued,
+  running,
+  done,
+  failed,
+  unknown;
+
+  bool get isTerminal => this == done || this == failed;
+  bool get isActive => !isTerminal;
+}
 
 /// One stage of the analysis pipeline, in the order they run.
 ///

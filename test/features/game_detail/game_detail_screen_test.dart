@@ -95,7 +95,7 @@ void main() {
 
   setUp(() {
     db = openWidgetTestDatabase();
-    api = FixtureLink({'MyActiveAnalysisJobs': 'empty'});
+    api = FixtureLink();
     // GameById has one fixture; the screen is opened for several games, so
     // the answer is built from the list fixture of the requested id.
     api.respond('GameById', (variables) => gameById(api, variables['id']));

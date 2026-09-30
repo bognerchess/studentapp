@@ -30,7 +30,7 @@ class CachedGameInput {
 }
 
 /// The offline copy of the library list (AC-2).
-@DriftAccessor(tables: [CachedGames, CachedAnalyses, PendingJobs])
+@DriftAccessor(tables: [CachedGames, CachedAnalyses, PendingWorkflows])
 class GamesCacheDao extends DatabaseAccessor<AppDatabase>
     with _$GamesCacheDaoMixin {
   GamesCacheDao(super.attachedDatabase);
@@ -123,18 +123,19 @@ class GamesCacheDao extends DatabaseAccessor<AppDatabase>
     return query.getSingleOrNull();
   }
 
-  /// Removes the game together with its cached analysis and its jobs.
+  /// Removes the game together with its cached analysis and the pipeline the
+  /// tracker was watching.
   Future<bool> remove(String ownerSub, String gameId) {
     return transaction(() async {
       final games = delete(cachedGames)
         ..where((t) => t.ownerSub.equals(ownerSub) & t.gameId.equals(gameId));
       final analyses = delete(cachedAnalyses)
         ..where((t) => t.ownerSub.equals(ownerSub) & t.gameId.equals(gameId));
-      final jobs = delete(pendingJobs)
+      final workflows = delete(pendingWorkflows)
         ..where((t) => t.ownerSub.equals(ownerSub) & t.gameId.equals(gameId));
       final removed = await games.go();
       await analyses.go();
-      await jobs.go();
+      await workflows.go();
       return removed > 0;
     });
   }

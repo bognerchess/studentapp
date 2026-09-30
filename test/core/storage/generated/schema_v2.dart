@@ -371,91 +371,6 @@ class CachedAnalyses extends Table with TableInfo {
   bool get dontWriteConstraints => true;
 }
 
-class PendingJobs extends Table with TableInfo {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  PendingJobs(this.attachedDatabase, [this._alias]);
-  late final GeneratedColumn<String> jobId = GeneratedColumn<String>(
-    'job_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-    $customConstraints: 'NOT NULL',
-  );
-  late final GeneratedColumn<String> gameId = GeneratedColumn<String>(
-    'game_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-    $customConstraints: 'NOT NULL',
-  );
-  late final GeneratedColumn<String> ownerSub = GeneratedColumn<String>(
-    'owner_sub',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-    $customConstraints: 'NOT NULL',
-  );
-  late final GeneratedColumn<String> state = GeneratedColumn<String>(
-    'state',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-    $customConstraints: 'NOT NULL',
-  );
-  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
-    'created_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-    $customConstraints: 'NOT NULL',
-  );
-  late final GeneratedColumn<int> lastPolledAt = GeneratedColumn<int>(
-    'last_polled_at',
-    aliasedName,
-    true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    $customConstraints: 'NULL',
-  );
-  @override
-  List<GeneratedColumn> get $columns => [
-    jobId,
-    gameId,
-    ownerSub,
-    state,
-    createdAt,
-    lastPolledAt,
-  ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'pending_jobs';
-  @override
-  Set<GeneratedColumn> get $primaryKey => {jobId};
-  @override
-  Never map(Map<String, dynamic> data, {String? tablePrefix}) {
-    throw UnsupportedError('TableInfo.map in schema verification code');
-  }
-
-  @override
-  PendingJobs createAlias(String alias) {
-    return PendingJobs(attachedDatabase, alias);
-  }
-
-  @override
-  List<String> get customConstraints => const ['PRIMARY KEY(job_id)'];
-  @override
-  bool get dontWriteConstraints => true;
-}
-
 class PendingWorkflows extends Table with TableInfo {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -787,7 +702,6 @@ class DatabaseAtV2 extends GeneratedDatabase {
   late final Drafts drafts = Drafts(this);
   late final CachedGames cachedGames = CachedGames(this);
   late final CachedAnalyses cachedAnalyses = CachedAnalyses(this);
-  late final PendingJobs pendingJobs = PendingJobs(this);
   late final PendingWorkflows pendingWorkflows = PendingWorkflows(this);
   late final EventOutbox eventOutbox = EventOutbox(this);
   late final FeedbackOutbox feedbackOutbox = FeedbackOutbox(this);
@@ -799,10 +713,6 @@ class DatabaseAtV2 extends GeneratedDatabase {
   late final Index cachedGamesOwnerPlayed = Index(
     'cached_games_owner_played',
     'CREATE INDEX cached_games_owner_played ON cached_games (owner_sub, played_date)',
-  );
-  late final Index pendingJobsOwnerState = Index(
-    'pending_jobs_owner_state',
-    'CREATE INDEX pending_jobs_owner_state ON pending_jobs (owner_sub, state)',
   );
   late final Index pendingWorkflowsOwnerState = Index(
     'pending_workflows_owner_state',
@@ -816,14 +726,12 @@ class DatabaseAtV2 extends GeneratedDatabase {
     drafts,
     cachedGames,
     cachedAnalyses,
-    pendingJobs,
     pendingWorkflows,
     eventOutbox,
     feedbackOutbox,
     kv,
     draftsOwnerStateUpdated,
     cachedGamesOwnerPlayed,
-    pendingJobsOwnerState,
     pendingWorkflowsOwnerState,
   ];
   @override

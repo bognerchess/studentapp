@@ -3,7 +3,7 @@
 The app keeps one SQLite database on the device, through
 [drift](https://drift.simonbinder.eu). It holds what has to survive an app
 kill or a missing network: unsent games, the cached library and analyses, the
-ids of running analysis jobs, the two outboxes, and a few flags. The GraphQL
+games whose analysis is running, the two outboxes, and a few flags. The GraphQL
 cache is not in here; it stays in memory.
 
 Everything lives in `lib/core/storage/`:
@@ -69,9 +69,9 @@ package.
   the device cares about (`source`, `cursorPly`, `orientation`,
   `analysisHold`). Reading it never throws; unknown or damaged content reads
   as "not known". That is why the submit queue needed no schema change.
-- **Upserts never cross owners.** `cached_games`, `cached_analyses`,
-  `pending_jobs` and `pending_workflows` have the server id as the primary
-  key. An upsert for owner A on an id that is stored for owner B is ignored.
+- **Upserts never cross owners.** `cached_games`, `cached_analyses` and
+  `pending_workflows` have the server id as the primary key. An upsert for
+  owner A on an id that is stored for owner B is ignored.
 
 ## Tables
 
@@ -80,7 +80,6 @@ package.
 | `drafts` | `id` (uuid); `client_game_id` unique | Games entered on the device, with the submit-queue fields (`state`, `attempts`, `last_error`, `next_attempt_at`, `server_game_id`). |
 | `cached_games` | `game_id` | The library list as last fetched: `summary_json` plus the columns the list sorts and filters by (`played_date`, `opponent_name`, `opponent_search`, `updated_at`), and `fetched_at`. |
 | `cached_analyses` | `game_id` | The analysis document as raw JSON with `schema_version`, `schema_minor`, `fetched_at`, plus where it came from: `source` (`coach` or `engine`), the furthest `stage` it was built from, and `stage_run_ids`. |
-| `pending_jobs` | `job_id` | Analysis jobs the poller watches: `game_id`, `state`, `created_at`, `last_polled_at`. Goes with the whole-game path (WP-60 B12). |
 | `pending_workflows` | `game_id` | Games whose staged analysis the tracker watches: `target_stage`, `state`, `created_at`, `last_polled_at`. |
 | `event_outbox` | `id` autoincrement | Analytics events: `owner_sub` (nullable), `device_id`, `session_id`, `name`, `occurred_at`, `props_json`, `attempts`. Capped at 1000 rows, oldest dropped first. |
 | `feedback_outbox` | `id` autoincrement; (`owner_sub`, `comment_id`) unique | Thumbs on coach comments: `rating` up, down or cleared. Latest wins per comment. |
@@ -171,6 +170,7 @@ To add a column, a table or an index:
            );
            await m.createTable(schema.pendingWorkflows);
            await m.createIndex(schema.pendingWorkflowsOwnerState);
+           await m.deleteTable('pending_jobs');
          },
        ),
 
@@ -181,11 +181,16 @@ To add a column, a table or an index:
    `ALTER TABLE`: changing a type, a constraint, dropping a column with an
    index) are the other tools.
 
-   Two things that step shows. `source` has `withDefault(const Constant('coach'))`,
+   Three things that step shows. `source` has `withDefault(const Constant('coach'))`,
    which is both what makes the `ALTER TABLE` legal on a table that has rows
    **and** what makes an old row keep its meaning: before version 2 there was
-   no other kind of cached analysis. And an index a new table declares has to
-   be created next to it; `createTable` does not bring it along.
+   no other kind of cached analysis. An index a new table declares has to be
+   created next to it; `createTable` does not bring it along. And a table that
+   goes is dropped by **name**: `pending_jobs` belonged to the whole-game path,
+   its class is gone from the code, so the version-2 snapshot no longer
+   describes it and `schema.pendingJobs` would not compile. Nothing is carried
+   over from it — its rows were the ids of jobs the old poller watched, and that
+   pipeline is not in the app any more.
 5. Run `flutter test test/core/storage`. The migration test now has a
    `from 1 to 2` case without any edit — that one only checks the shape of the
    schema. What a row *means* after the migration needs a test of its own:

@@ -12,14 +12,12 @@ final class Schema2 extends i0.VersionedSchema {
     drafts,
     cachedGames,
     cachedAnalyses,
-    pendingJobs,
     pendingWorkflows,
     eventOutbox,
     feedbackOutbox,
     kv,
     draftsOwnerStateUpdated,
     cachedGamesOwnerPlayed,
-    pendingJobsOwnerState,
     pendingWorkflowsOwnerState,
   ];
   late final Shape0 drafts = Shape0(
@@ -88,25 +86,7 @@ final class Schema2 extends i0.VersionedSchema {
     ),
     alias: null,
   );
-  late final Shape3 pendingJobs = Shape3(
-    source: i0.VersionedTable(
-      entityName: 'pending_jobs',
-      withoutRowId: false,
-      isStrict: false,
-      tableConstraints: ['PRIMARY KEY(job_id)'],
-      columns: [
-        _column_25,
-        _column_13,
-        _column_1,
-        _column_4,
-        _column_11,
-        _column_26,
-      ],
-      attachedDatabase: database,
-    ),
-    alias: null,
-  );
-  late final Shape4 pendingWorkflows = Shape4(
+  late final Shape3 pendingWorkflows = Shape3(
     source: i0.VersionedTable(
       entityName: 'pending_workflows',
       withoutRowId: false,
@@ -115,7 +95,7 @@ final class Schema2 extends i0.VersionedSchema {
       columns: [
         _column_13,
         _column_1,
-        _column_27,
+        _column_25,
         _column_4,
         _column_11,
         _column_26,
@@ -124,37 +104,37 @@ final class Schema2 extends i0.VersionedSchema {
     ),
     alias: null,
   );
-  late final Shape5 eventOutbox = Shape5(
+  late final Shape4 eventOutbox = Shape4(
     source: i0.VersionedTable(
       entityName: 'event_outbox',
       withoutRowId: false,
       isStrict: false,
       tableConstraints: [],
       columns: [
+        _column_27,
         _column_28,
         _column_29,
         _column_30,
         _column_31,
         _column_32,
         _column_33,
-        _column_34,
         _column_8,
       ],
       attachedDatabase: database,
     ),
     alias: null,
   );
-  late final Shape6 feedbackOutbox = Shape6(
+  late final Shape5 feedbackOutbox = Shape5(
     source: i0.VersionedTable(
       entityName: 'feedback_outbox',
       withoutRowId: false,
       isStrict: false,
       tableConstraints: ['UNIQUE(owner_sub, comment_id)'],
       columns: [
-        _column_28,
+        _column_27,
         _column_1,
+        _column_34,
         _column_35,
-        _column_36,
         _column_11,
         _column_8,
       ],
@@ -162,13 +142,13 @@ final class Schema2 extends i0.VersionedSchema {
     ),
     alias: null,
   );
-  late final Shape7 kv = Shape7(
+  late final Shape6 kv = Shape6(
     source: i0.VersionedTable(
       entityName: 'kv',
       withoutRowId: false,
       isStrict: false,
       tableConstraints: ['PRIMARY KEY("key")'],
-      columns: [_column_37, _column_38],
+      columns: [_column_36, _column_37],
       attachedDatabase: database,
     ),
     alias: null,
@@ -180,10 +160,6 @@ final class Schema2 extends i0.VersionedSchema {
   final i1.Index cachedGamesOwnerPlayed = i1.Index(
     'cached_games_owner_played',
     'CREATE INDEX cached_games_owner_played ON cached_games (owner_sub, played_date)',
-  );
-  final i1.Index pendingJobsOwnerState = i1.Index(
-    'pending_jobs_owner_state',
-    'CREATE INDEX pending_jobs_owner_state ON pending_jobs (owner_sub, state)',
   );
   final i1.Index pendingWorkflowsOwnerState = i1.Index(
     'pending_workflows_owner_state',
@@ -472,12 +448,12 @@ i1.GeneratedColumn<String> _column_24(String aliasedName) =>
 
 class Shape3 extends i0.VersionedTable {
   Shape3({required super.source, required super.alias}) : super.aliased();
-  i1.GeneratedColumn<String> get jobId =>
-      columnsByName['job_id']! as i1.GeneratedColumn<String>;
   i1.GeneratedColumn<String> get gameId =>
       columnsByName['game_id']! as i1.GeneratedColumn<String>;
   i1.GeneratedColumn<String> get ownerSub =>
       columnsByName['owner_sub']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get targetStage =>
+      columnsByName['target_stage']! as i1.GeneratedColumn<String>;
   i1.GeneratedColumn<String> get state =>
       columnsByName['state']! as i1.GeneratedColumn<String>;
   i1.GeneratedColumn<int> get createdAt =>
@@ -488,7 +464,7 @@ class Shape3 extends i0.VersionedTable {
 
 i1.GeneratedColumn<String> _column_25(String aliasedName) =>
     i1.GeneratedColumn<String>(
-      'job_id',
+      'target_stage',
       aliasedName,
       false,
       type: i1.DriftSqlType.string,
@@ -505,31 +481,6 @@ i1.GeneratedColumn<int> _column_26(String aliasedName) =>
 
 class Shape4 extends i0.VersionedTable {
   Shape4({required super.source, required super.alias}) : super.aliased();
-  i1.GeneratedColumn<String> get gameId =>
-      columnsByName['game_id']! as i1.GeneratedColumn<String>;
-  i1.GeneratedColumn<String> get ownerSub =>
-      columnsByName['owner_sub']! as i1.GeneratedColumn<String>;
-  i1.GeneratedColumn<String> get targetStage =>
-      columnsByName['target_stage']! as i1.GeneratedColumn<String>;
-  i1.GeneratedColumn<String> get state =>
-      columnsByName['state']! as i1.GeneratedColumn<String>;
-  i1.GeneratedColumn<int> get createdAt =>
-      columnsByName['created_at']! as i1.GeneratedColumn<int>;
-  i1.GeneratedColumn<int> get lastPolledAt =>
-      columnsByName['last_polled_at']! as i1.GeneratedColumn<int>;
-}
-
-i1.GeneratedColumn<String> _column_27(String aliasedName) =>
-    i1.GeneratedColumn<String>(
-      'target_stage',
-      aliasedName,
-      false,
-      type: i1.DriftSqlType.string,
-      $customConstraints: 'NOT NULL',
-    );
-
-class Shape5 extends i0.VersionedTable {
-  Shape5({required super.source, required super.alias}) : super.aliased();
   i1.GeneratedColumn<int> get id =>
       columnsByName['id']! as i1.GeneratedColumn<int>;
   i1.GeneratedColumn<String> get ownerSub =>
@@ -548,7 +499,7 @@ class Shape5 extends i0.VersionedTable {
       columnsByName['attempts']! as i1.GeneratedColumn<int>;
 }
 
-i1.GeneratedColumn<int> _column_28(String aliasedName) =>
+i1.GeneratedColumn<int> _column_27(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'id',
       aliasedName,
@@ -557,7 +508,7 @@ i1.GeneratedColumn<int> _column_28(String aliasedName) =>
       type: i1.DriftSqlType.int,
       $customConstraints: 'NOT NULL PRIMARY KEY AUTOINCREMENT',
     );
-i1.GeneratedColumn<String> _column_29(String aliasedName) =>
+i1.GeneratedColumn<String> _column_28(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'owner_sub',
       aliasedName,
@@ -565,7 +516,7 @@ i1.GeneratedColumn<String> _column_29(String aliasedName) =>
       type: i1.DriftSqlType.string,
       $customConstraints: 'NULL',
     );
-i1.GeneratedColumn<String> _column_30(String aliasedName) =>
+i1.GeneratedColumn<String> _column_29(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'device_id',
       aliasedName,
@@ -573,7 +524,7 @@ i1.GeneratedColumn<String> _column_30(String aliasedName) =>
       type: i1.DriftSqlType.string,
       $customConstraints: 'NOT NULL',
     );
-i1.GeneratedColumn<String> _column_31(String aliasedName) =>
+i1.GeneratedColumn<String> _column_30(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'session_id',
       aliasedName,
@@ -581,7 +532,7 @@ i1.GeneratedColumn<String> _column_31(String aliasedName) =>
       type: i1.DriftSqlType.string,
       $customConstraints: 'NOT NULL',
     );
-i1.GeneratedColumn<String> _column_32(String aliasedName) =>
+i1.GeneratedColumn<String> _column_31(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'name',
       aliasedName,
@@ -589,7 +540,7 @@ i1.GeneratedColumn<String> _column_32(String aliasedName) =>
       type: i1.DriftSqlType.string,
       $customConstraints: 'NOT NULL',
     );
-i1.GeneratedColumn<int> _column_33(String aliasedName) =>
+i1.GeneratedColumn<int> _column_32(String aliasedName) =>
     i1.GeneratedColumn<int>(
       'occurred_at',
       aliasedName,
@@ -597,7 +548,7 @@ i1.GeneratedColumn<int> _column_33(String aliasedName) =>
       type: i1.DriftSqlType.int,
       $customConstraints: 'NOT NULL',
     );
-i1.GeneratedColumn<String> _column_34(String aliasedName) =>
+i1.GeneratedColumn<String> _column_33(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'props_json',
       aliasedName,
@@ -607,8 +558,8 @@ i1.GeneratedColumn<String> _column_34(String aliasedName) =>
       defaultValue: const i1.CustomExpression('\'{}\''),
     );
 
-class Shape6 extends i0.VersionedTable {
-  Shape6({required super.source, required super.alias}) : super.aliased();
+class Shape5 extends i0.VersionedTable {
+  Shape5({required super.source, required super.alias}) : super.aliased();
   i1.GeneratedColumn<int> get id =>
       columnsByName['id']! as i1.GeneratedColumn<int>;
   i1.GeneratedColumn<String> get ownerSub =>
@@ -623,7 +574,7 @@ class Shape6 extends i0.VersionedTable {
       columnsByName['attempts']! as i1.GeneratedColumn<int>;
 }
 
-i1.GeneratedColumn<String> _column_35(String aliasedName) =>
+i1.GeneratedColumn<String> _column_34(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'comment_id',
       aliasedName,
@@ -631,7 +582,7 @@ i1.GeneratedColumn<String> _column_35(String aliasedName) =>
       type: i1.DriftSqlType.string,
       $customConstraints: 'NOT NULL',
     );
-i1.GeneratedColumn<String> _column_36(String aliasedName) =>
+i1.GeneratedColumn<String> _column_35(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'rating',
       aliasedName,
@@ -640,15 +591,15 @@ i1.GeneratedColumn<String> _column_36(String aliasedName) =>
       $customConstraints: 'NOT NULL',
     );
 
-class Shape7 extends i0.VersionedTable {
-  Shape7({required super.source, required super.alias}) : super.aliased();
+class Shape6 extends i0.VersionedTable {
+  Shape6({required super.source, required super.alias}) : super.aliased();
   i1.GeneratedColumn<String> get key =>
       columnsByName['key']! as i1.GeneratedColumn<String>;
   i1.GeneratedColumn<String> get value =>
       columnsByName['value']! as i1.GeneratedColumn<String>;
 }
 
-i1.GeneratedColumn<String> _column_37(String aliasedName) =>
+i1.GeneratedColumn<String> _column_36(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'key',
       aliasedName,
@@ -656,7 +607,7 @@ i1.GeneratedColumn<String> _column_37(String aliasedName) =>
       type: i1.DriftSqlType.string,
       $customConstraints: 'NOT NULL',
     );
-i1.GeneratedColumn<String> _column_38(String aliasedName) =>
+i1.GeneratedColumn<String> _column_37(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'value',
       aliasedName,

@@ -5,223 +5,6 @@ import '../schema.graphql.dart';
 import 'package:bogner_chess/core/api/scalars.dart';
 import 'package:gql/ast.dart';
 
-class Fragment$JobFields {
-  Fragment$JobFields({
-    required this.id,
-    required this.chessGameId,
-    required this.status,
-    this.stage,
-    this.queuePosition,
-    required this.requestedAt,
-    this.finishedAt,
-    this.failureCode,
-  });
-
-  factory Fragment$JobFields.fromJson(Map<String, dynamic> json) {
-    final l$id = json['id'];
-    final l$chessGameId = json['chessGameId'];
-    final l$status = json['status'];
-    final l$stage = json['stage'];
-    final l$queuePosition = json['queuePosition'];
-    final l$requestedAt = json['requestedAt'];
-    final l$finishedAt = json['finishedAt'];
-    final l$failureCode = json['failureCode'];
-    return Fragment$JobFields(
-      id: (l$id as String),
-      chessGameId: (l$chessGameId as String),
-      status: fromJson$Enum$AnalysisJobStatus((l$status as String)),
-      stage: (l$stage as String?),
-      queuePosition: (l$queuePosition as int?),
-      requestedAt: dateTimeFromJson(l$requestedAt),
-      finishedAt: l$finishedAt == null ? null : dateTimeFromJson(l$finishedAt),
-      failureCode: (l$failureCode as String?),
-    );
-  }
-
-  final String id;
-
-  final String chessGameId;
-
-  final Enum$AnalysisJobStatus status;
-
-  final String? stage;
-
-  final int? queuePosition;
-
-  final DateTime requestedAt;
-
-  final DateTime? finishedAt;
-
-  final String? failureCode;
-
-  Map<String, dynamic> toJson() {
-    final _resultData = <String, dynamic>{};
-    final l$id = id;
-    _resultData['id'] = l$id;
-    final l$chessGameId = chessGameId;
-    _resultData['chessGameId'] = l$chessGameId;
-    final l$status = status;
-    _resultData['status'] = toJson$Enum$AnalysisJobStatus(l$status);
-    final l$stage = stage;
-    _resultData['stage'] = l$stage;
-    final l$queuePosition = queuePosition;
-    _resultData['queuePosition'] = l$queuePosition;
-    final l$requestedAt = requestedAt;
-    _resultData['requestedAt'] = dateTimeToJson(l$requestedAt);
-    final l$finishedAt = finishedAt;
-    _resultData['finishedAt'] = l$finishedAt == null
-        ? null
-        : dateTimeToJson(l$finishedAt);
-    final l$failureCode = failureCode;
-    _resultData['failureCode'] = l$failureCode;
-    return _resultData;
-  }
-
-  @override
-  int get hashCode {
-    final l$id = id;
-    final l$chessGameId = chessGameId;
-    final l$status = status;
-    final l$stage = stage;
-    final l$queuePosition = queuePosition;
-    final l$requestedAt = requestedAt;
-    final l$finishedAt = finishedAt;
-    final l$failureCode = failureCode;
-    return Object.hashAll([
-      l$id,
-      l$chessGameId,
-      l$status,
-      l$stage,
-      l$queuePosition,
-      l$requestedAt,
-      l$finishedAt,
-      l$failureCode,
-    ]);
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) {
-      return true;
-    }
-    if (other is! Fragment$JobFields || runtimeType != other.runtimeType) {
-      return false;
-    }
-    final l$id = id;
-    final lOther$id = other.id;
-    if (l$id != lOther$id) {
-      return false;
-    }
-    final l$chessGameId = chessGameId;
-    final lOther$chessGameId = other.chessGameId;
-    if (l$chessGameId != lOther$chessGameId) {
-      return false;
-    }
-    final l$status = status;
-    final lOther$status = other.status;
-    if (l$status != lOther$status) {
-      return false;
-    }
-    final l$stage = stage;
-    final lOther$stage = other.stage;
-    if (l$stage != lOther$stage) {
-      return false;
-    }
-    final l$queuePosition = queuePosition;
-    final lOther$queuePosition = other.queuePosition;
-    if (l$queuePosition != lOther$queuePosition) {
-      return false;
-    }
-    final l$requestedAt = requestedAt;
-    final lOther$requestedAt = other.requestedAt;
-    if (l$requestedAt != lOther$requestedAt) {
-      return false;
-    }
-    final l$finishedAt = finishedAt;
-    final lOther$finishedAt = other.finishedAt;
-    if (l$finishedAt != lOther$finishedAt) {
-      return false;
-    }
-    final l$failureCode = failureCode;
-    final lOther$failureCode = other.failureCode;
-    if (l$failureCode != lOther$failureCode) {
-      return false;
-    }
-    return true;
-  }
-}
-
-const fragmentDefinitionJobFields = FragmentDefinitionNode(
-  name: NameNode(value: 'JobFields'),
-  typeCondition: TypeConditionNode(
-    on: NamedTypeNode(name: NameNode(value: 'AnalysisJob'), isNonNull: false),
-  ),
-  directives: [],
-  selectionSet: SelectionSetNode(
-    selections: [
-      FieldNode(
-        name: NameNode(value: 'id'),
-        alias: null,
-        arguments: [],
-        directives: [],
-        selectionSet: null,
-      ),
-      FieldNode(
-        name: NameNode(value: 'chessGameId'),
-        alias: null,
-        arguments: [],
-        directives: [],
-        selectionSet: null,
-      ),
-      FieldNode(
-        name: NameNode(value: 'status'),
-        alias: null,
-        arguments: [],
-        directives: [],
-        selectionSet: null,
-      ),
-      FieldNode(
-        name: NameNode(value: 'stage'),
-        alias: null,
-        arguments: [],
-        directives: [],
-        selectionSet: null,
-      ),
-      FieldNode(
-        name: NameNode(value: 'queuePosition'),
-        alias: null,
-        arguments: [],
-        directives: [],
-        selectionSet: null,
-      ),
-      FieldNode(
-        name: NameNode(value: 'requestedAt'),
-        alias: null,
-        arguments: [],
-        directives: [],
-        selectionSet: null,
-      ),
-      FieldNode(
-        name: NameNode(value: 'finishedAt'),
-        alias: null,
-        arguments: [],
-        directives: [],
-        selectionSet: null,
-      ),
-      FieldNode(
-        name: NameNode(value: 'failureCode'),
-        alias: null,
-        arguments: [],
-        directives: [],
-        selectionSet: null,
-      ),
-    ],
-  ),
-);
-const documentNodeFragmentJobFields = DocumentNode(
-  definitions: [fragmentDefinitionJobFields],
-);
-
 class Fragment$GameFields {
   Fragment$GameFields({
     required this.id,
@@ -239,7 +22,6 @@ class Fragment$GameFields {
     this.blackElo,
     required this.created,
     required this.hasAnalysis,
-    this.latestAnalysisJob,
   });
 
   factory Fragment$GameFields.fromJson(Map<String, dynamic> json) {
@@ -258,7 +40,6 @@ class Fragment$GameFields {
     final l$blackElo = json['blackElo'];
     final l$created = json['created'];
     final l$hasAnalysis = json['hasAnalysis'];
-    final l$latestAnalysisJob = json['latestAnalysisJob'];
     return Fragment$GameFields(
       id: (l$id as String),
       clientGameId: (l$clientGameId as String?),
@@ -277,11 +58,6 @@ class Fragment$GameFields {
       blackElo: (l$blackElo as int?),
       created: dateTimeFromJson(l$created),
       hasAnalysis: (l$hasAnalysis as bool),
-      latestAnalysisJob: l$latestAnalysisJob == null
-          ? null
-          : Fragment$JobFields.fromJson(
-              (l$latestAnalysisJob as Map<String, dynamic>),
-            ),
     );
   }
 
@@ -314,8 +90,6 @@ class Fragment$GameFields {
   final DateTime created;
 
   final bool hasAnalysis;
-
-  final Fragment$JobFields? latestAnalysisJob;
 
   Map<String, dynamic> toJson() {
     final _resultData = <String, dynamic>{};
@@ -351,8 +125,6 @@ class Fragment$GameFields {
     _resultData['created'] = dateTimeToJson(l$created);
     final l$hasAnalysis = hasAnalysis;
     _resultData['hasAnalysis'] = l$hasAnalysis;
-    final l$latestAnalysisJob = latestAnalysisJob;
-    _resultData['latestAnalysisJob'] = l$latestAnalysisJob?.toJson();
     return _resultData;
   }
 
@@ -373,7 +145,6 @@ class Fragment$GameFields {
     final l$blackElo = blackElo;
     final l$created = created;
     final l$hasAnalysis = hasAnalysis;
-    final l$latestAnalysisJob = latestAnalysisJob;
     return Object.hashAll([
       l$id,
       l$clientGameId,
@@ -390,7 +161,6 @@ class Fragment$GameFields {
       l$blackElo,
       l$created,
       l$hasAnalysis,
-      l$latestAnalysisJob,
     ]);
   }
 
@@ -475,11 +245,6 @@ class Fragment$GameFields {
     final l$hasAnalysis = hasAnalysis;
     final lOther$hasAnalysis = other.hasAnalysis;
     if (l$hasAnalysis != lOther$hasAnalysis) {
-      return false;
-    }
-    final l$latestAnalysisJob = latestAnalysisJob;
-    final lOther$latestAnalysisJob = other.latestAnalysisJob;
-    if (l$latestAnalysisJob != lOther$latestAnalysisJob) {
       return false;
     }
     return true;
@@ -599,25 +364,11 @@ const fragmentDefinitionGameFields = FragmentDefinitionNode(
         directives: [],
         selectionSet: null,
       ),
-      FieldNode(
-        name: NameNode(value: 'latestAnalysisJob'),
-        alias: null,
-        arguments: [],
-        directives: [],
-        selectionSet: SelectionSetNode(
-          selections: [
-            FragmentSpreadNode(
-              name: NameNode(value: 'JobFields'),
-              directives: [],
-            ),
-          ],
-        ),
-      ),
     ],
   ),
 );
 const documentNodeFragmentGameFields = DocumentNode(
-  definitions: [fragmentDefinitionGameFields, fragmentDefinitionJobFields],
+  definitions: [fragmentDefinitionGameFields],
 );
 
 class Fragment$ConsentFields {

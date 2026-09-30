@@ -31,8 +31,7 @@ final List<String> allLocations = [
 
 /// An account without games: the library shows its empty state.
 List<Override> get _emptyAccount =>
-    FixtureLink({'MyMobileGames': 'empty', 'MyActiveAnalysisJobs': 'empty'})
-        .overrides;
+    FixtureLink({'MyMobileGames': 'empty'}).overrides;
 
 void main() {
   group('languages', () {

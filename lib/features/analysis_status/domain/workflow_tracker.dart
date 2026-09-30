@@ -785,7 +785,7 @@ class WorkflowTracker {
     }
     _outcomes[gameId] = outcome;
     switch (outcome) {
-      case AnalysisStageAccepted():
+      case AnalysisAccepted():
         // The next poll sees it queued; no need to guess a state here.
         break;
       case AnalysisRateLimited(:final retryAfter):
@@ -794,7 +794,6 @@ class WorkflowTracker {
         _floor = retryAfter;
         _log.debug('$gameId: rate limited, waiting ${retryAfter.inSeconds} s');
       case AnalysisPrerequisiteMissing():
-      case AnalysisAccepted():
       case AnalysisLimitReached():
       case AnalysisQueueFull():
       case AnalysisEmailNotVerified():

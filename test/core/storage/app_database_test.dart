@@ -36,12 +36,6 @@ void main() {
       schemaMinor: 0,
       payload: '{}',
     );
-    await db.pendingJobsDao.upsert(
-      owner,
-      jobId: 'job-$owner',
-      gameId: 'game-$owner',
-      state: JobState.queued,
-    );
     await db.pendingWorkflowsDao.upsert(
       owner,
       gameId: 'game-$owner',
@@ -66,12 +60,11 @@ void main() {
     return counts;
   }
 
-  test('has the eight tables', () {
+  test('has the seven tables', () {
     expect(db.allTables.map((t) => t.actualTableName), {
       'drafts',
       'cached_games',
       'cached_analyses',
-      'pending_jobs',
       'pending_workflows',
       'event_outbox',
       'feedback_outbox',
@@ -111,7 +104,6 @@ void main() {
     expect(await db.draftsDao.watchAll(alice).first, isEmpty);
     expect(await db.gamesCacheDao.watchGames(alice).first, isEmpty);
     expect(await db.analysisCacheDao.get(alice, 'game-$alice'), isNull);
-    expect(await db.pendingJobsDao.getActive(alice), isEmpty);
     expect(await db.pendingWorkflowsDao.getActive(alice), isEmpty);
     expect(await db.feedbackOutboxDao.takeBatch(alice, 10), isEmpty);
     expect(await db.kvDao.get('ai_consent_seen', ownerSub: alice), isNull);
@@ -123,7 +115,6 @@ void main() {
     expect(await db.draftsDao.watchAll(bob).first, hasLength(1));
     expect(await db.gamesCacheDao.watchGames(bob).first, hasLength(1));
     expect(await db.analysisCacheDao.get(bob, 'game-$bob'), isNotNull);
-    expect(await db.pendingJobsDao.getActive(bob), hasLength(1));
     expect(await db.pendingWorkflowsDao.getActive(bob), hasLength(1));
     expect(await db.feedbackOutboxDao.takeBatch(bob, 10), hasLength(1));
     expect(await db.kvDao.get('ai_consent_seen', ownerSub: bob), '1');

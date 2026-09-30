@@ -8,6 +8,7 @@ import 'package:bogner_chess/core/api/models/analysis_models.dart';
 import 'package:bogner_chess/core/api/models/device_models.dart';
 import 'package:bogner_chess/core/api/models/game_models.dart';
 import 'package:bogner_chess/core/api/models/legal_models.dart';
+import 'package:bogner_chess/core/api/models/stage_models.dart';
 import 'package:bogner_chess/core/game/game_metadata.dart';
 
 // Every switch over a generated enum has a case for `$unknown`, the value the

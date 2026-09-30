@@ -164,11 +164,10 @@ void main() {
         schemaMinor: 0,
         payload: '{}',
       );
-      await db.pendingJobsDao.upsert(
+      await db.pendingWorkflowsDao.upsert(
         alice,
-        jobId: 'job-$id',
         gameId: id,
-        state: JobState.queued,
+        targetStage: 'DEEP_EVALUATION',
       );
     }
 
@@ -178,9 +177,10 @@ void main() {
     expect(await ids(dao.watchGames(alice)), ['g2']);
     expect(await db.analysisCacheDao.get(alice, 'g1'), isNull);
     expect(await db.analysisCacheDao.get(alice, 'g2'), isNotNull);
-    expect((await db.pendingJobsDao.getActive(alice)).map((j) => j.jobId), [
-      'job-g2',
-    ]);
+    expect(
+      (await db.pendingWorkflowsDao.getActive(alice)).map((w) => w.gameId),
+      ['g2'],
+    );
   });
 
   test('removeStale drops what a full refresh did not see', () async {

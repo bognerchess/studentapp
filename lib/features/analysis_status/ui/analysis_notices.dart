@@ -12,13 +12,12 @@ import 'package:bogner_chess/router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-import '../domain/job_tracker_providers.dart';
 import '../domain/workflow_tracker_providers.dart';
 
 /// Tells the user, on whatever screen is showing, that an analysis has
 /// finished ("Analysis ready", with a button that opens the review) or has
 /// failed. It sits in `MaterialApp.builder` like `IncomingLinkNotices`, and
-/// it is what creates the job tracker at start-up.
+/// it is what creates the workflow tracker at start-up.
 ///
 /// Nothing is shown for the game whose own screen is open: that screen
 /// changes in place.
@@ -32,20 +31,8 @@ class AnalysisNotices extends ConsumerStatefulWidget {
 }
 
 class _AnalysisNoticesState extends ConsumerState<AnalysisNotices> {
-  StreamSubscription<JobTrackerEvent>? _events;
-  JobTracker? _tracker;
-
   StreamSubscription<WorkflowEvent>? _workflowEvents;
   WorkflowTracker? _workflowTracker;
-
-  void _listenTo(JobTracker tracker) {
-    if (identical(tracker, _tracker)) {
-      return;
-    }
-    _tracker = tracker;
-    unawaited(_events?.cancel());
-    _events = tracker.events.listen(_onEvent);
-  }
 
   void _listenToWorkflows(WorkflowTracker tracker) {
     if (identical(tracker, _workflowTracker)) {
@@ -56,18 +43,15 @@ class _AnalysisNoticesState extends ConsumerState<AnalysisNotices> {
     _workflowEvents = tracker.events.listen(_onWorkflowEvent);
   }
 
-  late final JobTrackerUiMounted _mounted;
   late final WorkflowTrackerUiMounted _workflowsMounted;
 
   @override
   void initState() {
     super.initState();
-    _mounted = ref.read(jobTrackerUiMountedProvider.notifier);
     _workflowsMounted = ref.read(workflowTrackerUiMountedProvider.notifier);
     // Providers must not change while the tree is being built.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _mounted.set(mounted: true);
         _workflowsMounted.set(mounted: true);
       }
     });
@@ -75,17 +59,10 @@ class _AnalysisNoticesState extends ConsumerState<AnalysisNotices> {
 
   @override
   void dispose() {
-    unawaited(_events?.cancel());
     unawaited(_workflowEvents?.cancel());
-    // The trackers stop polling; their timers must not outlive the UI.
-    final notifier = _mounted;
+    // The tracker stops polling; its timers must not outlive the UI.
     final workflows = _workflowsMounted;
-    unawaited(
-      Future.microtask(() {
-        notifier.set(mounted: false);
-        workflows.set(mounted: false);
-      }),
-    );
+    unawaited(Future.microtask(() => workflows.set(mounted: false)));
     super.dispose();
   }
 
@@ -99,26 +76,21 @@ class _AnalysisNoticesState extends ConsumerState<AnalysisNotices> {
         locations.contains(AppRoutes.gameReview(gameId));
   }
 
-  Future<void> _onEvent(JobTrackerEvent event) async {
-    if (!mounted || _isShowing(event.gameId)) {
-      return;
-    }
-    final owner = ref.read(currentOwnerProvider);
-    final game = owner == null
-        ? null
-        : await ref.read(gamesRepositoryProvider).cached(owner, event.gameId);
+  /// The coach has written: the one notice that names the opponent, because
+  /// it is the one the user has been waiting for.
+  Future<void> _coachReady(String gameId) async {
+    final opponent = await _opponentOf(gameId);
     if (!mounted) {
       return;
     }
     final l10n = context.l10n;
     final router = ref.read(routerProvider);
-    final opponent = game?.displayOpponentName;
-    // `persist` defaults to `action != null`, which would make [duration]
-    // a decoration: the notice would sit over the tab bar until somebody
-    // tapped it, and every snack bar raised afterwards would wait behind it
-    // for the rest of the session. It is news, not a decision to take.
-    final snackBar = switch (event) {
-      AnalysisReadyEvent() => SnackBar(
+    _show(
+      // `persist` defaults to `action != null`, which would make [duration] a
+      // decoration: the notice would sit over the tab bar until somebody
+      // tapped it, and every snack bar raised afterwards would wait behind it
+      // for the rest of the session. It is news, not a decision to take.
+      SnackBar(
         content: Text(
           opponent == null
               ? l10n.analysisNoticeReady
@@ -133,20 +105,14 @@ class _AnalysisNoticesState extends ConsumerState<AnalysisNotices> {
               AnalyticsEvents.analysisReadyOpened,
               {'source': 'banner'},
             );
-            unawaited(router.push(AppRoutes.gameReview(event.gameId)));
+            unawaited(router.push(AppRoutes.gameReview(gameId)));
           },
         ),
       ),
-      AnalysisFailedEvent() => SnackBar(
-        content: Text(l10n.analysisNoticeFailed),
-        duration: const Duration(seconds: 8),
-        persist: false,
-        action: SnackBarAction(
-          label: l10n.analysisNoticeView,
-          onPressed: () => unawaited(router.push(AppRoutes.game(event.gameId))),
-        ),
-      ),
-    };
+    );
+  }
+
+  void _show(SnackBar snackBar) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(snackBar);
@@ -168,7 +134,7 @@ class _AnalysisNoticesState extends ConsumerState<AnalysisNotices> {
       case StageReadyEvent(:final stage):
         switch (stage) {
           case AnalysisStage.coaching:
-            await _onEvent(AnalysisReadyEvent(event.gameId));
+            await _coachReady(event.gameId);
             return;
           case AnalysisStage.deepEvaluation:
             final opponent = await _opponentOf(event.gameId);
@@ -199,33 +165,31 @@ class _AnalysisNoticesState extends ConsumerState<AnalysisNotices> {
       return;
     }
     final router = ref.read(routerProvider);
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(text),
-          duration: const Duration(seconds: 8),
-          persist: false,
-          action: SnackBarAction(
-            label: action,
-            onPressed: () {
-              if (toReview) {
-                ref.read(analyticsProvider).track(
-                  AnalyticsEvents.analysisReadyOpened,
-                  {'source': 'banner'},
-                );
-              }
-              unawaited(
-                router.push(
-                  toReview
-                      ? AppRoutes.gameReview(event.gameId)
-                      : AppRoutes.game(event.gameId),
-                ),
+    _show(
+      SnackBar(
+        content: Text(text),
+        duration: const Duration(seconds: 8),
+        persist: false,
+        action: SnackBarAction(
+          label: action,
+          onPressed: () {
+            if (toReview) {
+              ref.read(analyticsProvider).track(
+                AnalyticsEvents.analysisReadyOpened,
+                {'source': 'banner'},
               );
-            },
-          ),
+            }
+            unawaited(
+              router.push(
+                toReview
+                    ? AppRoutes.gameReview(event.gameId)
+                    : AppRoutes.game(event.gameId),
+              ),
+            );
+          },
         ),
-      );
+      ),
+    );
   }
 
   Future<String?> _opponentOf(String gameId) async {
@@ -239,10 +203,8 @@ class _AnalysisNoticesState extends ConsumerState<AnalysisNotices> {
 
   @override
   Widget build(BuildContext context) {
-    // Both trackers are created here, so both start polling at app start and
-    // resume what an app kill interrupted. TODO(WP-60 B12): the job tracker
-    // and its half of this widget go when the whole-game path does.
-    _listenTo(ref.watch(jobTrackerProvider));
+    // The tracker is created here, so it starts polling at app start and
+    // resumes what an app kill interrupted.
     _listenToWorkflows(ref.watch(workflowTrackerProvider));
     return widget.child;
   }

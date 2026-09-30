@@ -23,26 +23,20 @@ def write(op, scenario, data=None, body=None):
         json.dump(body if body is not None else {'data': data}, f, indent=2, ensure_ascii=False)
         f.write('\n')
 
-def job(id, game, status, stage=None, pos=None, finished=None, failure=None, requested='2026-09-19T10:00:00.000Z'):
-    return {'id': id, 'chessGameId': game, 'status': status, 'stage': stage, 'queuePosition': pos,
-            'requestedAt': requested, 'finishedAt': finished, 'failureCode': failure}
-
 def game(id, **kw):
     g = {'id': id, 'clientGameId': None, 'playerColor': 'WHITE', 'result': 'WHITE_WINS', 'resultText': '1-0',
          'playedDate': '2026-09-12', 'eventName': 'Club Championship', 'timeControl': '5400+30',
          'opponentName': 'Jonas Keller', 'whitePlayerName': 'Fake User', 'blackPlayerName': 'Jonas Keller',
          'whiteElo': 1650, 'blackElo': 1712, 'created': '2026-09-12T18:30:00.000Z',
-         'hasAnalysis': False, 'latestAnalysisJob': None}
+         'hasAnalysis': False}
     g.update(kw)
     return g
 
-G1 = game('game-1', clientGameId='3f0e1c52-7b1d-4a53-9c55-0d8a1b2c3d41', hasAnalysis=True,
-          latestAnalysisJob=job('job-1', 'game-1', 'DONE', finished='2026-09-12T18:34:10.000Z', requested='2026-09-12T18:31:00.000Z'))
+G1 = game('game-1', clientGameId='3f0e1c52-7b1d-4a53-9c55-0d8a1b2c3d41', hasAnalysis=True)
 G2 = game('game-2', clientGameId='8a6de0a4-2c0f-4f0e-8a44-6f3a5e7d9b12', playerColor='BLACK', result='DRAW', resultText='1/2-1/2',
           playedDate='2026-09-05', eventName='Rapid Open Zürich', timeControl='900+10', opponentName='Mira Østergård',
           whitePlayerName='Mira Østergård', blackPlayerName='Fake User', whiteElo=1820, blackElo=1650,
-          created='2026-09-05T20:05:00.000Z',
-          latestAnalysisJob=job('job-2', 'game-2', 'RUNNING', stage='engine'))
+          created='2026-09-05T20:05:00.000Z')
 G3 = game('game-3', clientGameId=None, result='BLACK_WINS', resultText='0-1', playedDate=None, eventName=None,
           timeControl=None, opponentName='Anonymous', whitePlayerName=None, blackPlayerName='Anonymous',
           whiteElo=None, blackElo=None, created='2026-08-30T09:00:00.000Z')
@@ -64,8 +58,8 @@ write('MyMobileGames', 'last_page', conn([G3], 3, False, 'c3'))
 write('MyMobileGames', 'empty', conn([], 0, False, None))
 write('MyMobileGames', 'null_connection', {'myMobileGames': None})
 write('MyMobileGames', 'unknown_enums', conn([
-    game('game-9', playerColor='BOTH', result='ABANDONED', resultText='?', playedDate='not-a-date',
-         latestAnalysisJob=job('job-9', 'game-9', 'PAUSED', pos=4))], 1, False, 'c1'))
+    game('game-9', playerColor='BOTH', result='ABANDONED', resultText='?',
+         playedDate='not-a-date')], 1, False, 'c1'))
 
 PGN = ('[Event "Club Championship"]\n[Site "?"]\n[Date "2026.09.12"]\n[Round "?"]\n[White "Fake User"]\n'
        '[Black "Jonas Keller"]\n[Result "1-0"]\n[WhiteElo "1650"]\n[BlackElo "1712"]\n[TimeControl "5400+30"]\n\n'
@@ -74,16 +68,6 @@ detail = dict(G1, rawPgn=PGN, startingFen=None, site=None, round=None)
 write('GameById', 'default', {'myChessGameById': detail})
 write('GameById', 'not_found', {'myChessGameById': None})
 write('GameById', 'unreadable_pgn', {'myChessGameById': dict(G3, rawPgn='1. e4 e5 2. Ke3 ???', startingFen=None, site=' ', round=None)})
-
-write('AnalysisJob', 'default', {'analysisJob': job('job-1', 'game-1', 'QUEUED', pos=2)})
-write('AnalysisJob', 'running', {'analysisJob': job('job-1', 'game-1', 'RUNNING', stage='coach', pos=7)})
-write('AnalysisJob', 'done', {'analysisJob': job('job-1', 'game-1', 'DONE', finished='2026-09-19T10:03:30.000Z')})
-write('AnalysisJob', 'failed', {'analysisJob': job('job-1', 'game-1', 'FAILED', finished='2026-09-19T10:03:30.000Z', failure='engine_timeout')})
-write('AnalysisJob', 'unknown_status', {'analysisJob': job('job-1', 'game-1', 'PAUSED')})
-write('AnalysisJob', 'not_found', {'analysisJob': None})
-write('MyActiveAnalysisJobs', 'default', {'myActiveAnalysisJobs': [
-    job('job-2', 'game-2', 'RUNNING', stage='engine'), job('job-3', 'game-3', 'QUEUED', pos=0, requested='2026-09-19T10:01:00.000Z')]})
-write('MyActiveAnalysisJobs', 'empty', {'myActiveAnalysisJobs': []})
 
 def analysis(doc, feedback=None, version=1, minor=0):
     return {'gameAnalysis': {'id': 'analysis-1', 'chessGameId': 'game-1', 'schemaVersion': version, 'schemaMinor': minor,
@@ -170,19 +154,6 @@ mutation('ImportMobileGame', 'importMobileGame', 'chessGame', {'default': import
     {'input_invalid': {'__typename': 'InputValidationError', 'message': 'web_api_errors.pgn_too_long', 'propertyName': 'Pgn'}})
 write('ImportMobileGame', 'empty_payload', {'importMobileGame': {'chessGame': None, 'errors': None}})
 mutation('DeleteChessGame', 'deleteChessGame', 'chessGame', {'default': {'id': 'game-1'}}, {})
-mutation('RequestGameAnalysis', 'requestGameAnalysis', 'analysisJob', {'default': job('job-10', 'game-10', 'QUEUED', pos=0)}, {
-    'limit_reached': {'__typename': 'AnalysisLimitReachedError', 'message': 'web_api_errors.analysis_limit_reached',
-                      'window': 'DAY', 'limit': 3, 'used': 3, 'resetAt': '2026-09-19T22:00:00.000Z'},
-    'limit_reached_month': {'__typename': 'AnalysisLimitReachedError', 'message': 'web_api_errors.analysis_limit_reached',
-                      'window': 'MONTH', 'limit': 30, 'used': 30, 'resetAt': '2026-09-30T22:00:00.000Z'},
-    'limit_reached_unknown_window': {'__typename': 'AnalysisLimitReachedError', 'message': 'web_api_errors.analysis_limit_reached',
-                      'window': 'WEEK', 'limit': 10, 'used': 10, 'resetAt': '2026-09-21T00:00:00+02:00'},
-    'queue_full': {'__typename': 'AnalysisQueueFullError', 'message': 'web_api_errors.analysis_queue_full', 'maxQueuedJobs': 2},
-    'rate_limited': RATE,
-    'email_not_verified': {'__typename': 'EmailNotVerifiedError', 'message': 'web_api_errors.email_not_verified'},
-    'ai_consent_required': {'__typename': 'AiConsentRequiredError', 'message': 'web_api_errors.ai_consent_required', 'requiredVersion': 1}},
-    {'business_error': {'__typename': 'BusinessError', 'message': 'web_api_errors.analysis_already_in_progress'},
-     'input_invalid': {'__typename': 'InputValidationError', 'message': 'web_api_errors.invalid_input', 'propertyName': 'Language'}})
 mutation('SubmitCoachCommentFeedback', 'submitCoachCommentFeedback', 'coachCommentFeedback', {
     'default': {'id': 'feedback-1', 'commentId': '322b7d97-32b5-4bc3-9f81-475368d0ef1c', 'rating': 'UP'},
     'down': {'id': 'feedback-1', 'commentId': '322b7d97-32b5-4bc3-9f81-475368d0ef1c', 'rating': 'DOWN'},

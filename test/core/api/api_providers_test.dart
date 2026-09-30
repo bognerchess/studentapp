@@ -24,8 +24,12 @@ void main() {
 
       expect((await container.read(gamesApiProvider).list()).totalCount, 3);
       expect(
-        await container.read(analysisApiProvider).activeJobs(),
-        hasLength(2),
+        (await container.read(stageApiProvider).workflow('game-1'))?.gameId,
+        'game-1',
+      );
+      expect(
+        (await container.read(analysisApiProvider).analysis('game-1'))?.gameId,
+        'game-1',
       );
       expect((await container.read(usageApiProvider).usage()).dailyLimit, 3);
       expect(
@@ -42,7 +46,8 @@ void main() {
       expect(container.read(accountApiProvider), isNotNull);
       expect(link.requests.map((r) => r.operationName), [
         'MyMobileGames',
-        'MyActiveAnalysisJobs',
+        'GameAnalysisWorkflow',
+        'GameAnalysis',
         'MyAnalysisUsage',
         'MyAiConsent',
         'MobileConfig',

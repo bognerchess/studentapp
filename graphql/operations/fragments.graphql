@@ -1,17 +1,5 @@
 # Shared selections. The mappers in lib/core/api/mappers/ work on these
-# fragments, so every operation that returns a game or a job selects the same
-# fields.
-
-fragment JobFields on AnalysisJob {
-  id
-  chessGameId
-  status
-  stage
-  queuePosition
-  requestedAt
-  finishedAt
-  failureCode
-}
+# fragments, so every operation that returns a game selects the same fields.
 
 fragment GameFields on ChessGame {
   id
@@ -29,9 +17,6 @@ fragment GameFields on ChessGame {
   blackElo
   created
   hasAnalysis
-  latestAnalysisJob {
-    ...JobFields
-  }
 }
 
 fragment ConsentFields on ConsentStatus {

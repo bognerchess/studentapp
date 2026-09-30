@@ -119,12 +119,19 @@ void main() {
       expect(await db.pendingWorkflowsDao.getActive('sub-alice'), hasLength(1));
     });
 
-    test('the jobs of version 1 are left where they are', () async {
+    test('pending_jobs is gone, row and all', () async {
       final db = await upgradedFromV1();
 
-      // B12 of WP-60 drops pending_jobs; until then a job that was in flight
-      // over the upgrade still is.
-      expect(await db.pendingJobsDao.getActive('sub-alice'), hasLength(1));
+      // The whole-game path went with WP-60, so a job that was in flight over
+      // the upgrade has nothing left to be watched by. The table is dropped
+      // rather than emptied: the app has no code that could read it.
+      final tables = await db
+          .customSelect(
+            "SELECT name FROM sqlite_master WHERE type = 'table' "
+            "AND name = 'pending_jobs'",
+          )
+          .get();
+      expect(tables, isEmpty);
     });
   });
 

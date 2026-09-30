@@ -140,7 +140,7 @@ void main() {
     expect(await games.removeStale(alice, games.now()), 3);
   });
 
-  test('delete: server first, then cache, analysis and jobs', () async {
+  test('delete: server first, then cache, analysis and pipeline', () async {
     await games.fetchPage(alice, fetchedAt: games.now());
     await db.analysisCacheDao.putCoach(
       alice,
@@ -149,11 +149,10 @@ void main() {
       schemaMinor: 0,
       payload: '{}',
     );
-    await db.pendingJobsDao.upsert(
+    await db.pendingWorkflowsDao.upsert(
       alice,
-      jobId: 'j',
       gameId: 'game-1',
-      state: JobState.running,
+      targetStage: 'DEEP_EVALUATION',
     );
 
     expect(await games.delete(alice, 'game-1'), isA<GameDeleted>());
@@ -163,7 +162,7 @@ void main() {
     );
     expect(await ids(), ['game-2', 'game-3']);
     expect(await db.analysisCacheDao.get(alice, 'game-1'), isNull);
-    expect(await db.pendingJobsDao.getActive(alice), isEmpty);
+    expect(await db.pendingWorkflowsDao.getActive(alice), isEmpty);
   });
 
   test('a refused delete keeps the cached game', () async {
@@ -171,33 +170,6 @@ void main() {
     link.use('DeleteChessGame', 'technical_error');
     expect(await games.delete(alice, 'game-1'), isA<DeleteGameFailed>());
     expect(await ids(), hasLength(3));
-  });
-
-  test('applyJob changes the badge of a cached game only', () async {
-    await games.fetchPage(alice, fetchedAt: games.now());
-    final job = JobInfo(
-      id: 'j9',
-      gameId: 'game-3',
-      status: JobStatus.done,
-      requestedAt: DateTime.utc(2026, 9, 19, 10),
-      finishedAt: DateTime.utc(2026, 9, 19, 10, 3),
-    );
-    await games.applyJob(alice, job, hasAnalysis: true);
-    final game = (await games.cached(alice, 'game-3'))!;
-    expect(game.hasAnalysis, isTrue);
-    expect(game.latestJob, job);
-    expect(game.blackName, 'Anonymous');
-
-    await games.applyJob(
-      alice,
-      JobInfo(
-        id: 'j',
-        gameId: 'unknown-game',
-        status: JobStatus.queued,
-        requestedAt: DateTime.utc(2026),
-      ),
-    );
-    expect(await games.cached(alice, 'unknown-game'), isNull);
   });
 
   test('applyWorkflow records the pipeline next to the game', () async {

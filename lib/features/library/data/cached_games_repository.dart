@@ -140,7 +140,6 @@ class CachedGamesRepository implements GamesRepository {
         if (known[game.id] case final workflow?)
           gameSummaryWith(
             game,
-            latestJob: game.latestJob,
             hasAnalysis: game.hasAnalysis,
             workflow: workflow,
           )
@@ -159,29 +158,11 @@ class CachedGamesRepository implements GamesRepository {
     if (cached?.workflow case final workflow?) {
       return gameSummaryWith(
         game,
-        latestJob: game.latestJob,
         hasAnalysis: game.hasAnalysis,
         workflow: workflow,
       );
     }
     return game;
-  }
-
-  @override
-  Future<void> applyJob(String owner, JobInfo job, {bool? hasAnalysis}) async {
-    final row = await _db.gamesCacheDao.get(owner, job.gameId);
-    final game = row == null ? null : GameSummaryCodec.decode(row.summaryJson);
-    if (row == null || game == null) {
-      return;
-    }
-    final updated = gameSummaryWith(
-      game,
-      latestJob: job,
-      hasAnalysis: hasAnalysis ?? game.hasAnalysis,
-    );
-    await _db.gamesCacheDao.upsertPage(owner, [
-      _input(updated),
-    ], fetchedAt: row.fetchedAt);
   }
 
   @override
@@ -202,7 +183,6 @@ class CachedGamesRepository implements GamesRepository {
     }
     final updated = gameSummaryWith(
       game,
-      latestJob: game.latestJob,
       hasAnalysis: hasAnalysis ?? game.hasAnalysis,
       workflow: workflow,
     );
@@ -222,11 +202,7 @@ class CachedGamesRepository implements GamesRepository {
     if (game == null || game.hasAnalysis == hasAnalysis) {
       return;
     }
-    final updated = gameSummaryWith(
-      game,
-      latestJob: game.latestJob,
-      hasAnalysis: hasAnalysis,
-    );
+    final updated = gameSummaryWith(game, hasAnalysis: hasAnalysis);
     await _db.gamesCacheDao.upsertPage(owner, [
       _input(updated),
     ], fetchedAt: row!.fetchedAt);

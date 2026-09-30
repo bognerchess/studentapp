@@ -56,10 +56,7 @@ void main() {
     testWidgets('the empty library leads to the new-game tab', (tester) async {
       await pumpApp(
         tester,
-        overrides: FixtureLink({
-          'MyMobileGames': 'empty',
-          'MyActiveAnalysisJobs': 'empty',
-        }).overrides,
+        overrides: FixtureLink({'MyMobileGames': 'empty'}).overrides,
       );
       expect(find.text('No games yet'), findsOneWidget);
 

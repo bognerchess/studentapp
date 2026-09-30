@@ -199,7 +199,7 @@ class StageApi {
     }
     return run == null
         ? AnalysisRequestFailed(emptyPayload(operationName))
-        : AnalysisStageAccepted(stageRunOf(run));
+        : AnalysisAccepted(stageRunOf(run));
   }
 
   /// A top-level GraphQL error that means "this game is not yours or is

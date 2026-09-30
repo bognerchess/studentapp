@@ -13,7 +13,6 @@ import 'daos/event_outbox_dao.dart';
 import 'daos/feedback_outbox_dao.dart';
 import 'daos/games_cache_dao.dart';
 import 'daos/kv_dao.dart';
-import 'daos/pending_jobs_dao.dart';
 import 'daos/pending_workflows_dao.dart';
 import 'generated/schema_versions.dart';
 import 'tables/cached_analyses.dart';
@@ -22,7 +21,6 @@ import 'tables/drafts.dart';
 import 'tables/event_outbox.dart';
 import 'tables/feedback_outbox.dart';
 import 'tables/kv.dart';
-import 'tables/pending_jobs.dart';
 import 'tables/pending_workflows.dart';
 
 export 'converters.dart';
@@ -32,7 +30,6 @@ export 'daos/event_outbox_dao.dart';
 export 'daos/feedback_outbox_dao.dart';
 export 'daos/games_cache_dao.dart';
 export 'daos/kv_dao.dart';
-export 'daos/pending_jobs_dao.dart';
 export 'daos/pending_workflows_dao.dart';
 export 'tables/cached_analyses.dart';
 export 'tables/cached_games.dart';
@@ -40,7 +37,6 @@ export 'tables/drafts.dart';
 export 'tables/event_outbox.dart';
 export 'tables/feedback_outbox.dart';
 export 'tables/kv.dart';
-export 'tables/pending_jobs.dart';
 export 'tables/pending_workflows.dart';
 
 part 'app_database.g.dart';
@@ -63,7 +59,6 @@ typedef Clock = DateTime Function();
     Drafts,
     CachedGames,
     CachedAnalyses,
-    PendingJobs,
     PendingWorkflows,
     EventOutbox,
     FeedbackOutbox,
@@ -73,7 +68,6 @@ typedef Clock = DateTime Function();
     DraftsDao,
     GamesCacheDao,
     AnalysisCacheDao,
-    PendingJobsDao,
     PendingWorkflowsDao,
     EventOutboxDao,
     FeedbackOutboxDao,
@@ -128,6 +122,11 @@ class AppDatabase extends _$AppDatabase {
         );
         await m.createTable(schema.pendingWorkflows);
         await m.createIndex(schema.pendingWorkflowsOwnerState);
+        // `pending_jobs` went with the whole-game path. Its rows were the ids
+        // of jobs the old poller watched — transient state of a pipeline this
+        // app no longer drives, so there is nothing to carry over. Named as a
+        // string because the version-2 snapshot no longer describes it.
+        await m.deleteTable('pending_jobs');
       },
     ),
     beforeOpen: (details) async {
@@ -151,9 +150,6 @@ class AppDatabase extends _$AppDatabase {
       )..where((t) => t.ownerSub.equals(ownerSub))).go();
       await (delete(
         cachedAnalyses,
-      )..where((t) => t.ownerSub.equals(ownerSub))).go();
-      await (delete(
-        pendingJobs,
       )..where((t) => t.ownerSub.equals(ownerSub))).go();
       await (delete(
         pendingWorkflows,

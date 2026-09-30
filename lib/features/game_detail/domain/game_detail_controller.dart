@@ -222,7 +222,7 @@ class GameDetailController extends Notifier<GameDetailState> {
         return outcome;
       }
       switch (outcome) {
-        case AnalysisStageAccepted(:final run):
+        case AnalysisAccepted(:final run):
           analytics.track(AnalyticsEvents.analysisRequested, {
             'language': language,
             'source': 'game_detail_coach',
@@ -238,9 +238,6 @@ class GameDetailController extends Notifier<GameDetailState> {
         case AnalysisEmailNotVerified():
         case AnalysisAiConsentRequired():
         case AnalysisRequestFailed():
-        // `runCoaching` never answers with the whole-game member; B12 of
-        // WP-60 deletes it and this case goes with it.
-        case AnalysisAccepted():
           break;
       }
       // Accepted or refused: the numbers under the button may have changed.
