@@ -33,6 +33,8 @@ final reviewRepositoryProvider = Provider<ReviewRepository>((ref) {
     // would restart every load). The screen listens on the workflow itself
     // and asks for the data again.
     trackedWorkflow: (gameId) => ref.read(trackedWorkflowsProvider)[gameId],
+    syncArtifacts: (gameId) =>
+        ref.read(workflowTrackerProvider).syncArtifacts(gameId),
   );
   return _TrackedReviewRepository(repository, ref);
 });

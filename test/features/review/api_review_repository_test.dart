@@ -44,7 +44,13 @@ void main() {
   /// which is the cold open the repository answers with one query.
   final Map<String, AnalysisWorkflow> tracked = {};
 
+  /// What the tracker's catch-up does when asked, and how often it was.
+  late Future<void> Function(String gameId) sync;
+  final List<String> synced = [];
+
   setUp(() {
+    synced.clear();
+    sync = (gameId) async => synced.add(gameId);
     clock = FakeClock();
     db = openTestDatabase(clock);
     link = FixtureLink();
@@ -59,6 +65,7 @@ void main() {
       db: db,
       owner: () => owner,
       trackedWorkflow: (gameId) => tracked[gameId],
+      syncArtifacts: (gameId) => sync(gameId),
     );
   });
   tearDown(() => db.close());
@@ -249,6 +256,22 @@ void main() {
       repository.load('game-1'),
       throwsA(isA<AnalysisNotAvailable>()),
     );
+    // The tracker was asked to catch up once before giving up.
+    expect(synced, ['game-1']);
+  });
+
+  test('nothing stored and no coach document: the engine stages the tracker '
+      'catches up on are served', () async {
+    link.use('GameAnalysis', 'none');
+    sync = (gameId) async {
+      synced.add(gameId);
+      await cacheEngineAssembly();
+    };
+
+    final data = await repository.load('game-1');
+    expect(data.result, isA<AnalysisSupported>());
+    expect(data.source, AnalysisSource.engine);
+    expect(synced, ['game-1']);
   });
 
   test('a newer major version is handed over and cached as such', () async {

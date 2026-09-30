@@ -50,16 +50,20 @@ class ApiReviewRepository implements ReviewRepository {
     required AppDatabase db,
     required String? Function() owner,
     AnalysisWorkflow? Function(String gameId)? trackedWorkflow,
+    Future<void> Function(String gameId)? syncArtifacts,
   }) : _api = analysisApi,
        _stages = stageApi,
        _db = db,
        _ownerOf = owner,
        _trackedWorkflow = trackedWorkflow ?? _noWorkflow,
+       _syncArtifacts = syncArtifacts ?? _noSync,
        _feedback = LocalFeedbackStore(db);
 
   static const _log = Log('review-data');
 
   static AnalysisWorkflow? _noWorkflow(String gameId) => null;
+
+  static Future<void> _noSync(String gameId) => Future.value();
 
   final api.AnalysisApi _api;
   final StageApi _stages;
@@ -67,6 +71,11 @@ class ApiReviewRepository implements ReviewRepository {
   final AppDatabase _db;
   final String? Function() _ownerOf;
   final AnalysisWorkflow? Function(String gameId) _trackedWorkflow;
+
+  /// The tracker's catch-up: stores the finished stages' artifacts of a game
+  /// it is not watching. Asked once, before giving up on a game with nothing
+  /// stored.
+  final Future<void> Function(String gameId) _syncArtifacts;
   final LocalFeedbackStore _feedback;
 
   @override
@@ -122,6 +131,21 @@ class ApiReviewRepository implements ReviewRepository {
           rethrow;
         }
         _log.debug('refresh failed, showing the cached analysis: $e');
+      }
+    }
+    if (result == null) {
+      // No coach document anywhere. The engine stages may still be finished
+      // on the server without this device having stored their artifacts:
+      // the tracker was not watching when they landed, or could not fetch
+      // them then. One catch-up, then the cache is read once more.
+      await _syncArtifacts(gameId);
+      final synced = await _db.analysisCacheDao.get(owner, gameId);
+      if (synced != null) {
+        final parsed = AnalysisParser.parseString(synced.payload);
+        if (parsed is! AnalysisInvalid) {
+          result = parsed;
+          source = synced.source;
+        }
       }
     }
     if (result == null) {

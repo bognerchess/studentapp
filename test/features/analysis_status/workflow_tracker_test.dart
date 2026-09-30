@@ -335,6 +335,56 @@ void main() {
       if (entry.gameId == gameId) entry.stage,
   ];
 
+  group('syncArtifacts', () {
+    test('stores what is ready for a game nobody is watching, and starts '
+        'nothing', () {
+      fake((async) {
+        unawaited(tracker.setOwner(alice));
+        async.flushMicrotasks();
+        server.setAll('g1', {_be: 'READY', _bc: 'READY', _de: 'READY'});
+
+        unawaited(tracker.syncArtifacts('g1'));
+        async.flushMicrotasks();
+
+        final row = settle(async, db.analysisCacheDao.get(alice, 'g1'))!;
+        expect(row.source, AnalysisSource.engine);
+        expect(row.stage, _de);
+        // Stage 3 says everything, so it is the one artifact fetched.
+        expect(server.artifactFetches, [server.runIdOf('g1', _de)]);
+        expect(stagesStartedFor('g1'), isEmpty);
+        expect(tracker.trackedGames, isEmpty);
+        expect(
+          tracker.workflows.value['g1']?.stateOf(AnalysisStage.deepEvaluation),
+          AnalysisStageState.ready,
+        );
+      });
+    });
+
+    test('a failed pipeline keeps what it has and is not run again', () {
+      fake((async) {
+        unawaited(tracker.setOwner(alice));
+        async.flushMicrotasks();
+        server.setAll('g1', {_be: 'READY', _bc: 'READY', _de: 'FAILED'});
+
+        unawaited(tracker.syncArtifacts('g1'));
+        async.flushMicrotasks();
+
+        final row = settle(async, db.analysisCacheDao.get(alice, 'g1'))!;
+        expect(row.stage, _be);
+        expect(stagesStartedFor('g1'), isEmpty);
+      });
+    });
+
+    test('does nothing while nobody is signed in', () {
+      fake((async) {
+        server.setAll('g1', {_be: 'READY'});
+        unawaited(tracker.syncArtifacts('g1'));
+        async.flushMicrotasks();
+        expect(server.workflowQueriesOf('g1'), 0);
+      });
+    });
+  });
+
   group('the chain', () {
     test('starting it writes the row before anything is fired', () {
       fake((async) {
