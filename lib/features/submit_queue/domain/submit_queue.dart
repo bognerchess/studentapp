@@ -5,6 +5,8 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:bogner_chess/core/analytics/analysis_analytics.dart';
+import 'package:bogner_chess/core/analytics/analytics.dart';
 import 'package:bogner_chess/core/api/games_api.dart';
 import 'package:bogner_chess/core/api/stage_api.dart';
 import 'package:bogner_chess/core/connectivity/connectivity.dart';
@@ -65,8 +67,10 @@ class SubmitQueue {
     required this._stages,
     required this._owner,
     required this._connectivity,
+    Analytics? analytics,
     void Function()? onLibraryChanged,
-  }) : _onLibraryChanged = onLibraryChanged ?? _nothing;
+  }) : _analytics = analytics ?? const NoopAnalytics(),
+       _onLibraryChanged = onLibraryChanged ?? _nothing;
 
   static void _nothing() {}
 
@@ -94,6 +98,10 @@ class SubmitQueue {
   final StageApi Function() _stages;
   final String? Function() _owner;
   final ConnectivitySource _connectivity;
+
+  /// A no-op unless the provider wires the real one, so that a queue built in
+  /// a test records nothing and opens no database.
+  final Analytics _analytics;
   final void Function() _onLibraryChanged;
 
   final ValueNotifier<SubmitQueueStatus> _status = ValueNotifier(
@@ -418,8 +426,9 @@ class SubmitQueue {
       );
       final outcome = await _stages().runBaseEvaluation(gameId);
       switch (outcome) {
-        case AnalysisAccepted():
+        case AnalysisAccepted(:final stage):
           analysis = SubmittedAnalysis.started;
+          _analytics.stageStarted(stage, source: 'submit_queue');
         case AnalysisRateLimited():
           // Fair use on the engine commands. The game is saved; the user
           // taps Analyse when they get to it.

@@ -14,6 +14,10 @@ abstract final class AnalyticsEvents {
   static const pgnImported = 'pgn_imported';
   static const gameSubmitted = 'game_submitted';
   static const analysisRequested = 'analysis_requested';
+  static const analysisStageStarted = 'analysis_stage_started';
+  static const analysisStageReady = 'analysis_stage_ready';
+  static const analysisStageFailed = 'analysis_stage_failed';
+  static const coachRequested = 'coach_requested';
   static const analysisLimitHit = 'analysis_limit_hit';
   static const analysisReadyOpened = 'analysis_ready_opened';
   static const reviewOpened = 'review_opened';
@@ -33,6 +37,10 @@ abstract final class AnalyticsEvents {
     pgnImported,
     gameSubmitted,
     analysisRequested,
+    analysisStageStarted,
+    analysisStageReady,
+    analysisStageFailed,
+    coachRequested,
     analysisLimitHit,
     analysisReadyOpened,
     reviewOpened,

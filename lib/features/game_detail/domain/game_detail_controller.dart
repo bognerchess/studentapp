@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+import 'package:bogner_chess/core/analytics/analysis_analytics.dart';
 import 'package:bogner_chess/core/analytics/analytics.dart';
 import 'package:bogner_chess/core/api/analysis_api.dart';
 import 'package:bogner_chess/core/api/api_providers.dart';
@@ -160,10 +161,12 @@ class GameDetailController extends Notifier<GameDetailState> {
       final outcome = await ref
           .read(workflowTrackerProvider)
           .startChain(gameId);
-      if (ref.mounted) {
-        ref.read(analyticsProvider).track(AnalyticsEvents.analysisRequested, {
-          'source': 'game_detail',
-        });
+      // Only what the server took: the tap may have started nothing (the
+      // pipeline was already complete) or have been refused.
+      if (ref.mounted && outcome is AnalysisAccepted) {
+        ref
+            .read(analyticsProvider)
+            .stageStarted(outcome.stage, source: 'game_detail');
       }
       return outcome;
     } finally {
@@ -223,10 +226,9 @@ class GameDetailController extends Notifier<GameDetailState> {
       }
       switch (outcome) {
         case AnalysisAccepted(:final run):
-          analytics.track(AnalyticsEvents.analysisRequested, {
-            'language': language,
-            'source': 'game_detail_coach',
-          });
+          analytics
+            ..coachRequested(language)
+            ..stageStarted(run.stage, source: 'game_detail_coach');
           await ref.read(workflowTrackerProvider).trackCoaching(gameId, run);
         case AnalysisLimitReached(:final window):
           analytics.track(AnalyticsEvents.analysisLimitHit, {

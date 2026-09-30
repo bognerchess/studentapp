@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+import 'package:bogner_chess/core/analytics/analysis_analytics.dart';
 import 'package:bogner_chess/core/analytics/analytics.dart';
 import 'package:bogner_chess/core/l10n/l10n.dart';
 import 'package:bogner_chess/features/library/domain/games_repository.dart';
@@ -124,7 +125,13 @@ class _AnalysisNoticesState extends ConsumerState<AnalysisNotices> {
   /// there is something to read (the deep evaluation, the coach), and that
   /// the pipeline stopped.
   Future<void> _onWorkflowEvent(WorkflowEvent event) async {
-    if (!mounted || _isShowing(event.gameId)) {
+    if (!mounted) {
+      return;
+    }
+    _record(event);
+    if (_isShowing(event.gameId)) {
+      // The screen of that game changes in place; a snack bar over it would
+      // only cover the button it just grew. The event was still counted.
       return;
     }
     final String text;
@@ -152,6 +159,10 @@ class _AnalysisNoticesState extends ConsumerState<AnalysisNotices> {
           case AnalysisStage.unknown:
             return;
         }
+      case StageStartedEvent():
+        // Nothing to say: the card and the strip show it where the user is
+        // already looking.
+        return;
       case StageFailedEvent():
         text = context.l10n.analysisNoticeStageFailed;
         action = context.l10n.analysisNoticeView;
@@ -190,6 +201,30 @@ class _AnalysisNoticesState extends ConsumerState<AnalysisNotices> {
         ),
       ),
     );
+  }
+
+  /// Counts what the pipeline did. This is the one subscriber of the tracker,
+  /// so it is where the stages of every game are counted, whether or not
+  /// anything is said about them.
+  ///
+  /// A stage the *user* started is counted by whoever asked (the game screen,
+  /// its coach button, the submit queue), which is the only place that knows
+  /// what asked; the tracker's `chained` flag keeps that stage from being
+  /// counted twice here.
+  void _record(WorkflowEvent event) {
+    final analytics = ref.read(analyticsProvider);
+    switch (event) {
+      case StageStartedEvent(:final stage, :final chained):
+        if (chained) {
+          analytics.stageStarted(stage, source: 'chain');
+        }
+      case StageReadyEvent(:final stage, :final took):
+        analytics.stageReady(stage, took: took);
+      case StageFailedEvent(:final stage, :final failureCode):
+        analytics.stageFailed(stage, code: failureCode);
+      case WorkflowStaleEvent():
+        break;
+    }
   }
 
   Future<String?> _opponentOf(String gameId) async {

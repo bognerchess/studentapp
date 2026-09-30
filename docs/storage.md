@@ -100,7 +100,19 @@ says the coaching stage went stale. An engine assembly must never replace a
 coach document — it has no comments and no lessons, so that would take text
 away from the user. `stage_run_ids` is a JSON object of stage name to run id:
 what the payload was built from, and therefore which artifacts the tracker
-does not have to fetch again.
+does not have to fetch again. A **coach** row uses it too, for the one run that
+wrote the document (`{"COACHING": "<run id>"}`): the document itself carries no
+run id and `gameAnalysis` always serves the newest, so this is what lets the
+review repository tell a second coaching run from the one it already has. A
+coach row without a recorded run is never refetched — it is already the best
+kind of document and there is nothing to compare it with.
+
+`cached_games.summary_json` is written by `GameSummaryCodec` (version 2). A row
+an older build wrote also carries a `job` key, the whole-game analysis job of
+the path WP-60 replaced; it is **read past**. That job was transient state of a
+pipeline this app no longer drives, and the badge never depended on it
+(`hasAnalysis` and the pipeline summary decide), so the row loses nothing that
+still means anything. The next library refresh rewrites it without the key.
 
 `pending_workflows` exists because there is no "my running workflows" field on
 the server: the pipeline is queried per game, so the app has to remember which

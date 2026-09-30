@@ -1,7 +1,7 @@
 ---
 id: WP-60
 title: Staged (progressive) analysis
-status: in-progress
+status: review
 size: L
 depends_on: [WP-26, WP-28, WP-29]
 blocked_by_human: []
@@ -41,8 +41,15 @@ The steps below are the plan's B1–B14. This file is updated as they land.
   stores what lands.
 - **B6–B10** review repository, game detail, review screen, library, submit
   queue.
-- **B11** mock server and fixtures. **B12** deletion of the whole-game path.
-  **B13** analytics and docs. **B14** tests.
+- **B11** mock server and fixtures.
+- **B12 Deletion of the whole-game path.** `AnalysisApi.request` / `.job` /
+  `.activeJobs` and their operations, `JobInfo`, `JobTracker`, `pending_jobs`,
+  `GameSummary.latestJob` and everything that read them. `JobStatus` stays,
+  in `stage_models.dart`.
+- **B13 Analytics and docs.** `analysis_stage_started` / `_ready` / `_failed`
+  and `coach_requested`; `docs/analytics-events.md`, `docs/storage.md`,
+  `docs/testing.md` and this file.
+- **B14** tests, throughout.
 
 ## Out of scope
 
@@ -84,16 +91,149 @@ The app gains no dependency.
 ```bash
 tool/gen.sh
 tool/check.sh
+tool/check_compliance.sh
 flutter test test/core/analysis test/core/api test/core/storage test/features/analysis_status
-dart run tool/mock_server/main.dart --port 5299   # each scenario, through the simulator build
+dart run tool/mock_server/main.dart --port 5299 --quiet   # each scenario, through the simulator
 flutter build ios --simulator --debug --dart-define-from-file=config/fake.json
 flutter test integration_test -d "iPhone 17 Pro" --dart-define-from-file=config/fake.json
-tool/check_compliance.sh
+```
+
+The simulator cannot be tapped from a script, so the screens below were driven
+through `lib/features/game_detail/dev/flow_demo.dart`, the development entry
+point WP-26-28 wrote for exactly that. It gained an `analyse` and a `coach`
+step for the staged flow:
+
+```bash
+flutter build ios --simulator --debug --dart-define-from-file=config/fake.json \
+  -t lib/features/game_detail/dev/flow_demo.dart
+xcrun simctl launch booted com.bognerchess.mobile \
+  -AppleLanguages "(de)" -flow_demo "game:game-2,analyse,wait:20,open,wait:60"
+curl -X POST localhost:5299/__scenario -d '{"name":"stage_fails","stage":"DEEP_EVALUATION"}'
+xcrun simctl io booted screenshot <path>
 ```
 
 ## Evidence
 
-Filled in by the agent: command output, and for UI work screenshots (German and English).
+Run on 2026-09-30 on macOS 26.6 (Apple silicon), Xcode 26, Flutter 3.47.5,
+iPhone 17 Pro simulator (iOS 26.5), on the branch as committed.
+
+**The gate:**
+
+```
+$ tool/check.sh
+==> 1/7 dependencies: flutter pub get --enforce-lockfile
+==> 2/7 format: dart format --set-exit-if-changed
+Formatted 402 files (0 changed) in 0.54 seconds.
+==> 3/7 analyze: flutter analyze --fatal-infos
+No issues found! (ran in 2.1s)
+==> 4/7 licence headers: tool/check_headers.dart
+check_headers: ok
+==> 5/7 layer imports: tool/check_layers.dart
+check_layers: ok
+==> 6/7 codegen is clean: tool/gen.sh, then compare the working tree
+codegen: clean
+==> 7/7 tests: flutter test --exclude-tags golden
+00:26 +2119 ~1: All tests passed!
+OK in 36s
+```
+
+The count went 2193 → 2119: the whole-game path took its tests with it, and
+what replaced them — the migration assertion, the tracker's publish order, the
+review reload, the pipeline analytics, the library's remembered pipeline — put
+some back. The one skipped test is the pre-existing one.
+
+**The licence gate:**
+
+```
+$ tool/check_compliance.sh
+==> 1/8 forbidden dependencies
+  ok:   no forbidden dependency in pubspec.yaml, pubspec.lock or the SPM pins
+==> 2/8 a licence row for every direct dependency
+  ok:   22 direct dependencies, all with an accepted licence
+==> 3/8 licence headers (tool/check_headers.dart --strict-swift)
+  ok:   headers
+==> 4/8 the bundled asset allow-list (tool/check_bundled_assets.sh)
+  ok:   no built app given; checked the sources instead
+==> 5/8 NOTICE
+  ok:   NOTICE names every vendored work
+==> 6/8 the source tag
+==> 7/8 corresponding source
+==> 8/8 reproducible build (tool/check_reproducible.sh)
+1 decision(s) for the copyright holder are open; see the DECISION lines above.
+check_compliance: ok (development mode), 4 note(s). Run with --release before conveying a build.
+```
+
+The four notes are the standing development-mode ones: HEAD is on no remote
+branch (this work is not pushed), the App Store permission is still DRAFT
+(human gate H7), and the two release-only checks did not run.
+
+**Builds and the simulator:**
+
+```
+$ flutter build ios --simulator --debug --dart-define-from-file=config/fake.json
+Xcode build done.                                           26.7s
+✓ Built build/ios/iphonesimulator/Runner.app
+
+$ flutter test integration_test -d "iPhone 17 Pro" --dart-define-from-file=config/fake.json
+00:00 +0: the fixture is a legal 80-ply game with its special moves
+00:00 +1: a 40-move game entered on the board gives exactly its movetext
+00:09 +2: All tests passed!
+```
+
+**What the simulator showed.** `dart run tool/mock_server/main.dart --port 5299
+--quiet` throughout, driven through `flow_demo` (the simulator cannot be
+tapped from a script; there is no `simulator` tool in this session, so every
+state below was reached with `xcrun simctl launch -flow_demo …`, `curl
+localhost:5299/__scenario` and `xcrun simctl io booted screenshot`).
+
+| State | What was on screen |
+| --- | --- |
+| Tap "Analyse this game" | "Analysing your game", the four rows, Engine running with a determinate bar counting plies ("2 of 8"), the other three "Not started", and the leave-the-app hint. |
+| Stage 1 stored, stage 2 running | Engine "Ready", Key positions running, and **"Open analysis" appears** — minutes before the coach. |
+| Chain finished | Engine / Key positions / Deep analysis all "Ready", Coach "Not started", the coach explanation, "Ask the coach", "3 of 3 analyses left today · resets at 2:00 AM", "Open analysis". |
+| Review opened while stage 2 ran | The engine assembly: eval graph with key-moment markers, glyphs on the moves, the banner "Engine analysis ready. Looking for key positions…", opened on Moves rather than an empty Coach tab. |
+| Coach running | Accuracy 92 % / 90 % in the header, banner "Your coach is writing…". |
+| Coach done | The screen switched to the Coach tab, "The moments that mattered", banner gone. |
+| `stage_fails` with `DEEP_EVALUATION` | "This step failed" / "An earlier step has to run again.", Deep analysis "Failed", "Try this step again" **and** "Open analysis" — the engine result stays readable. |
+| `limit_reached`, then "Ask the coach" | The day-limit sheet: "Daily limit reached", the three-a-day sentence, the reset time, "Your game is saved…". |
+
+The German "Dein Coach schreibt…" banner has no screenshot: the mock finishes
+a coaching run within one poll at the settings used, so the screen was already
+showing the document by the time the shot was taken. The English one caught it,
+and the German string is asserted in `review_screen_test.dart` ("the coach is
+writing", German group).
+
+`rate_limited` and `stale` were exercised against the mock server rather than
+through the simulator: both are covered end to end in
+`test/core/api/repositories_mock_server_test.dart` ("the staged chain refuses:
+a failing stage, a rate limit, and stale moves") and in the mock server's own
+test, and neither has a screen of its own that the states above do not show.
+
+**Screenshots** (`docs/tasks/evidence/WP-60/`, iPhone 17 Pro, dark):
+
+| File | |
+| --- | --- |
+| `en-strip-running.png` / `de-strip-running.png` | the stage strip while the engine runs |
+| `en-strip-stage2.png` | stage 1 stored, stage 2 running, "Open analysis" there |
+| `en-engine-ready.png` / `de-engine-ready.png` | engine ready, the coach button and the quota line |
+| `en-review-banner-engine.png` / `de-review-banner-engine.png` | the review banner on an engine-only analysis |
+| `en-review-banner-coach-writing.png` | the banner while the coach writes |
+| `en-review-coach-ready.png` / `de-review-coach-ready.png` | the coach's document |
+| `en-stage-failed.png` / `de-stage-failed.png` | a failed step with its retry |
+| `en-limit-sheet.png` / `de-limit-sheet.png` | the day limit |
+
+**Two bugs the simulator found**, both fixed on this branch with a regression
+test each (`470beb4`, `18fffcf`):
+
+1. The listen that reloads the review when a stage lands sat in `_ReviewBody`,
+   which only exists once a document has loaded. A review opened during the
+   first engine stage therefore showed "Something went wrong" and stayed there.
+2. The tracker published a stage as READY *before* it had fetched and stored
+   that stage's artifact, so the screen that reacted looked into an empty
+   cache. The artifacts are stored first now.
+
+Neither was reachable from a widget test as the tests were written, which is
+what the simulator run is for.
 
 ## Handoff notes
 
@@ -372,13 +512,13 @@ different thing from a coach who has not run.
 writes next to the cached game on every poll that changed something.
 `game_summary_codec` is version 2; a version-1 row reads as a game whose
 pipeline this device knows nothing about, which is what it was. `LibraryStatus`
-gains `engineReady`, badged "Engine analysis", and `statusOfGame` now takes the
-summary as well as the job.
+gains `engineReady`, badged "Engine analysis", and `statusOfGame` takes the
+summary.
 
-`latestJob` stays. Removing it breaks the whole-game path — the mapper, the job
-tracker, `applyJob` and their tests — so `workflow` sits beside it with a
-TODO for B12, and so does `LibraryGameRow.job` and `statusOfGame`'s `job`
-parameter.
+`latestJob` stayed for the length of B9 — removing it would have broken the
+whole-game path, the mapper, the job tracker, `applyJob` and their tests — so
+`workflow` sat beside it with a TODO, and so did `LibraryGameRow.job` and
+`statusOfGame`'s `job` parameter. B12 took all four.
 
 The order in `statusOfGame` is worth reading once: work in flight beats a
 stored result (a game being analysed again reads as "analysing", as it did
@@ -417,30 +557,117 @@ because the free stages need no consent. A consent that is genuinely missing is
 now collected on the way to the coach, where it belongs. Worth a product look:
 the consent prompt in the save flow is early by one step.
 
-**What B12 still has to delete, and where it is referenced.**
+**B12.** The whole-game path is gone from the app. `AnalysisApi` keeps
+`analysis` and `submitFeedback`; `request`, `job` and `activeJobs`, the three
+operations, `JobFields` and `latestAnalysisJob` went, and
+`AnalysisStageAccepted` took the name `AnalysisAccepted` back, which removed
+the unreachable case from the four sealed-outcome switches.
 
-| Symbol | Hand-written files that still name it |
-| --- | --- |
-| `AnalysisApi.request` / `.job` / `.activeJobs`, the `RequestGameAnalysis`, `AnalysisJob` and `MyActiveAnalysisJobs` operations | `lib/core/api/analysis_api.dart` (`AnalysisApi.analysis` and `submitFeedback` stay) |
-| `AnalysisAccepted`, `JobInfo`, `jobOf` | `lib/core/api/models/analysis_models.dart`, `lib/core/api/mappers/game_mapper.dart`, `lib/core/api/games_api.dart`; the sealed-outcome switches in `workflow_tracker.dart`, `game_detail_controller.dart`, `analysis_request_flow.dart` and `submit_queue.dart` each carry one unreachable case for it |
-| `JobStatus` | keep it: `StageRun`, `StageRunSummary` and `stageRunOf` use it. The plan's note applies — move it to `stage_models.dart` |
-| `JobTracker`, `job_tracker.dart`, `job_tracker_providers.dart` (`jobTrackerProvider`, `trackedJobsProvider`, `newestJob`, `jobTrackerUiMountedProvider`, `JobTrackerUiMounted`) | `analysis_notices.dart` (its second listener and the second mounted provider), `library_controller.dart` (`newestJob`, `trackedJobsProvider`), `pump_app.dart` (`jobPolling`, `_NeverMounted`, `_AlwaysMounted`) |
-| `GameSummary.latestJob`, `LibraryGameRow.job`, `statusOfGame`'s `job`, `gameSummaryWith`'s `latestJob`, `GameSummaryCodec.jobToJson` / `jobFromJson` and the `job` key | `game_models.dart`, `game_mapper.dart`, `game_summary_codec.dart`, `library_models.dart`, `library_controller.dart`, `cached_games_repository.dart` |
-| `GamesRepository.applyJob` and its implementation | `games_repository.dart`, `cached_games_repository.dart`, `job_tracker.dart` |
-| `pending_jobs` (`tables/pending_jobs.dart`, `daos/pending_jobs_dao.dart`) | `job_tracker.dart` only; the table is already dropped by the 1→2 migration |
-| `JobFields` / `latestAnalysisJob` in `graphql/operations/fragments.graphql` | `game_mapper.dart` |
-| Tests of the old path | `job_tracker_test.dart`, `pending_jobs_dao_test.dart`, `analysis_notices_test.dart` (its job half), `repositories_fixture_test.dart` and `repositories_mock_server_test.dart` (the `latestJob` assertions), the `newestJob` group of `library_domain_test.dart` |
+Five decisions worth keeping.
 
-A version-1 cached game row still decodes its `job` key, so `jobFromJson` has
-to survive B12 or the migration note has to say that those rows lose it. Either
-is fine; the badge no longer depends on it.
+`JobStatus` stayed and moved to `stage_models.dart`, where the thing it
+describes now lives. It is still named after the schema's
+`AnalysisJobStatus`, which the stage commands share with the web client's
+jobs, so the name is the contract's rather than a leftover.
 
-**What B13 still owes.** No analytics event was added: `analysis_requested` now
-fires from `startFreeChain` (source `game_detail`) and from `askCoach` (source
-`game_detail_coach`), and `analysis_limit_hit` still fires on the coach
-refusal only — the plan's `analysis_stage_started` / `_ready` / `_failed` and
-`coach_requested` are not there yet, and neither is the `docs/analytics-events.md`
-row for the new `source` values. `docs/storage.md` does not yet mention that
-`cached_analyses.stage_run_ids` also holds the coaching run on a coach row.
-`analysisReadyListenerProvider` is still the no-op it always was: nothing in
-`app.dart` overrides it, so no push refreshes either tracker.
+`pending_jobs` is dropped by the 1→2 migration **by name**
+(`m.deleteTable('pending_jobs')`): the class is gone, so the version-2
+snapshot no longer describes it and `schema.pendingJobs` would not compile.
+Version 2 has never shipped — this branch created it — so its dump and the
+generated helpers were rewritten rather than a version 3 invented. Nothing is
+carried over; those rows were ids of jobs the old poller watched.
+`migration_test` now asserts the table is gone.
+
+A version-1 cached game row keeps its `job` key and it is **read past**. The
+plan allowed either that or keeping `jobFromJson`; dropping it is the honest
+one, because that job was transient state of a pipeline the app no longer
+drives and the badge never depended on it. `docs/storage.md` says so.
+
+`GamesCacheDao.remove` used to delete the game's `pending_jobs` rows. It now
+deletes its `pending_workflows` row, which nothing did before: a deleted game
+was polled once more before the tracker untracked it.
+
+`repositories_fixture_test` lost the two whole-game groups, which
+`stage_api_test` covers stage by stage; the one case it did not cover, a typed
+error without its fields, moved there. `analysis_notices_test` was rewritten to
+drive the workflow tracker over a scripted pipeline, because the old half
+handed a finished job to a tracker that no longer exists.
+
+**B13.** The five pipeline events are fired from one place,
+`lib/core/analytics/analysis_analytics.dart`, an extension on `Analytics`.
+`analysis_requested` is **derived** there: `stageStarted` fires it whenever the
+stage it was given is the base evaluation. The staged pipeline has no single
+"request", so the first stage is the definition, and one function deciding it
+is what stops the two counts from drifting apart.
+
+`source` is recorded by whoever knows what asked: `game_detail` and
+`game_detail_coach` by `GameDetailController`, `submit_queue` by `SubmitQueue`
+(which gained an `Analytics` parameter, a no-op by default so no test had to
+change), and `chain` by `AnalysisNotices`. That last one needed a new tracker
+event, `StageStartedEvent`, with a `chained` flag: the tracker fires *every*
+engine mutation, including the first one, so without the flag a stage the user
+started would be counted twice — once by the caller that got the outcome back,
+once by the notices widget.
+
+`analysis_stage_ready` carries `duration_s`, which the tracker now computes
+from the run's `requestedAt` and `finishedAt` and hands over on
+`StageReadyEvent`. `AnalysisNotices` counts ready and failed stages for **every**
+watched game, including the one whose screen is open: the snack bar is
+suppressed there, the count is not.
+
+`analysis_limit_hit` is unchanged and can now only come from the coach, which
+is the only metered step. Its property is `window` (`day` / `month` /
+`unknown`), not the `limit_kind` the catalogue planned; the catalogue says so
+now. The backend has no client-event allow-list to extend — it only has
+server-written constants — so there is no cross-repo change, as the plan
+expected.
+
+`analysisReadyListenerProvider` is still the no-op it always was; nothing in
+`app.dart` overrides it. Its documentation now says what an override would do
+(`ref.read(workflowTrackerProvider).refreshNow()`, one line) and that the
+staged pipeline has no push of its own yet.
+
+`flow_demo.dart` gained an `analyse` and a `coach` step, which is what made
+the simulator evidence possible at all; `request` was renamed to `coach`.
+
+**Two bugs this work package's own simulator run found**, both fixed here with
+a regression test:
+
+1. `470beb4` — the listen that reloads the review when a stage lands lived in
+   `_ReviewBody`, which only exists once a document has loaded, so a review
+   opened during the first engine stage showed "Something went wrong" and
+   stayed there.
+2. `18fffcf` — the tracker published a stage as READY before it had stored
+   that stage's document, so whatever reacted looked into an empty cache. The
+   artifacts are stored first now.
+
+Both are worth remembering as a shape: a listener that only exists in the
+success state, and a publish that runs ahead of the data it announces.
+
+**What is left for later.**
+
+- The backend gaps the plan listed are unchanged: coaching-stage limit hits do
+  not call `RecordLimitHitAsync`; `myAnalysisUsage.queuedJobs` counts
+  `analysis_job` rows only, so it reads 0 on the staged path (the mock server
+  reports the number it actually enforces instead, and says why in a comment);
+  there is no per-person cap on active `engine_stage_run` rows; `engine_ms` is
+  under-reported in the unit-cost metric; `PersonErasureService` deletes
+  `engine_stage_run` only through the game cascade.
+- **No push on staged completion.** The app polls while it is in the
+  foreground; a coaching run that finishes in the background is picked up on
+  the next open. `analysisReadyListenerProvider` is where that would be wired.
+- **"Adopt a job started on the web" is gone.** There is no active-workflows
+  root field, so the app only learns of an analysis somebody else started
+  through `hasAnalysis` on the next library refresh.
+- **The `!` glyph on a positive moment needs a comment**, so it stays absent
+  until the coach has run — a gap the engine stages cannot close.
+- **The review resets the reading position** when a stage lands, because
+  `ReviewController.build` watches the data. At most three times per game and
+  only while the pipeline runs; worth revisiting if it annoys anybody.
+- **The consent prompt in the save flow is early by one step.** "Save &
+  analyse" still asks for AI consent although the free stages need none; the
+  coach collects it where it belongs. Worth a product look.
+- The progress-bar reversal (WP-26-28 decided against one, this one brings it
+  back because each stage reports real numbers) and `variation.kind =
+  peer_line` are recorded above under B1 and B7.
+

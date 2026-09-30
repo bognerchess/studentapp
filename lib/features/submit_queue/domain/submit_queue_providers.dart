@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+import 'package:bogner_chess/core/analytics/analytics.dart';
 import 'package:bogner_chess/core/api/api_providers.dart';
 import 'package:bogner_chess/core/auth/auth_state.dart';
 import 'package:bogner_chess/core/connectivity/connectivity.dart';
@@ -31,6 +32,7 @@ final submitQueueProvider = Provider<SubmitQueue>((ref) {
     stages: () => ref.read(stageApiProvider),
     owner: () => _ownerOf(ref),
     connectivity: ref.watch(connectivityProvider),
+    analytics: ref.watch(analyticsProvider),
     onLibraryChanged: () => ref.read(libraryRefreshProvider.notifier).request(),
   );
   // Sign-in is a trigger; sign-out stops the timer. The drafts stay.
