@@ -2005,4 +2005,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get libraryStatusEngineReady => 'Engine analysis';
+
+  @override
+  String get gameDetailRerunCoach => 'Run the coach again';
 }

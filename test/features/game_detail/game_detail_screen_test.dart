@@ -369,8 +369,33 @@ void main() {
 
       expect(find.text('Your analysis is ready.'), findsOneWidget);
       expect(find.bySemanticsIdentifier(GameDetailIds.askCoach), findsNothing);
+      expect(
+        find.bySemanticsIdentifier(GameDetailIds.rerunCoach),
+        findsNothing,
+        reason: 'a run costs this account a quota',
+      );
       await tapId(tester, GameDetailIds.openAnalysis);
       expect(navigatedTo(tester), AppRoutes.gameReview(freshGame));
+    });
+
+    testWidgets('coach ready without a limit: the coach can be asked again', (
+      tester,
+    ) async {
+      api.use('MyAnalysisUsage', 'unlimited');
+      await openAt(tester, 'all_ready');
+
+      expect(find.text('Your analysis is ready.'), findsOneWidget);
+      expect(find.text('Run the coach again'), findsOneWidget);
+      expect(
+        find.bySemanticsIdentifier(GameDetailIds.askCoach),
+        findsNothing,
+        reason: 'the coach step is done; this is a re-run, not the first ask',
+      );
+
+      await tapId(tester, GameDetailIds.rerunCoach);
+      final input =
+          api.requestsOf('RunCoaching').single.variables['input'] as Map;
+      expect(input['chessGameId'], freshGame);
     });
 
     testWidgets('a failed stage: what happened, and a retry of that step', (

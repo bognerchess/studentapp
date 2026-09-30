@@ -465,12 +465,33 @@ class _AnalysisCard extends ConsumerWidget {
         ),
       ];
     } else if (_coachReady) {
+      // A finished analysis has nothing left to offer — except to whoever is
+      // developing the coach's voice, who wants to read the new text in
+      // place. Every run spends a quota, so only an account that has none to
+      // spend is offered it. `_activeStage` is checked above this branch, so
+      // the card turns into the strip as soon as the new run is published.
+      final unlimited =
+          ref.watch(usageProvider).value?.policy == UsagePolicy.unlimited;
       children = [
         _CardTitle(
           icon: Icons.check_circle_outline,
           color: colors.success,
           text: l10n.gameDetailReadyMessage,
         ),
+        if (unlimited) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Identified(
+              GameDetailIds.rerunCoach,
+              child: TextButton.icon(
+                onPressed: requesting ? null : askCoach,
+                icon: const Icon(Icons.refresh),
+                label: Text(l10n.gameDetailRerunCoach),
+              ),
+            ),
+          ),
+        ],
       ];
     } else if (_deepReady) {
       children = [

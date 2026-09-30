@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../helpers/board_tester.dart';
+import '../../helpers/fixture_link.dart';
 import '../../helpers/pump_app.dart';
 import 'pump_review.dart';
 
@@ -111,6 +112,24 @@ void main() {
       );
       tester.reviewController.last();
       await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('the re-run banner of an account without limits', (
+      tester,
+    ) async {
+      // German plus a text button is the widest the banner ever gets, and
+      // its height is reserved before the board is measured.
+      final api = FixtureLink({'MyAnalysisUsage': 'unlimited'});
+      await pumpReview(
+        tester,
+        workflow: workflowFixture(api.store, 'all_ready'),
+        api: api,
+        locale: const Locale('de'),
+        textScale: 2,
+        screen: kIphoneSe,
+      );
+      expect(tester.reviewControl(ReviewIds.stageRerunCoach), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 

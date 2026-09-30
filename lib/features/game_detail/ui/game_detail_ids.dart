@@ -17,6 +17,12 @@ abstract final class GameDetailIds {
   /// Starts the metered coaching stage.
   static const String askCoach = 'game-ask-coach';
 
+  /// Runs the coaching stage again over a game that already has a coach
+  /// document. Only shown to accounts whose usage policy is unlimited,
+  /// because every run spends a quota: it is there for developing the
+  /// coach's voice, not for the player.
+  static const String rerunCoach = 'game-rerun-coach';
+
   /// Runs the stage that failed once more.
   static const String retryStage = 'game-retry-stage';
 

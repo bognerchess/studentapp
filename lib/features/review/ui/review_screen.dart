@@ -245,7 +245,18 @@ class _ReviewBodyState extends ConsumerState<_ReviewBody> {
     });
 
     final workflow = ref.watch(trackedWorkflowsProvider)[widget.gameId];
-    final stage = _StageBannerState.of(workflow, controller.data.source);
+    // Whoever is developing the coach's voice reads the new text here, so the
+    // banner keeps a way to ask for one over a finished pipeline. It costs a
+    // quota per run, so only an account without one is offered it. The quota
+    // is only asked about when there is a finished pipeline to offer it on,
+    // so an ordinary review still opens without that request.
+    final stage = _StageBannerState.of(
+      workflow,
+      controller.data.source,
+      canRerunCoach:
+          workflow?.isComplete == true &&
+          ref.watch(usageProvider).value?.policy == UsagePolicy.unlimited,
+    );
 
     final board = document != null
         ? ReviewBoard.of(document, state)
@@ -940,12 +951,21 @@ enum _StageBannerState {
   deepRunning,
   deepReady,
   coachWriting,
+  complete,
   failed,
   stale;
 
   /// Null when there is no pipeline to report: nothing is being watched, or
   /// everything is stored.
-  static _StageBannerState? of(AnalysisWorkflow? workflow, AnalysisSource _) {
+  ///
+  /// [canRerunCoach] is the one exception to "everything is stored": an
+  /// account without a quota gets [complete], which is the way to read a new
+  /// coach text in place while the voice is being developed.
+  static _StageBannerState? of(
+    AnalysisWorkflow? workflow,
+    AnalysisSource _, {
+    required bool canRerunCoach,
+  }) {
     if (workflow == null) {
       return null;
     }
@@ -964,7 +984,7 @@ enum _StageBannerState {
       // banner, or the engine is done and the coach is one tap away.
       _ =>
         workflow.coachReady
-            ? null
+            ? (workflow.isComplete && canRerunCoach ? complete : null)
             : workflow.engineReady
             ? deepReady
             : null,
@@ -1003,7 +1023,10 @@ class _StageBanner extends StatelessWidget {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final colors = AppColors.of(context);
-    final (text, icon, color) = switch (state) {
+    // Null for the one state whose whole banner is its action: a finished
+    // pipeline has no news, only the offer to write the coach text again.
+    final (String, IconData, Color)? line = switch (state) {
+      _StageBannerState.complete => null,
       _StageBannerState.running => (
         l10n.reviewStageRunning,
         Icons.hourglass_top,
@@ -1040,16 +1063,26 @@ class _StageBanner extends StatelessWidget {
         colors.warning,
       ),
     };
-    final action = switch (state) {
+    // Its identifier, its label, what it does, and the icon it carries when
+    // it stands on its own rather than at the end of a line of text.
+    final (String, String, VoidCallback, IconData?)? action = switch (state) {
       _StageBannerState.deepReady => (
         ReviewIds.stageAskCoach,
         l10n.reviewAskCoach,
         onAskCoach,
+        null,
       ),
       _StageBannerState.failed => (
         ReviewIds.stageRetry,
         l10n.reviewStageRetry,
         onRetry,
+        null,
+      ),
+      _StageBannerState.complete => (
+        ReviewIds.stageRerunCoach,
+        l10n.gameDetailRerunCoach,
+        onAskCoach,
+        Icons.refresh,
       ),
       _ => null,
     };
@@ -1061,39 +1094,62 @@ class _StageBanner extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 16, color: color),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  text,
-                  style: theme.textTheme.bodySmall?.copyWith(color: color),
-                ),
-              ),
-              if (action case (final id, final label, final onTap)) ...[
+              if (line case (final text, final icon, final color)) ...[
+                Icon(icon, size: 16, color: color),
                 const SizedBox(width: AppSpacing.sm),
-                ReviewIdentified(
-                  identifier: id,
-                  label: label,
-                  onTap: onTap,
-                  child: TextButton(
-                    onPressed: onTap,
-                    style: TextButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm,
-                      ),
-                      minimumSize: const Size(48, 28),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: Text(label),
+                Expanded(
+                  child: Text(
+                    text,
+                    style: theme.textTheme.bodySmall?.copyWith(color: color),
                   ),
                 ),
+                const SizedBox(width: AppSpacing.sm),
               ],
+              if (action case (final id, final label, final onTap, final icon))
+                // On its own the button takes the width, so that its label is
+                // laid out against the screen and not against its own text.
+                if (line == null)
+                  Expanded(child: _button(id, label, onTap, icon))
+                else
+                  _button(id, label, onTap, icon),
             ],
           ),
           if (state.showsUsage) const UsageSummary(textAlign: TextAlign.start),
         ],
       ),
+    );
+  }
+
+  /// The banner's action. One line always: [heightOf] reserves the banner's
+  /// height before the board is measured, so a label that wrapped would push
+  /// the panel below out of the layout. A long translation therefore ends in
+  /// an ellipsis rather than in an overflow.
+  Widget _button(
+    String identifier,
+    String label,
+    VoidCallback onTap,
+    IconData? icon,
+  ) {
+    final style = TextButton.styleFrom(
+      alignment: icon == null ? null : Alignment.centerLeft,
+      visualDensity: VisualDensity.compact,
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+      minimumSize: const Size(48, 28),
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    );
+    final text = Text(label, maxLines: 1, overflow: TextOverflow.ellipsis);
+    return ReviewIdentified(
+      identifier: identifier,
+      label: label,
+      onTap: onTap,
+      child: icon == null
+          ? TextButton(onPressed: onTap, style: style, child: text)
+          : TextButton.icon(
+              onPressed: onTap,
+              style: style,
+              icon: Icon(icon, size: 16),
+              label: text,
+            ),
     );
   }
 }

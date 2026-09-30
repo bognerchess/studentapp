@@ -671,3 +671,11 @@ success state, and a publish that runs ahead of the data it announces.
   back because each stage reports real numbers) and `variation.kind =
   peer_line` are recorded above under B1 and B7.
 
+
+**An account whose usage policy is unlimited gets a "Run the coach again"
+affordance** on a game whose coaching stage is already READY — in the game
+screen's analysis card (`GameDetailIds.rerunCoach`) and in the review screen's
+stage banner (`ReviewIds.stageRerunCoach`), both through the same
+`runCoachRequest` flow — so that the coach's voice can be developed and the
+new text read in place from the phone; a default account sees nothing, because
+every run supersedes the old one at the cost of one quota (BE-21/BE-22).
