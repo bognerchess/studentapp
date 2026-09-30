@@ -155,6 +155,12 @@ class WorkflowTracker {
   /// same stage again.
   final Set<String> _starting = {};
 
+  /// Games whose stage command was just accepted: they get one more workflow
+  /// query in the same poll, so the caller of [startChain] sees the stage
+  /// queued when its future resolves and the screen never shows the button
+  /// again for the seconds until the next timer tick.
+  final Set<String> _justStarted = {};
+
   /// What the last stage command of a game answered, kept only until
   /// [startChain] returns it. This is how the screen that asked gets to
   /// explain a refusal, even though it is the poll that fires the mutation.
@@ -406,6 +412,9 @@ class WorkflowTracker {
       }
       try {
         await _tick(owner, gameId);
+        if (_justStarted.remove(gameId) && _targets.containsKey(gameId)) {
+          await _tick(owner, gameId, chain: false);
+        }
       } on Object catch (e, s) {
         _warn('following $gameId failed', e, s);
       }
@@ -420,7 +429,11 @@ class WorkflowTracker {
     }
   }
 
-  Future<void> _tick(String owner, String gameId) async {
+  /// One look at [gameId]. With [chain] false it only observes and stores:
+  /// the follow-up read after a stage command was accepted must not start
+  /// anything, or a server that has not shown the run queued yet would be
+  /// asked twice in one poll.
+  Future<void> _tick(String owner, String gameId, {bool chain = true}) async {
     final target = _targets[gameId];
     if (target == null) {
       return;
@@ -486,6 +499,9 @@ class WorkflowTracker {
       return;
     }
 
+    if (!chain) {
+      return;
+    }
     final started = await _chain(
       owner,
       gameId,
@@ -831,7 +847,11 @@ class WorkflowTracker {
     _outcomes[gameId] = outcome;
     switch (outcome) {
       case AnalysisAccepted():
-        // The next poll sees it queued; no need to guess a state here.
+        // Poll again straight away rather than guessing a state: the server
+        // now reports the stage queued, and `startChain` resolves only after
+        // that, so the screen swaps the button for the strip at the moment
+        // the tap is answered instead of three seconds later.
+        _justStarted.add(gameId);
         _emit(StageStartedEvent(gameId, next, chained: !restarted));
       case AnalysisRateLimited(:final retryAfter):
         // Fair use on the engine commands. Wait what the server asked for,

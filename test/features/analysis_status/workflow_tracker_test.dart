@@ -353,6 +353,25 @@ void main() {
       });
     });
 
+    test('an accepted stage is visible when startChain resolves', () {
+      fake((async) {
+        unawaited(tracker.setOwner(alice));
+        async.flushMicrotasks();
+
+        // The tap is answered only once the workflow shows the stage queued,
+        // so the button never comes back before the strip replaces it.
+        unawaited(tracker.startChain('g1'));
+        async.flushMicrotasks();
+
+        expect(stagesStartedFor('g1'), [_be]);
+        expect(
+          tracker.workflows.value['g1']?.stateOf(AnalysisStage.baseEvaluation),
+          AnalysisStageState.queued,
+        );
+        expect(server.workflowQueriesOf('g1'), 2);
+      });
+    });
+
     test('fires stage 2 once stage 1 is ready, and 3 once 2 is', () {
       fake((async) {
         start(async);
@@ -1192,7 +1211,9 @@ void main() {
           server.set('g2', _be, 'RUNNING');
           tick(async);
 
-          expect(server.workflowQueriesOf('g1'), g1 + 1);
+          // g1 started stage 2 in this tick, which earns it one follow-up
+          // query; g2 only waited.
+          expect(server.workflowQueriesOf('g1'), g1 + 2);
           expect(server.workflowQueriesOf('g2'), g2 + 1);
           expect(stagesStartedFor('g1'), [_be, _bc]);
           expect(stagesStartedFor('g2'), [_be]);
