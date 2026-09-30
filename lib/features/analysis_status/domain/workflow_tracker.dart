@@ -321,6 +321,45 @@ class WorkflowTracker {
     await startChain(gameId, target: AnalysisStage.coaching);
   }
 
+  /// Stores what the server already holds for [gameId] without starting
+  /// anything: the artifacts of the finished engine stages, and the coach
+  /// document when there is one.
+  ///
+  /// For a game this tracker is not watching: it finished while this device
+  /// was not looking (another device ran it, or the artifacts could not be
+  /// fetched at the time and the pipeline was done before they could be
+  /// asked for again). The review asks for this before giving up on a game
+  /// whose stages the server reports as ready. Never throws.
+  Future<void> syncArtifacts(String gameId) async {
+    final owner = _owner;
+    if (_disposed || owner == null) {
+      return;
+    }
+    final AnalysisWorkflow? workflow;
+    try {
+      workflow = await _api.workflow(gameId);
+    } on ApiError catch (e) {
+      _log.debug('syncing $gameId failed: $e');
+      return;
+    }
+    if (workflow == null || _disposed || owner != _owner) {
+      return;
+    }
+    try {
+      await _storeArtifacts(owner, gameId, workflow);
+      await _followCoaching(owner, gameId, workflow);
+    } on Object catch (e, s) {
+      _warn('syncing $gameId failed', e, s);
+      return;
+    }
+    if (_disposed || owner != _owner) {
+      return;
+    }
+    final previous = _workflows.value[gameId];
+    _workflows.value = {..._workflows.value, gameId: workflow};
+    await _rememberSummary(owner, gameId, previous, workflow);
+  }
+
   /// Polls now and starts the interval again. Called on resume, by the push
   /// handler and by pull-to-refresh. Does nothing while the app is in the
   /// background or nobody is signed in. Never throws.
