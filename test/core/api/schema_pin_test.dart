@@ -51,6 +51,7 @@ void main() {
       'SubmitCoachCommentFeedback',
       'GameAnalysisWorkflow',
       'EngineStageRun',
+      'AnalyseGame',
       'RunBaseEvaluation',
       'RunBaseClassification',
       'RunDeepEvaluation',

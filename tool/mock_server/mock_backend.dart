@@ -113,8 +113,8 @@ class _StageRun {
   DateTime? supersededAt;
 }
 
-/// The pipeline of one game: its runs, and whether the moves have moved on
-/// since they finished.
+/// The pipeline of one game: its runs, how far the last `analyseGame` set out
+/// to go, and whether the moves have moved on since the runs finished.
 class _Workflow {
   _Workflow(this.gameId);
 
@@ -127,6 +127,24 @@ class _Workflow {
   /// that reads STALE: its artifact describes a game that is no longer the
   /// one on the board.
   DateTime? movesChangedAt;
+
+  /// What the newest `analyseGame` set out to reach, as the workflow reports
+  /// it. Kept after the chain is over: the app reads it to know whether the
+  /// coach was meant to be asked at all.
+  String? targetStage;
+
+  /// Why that target stops short of the coach, when it does.
+  String? targetReason;
+
+  /// The target of the chain that is still running, which is what makes the
+  /// next stage start on the next poll. Cleared when the chain is over, has
+  /// failed, or went stale.
+  String? chainTarget;
+
+  /// The coach language and character the chain carries, so the coaching stage
+  /// at the end of it writes in the language the request asked for.
+  String language = 'en';
+  String? persona;
 }
 
 class _Analysis {
@@ -302,7 +320,8 @@ class MockBackend {
   /// for a game it analysed in an earlier session, and what the `stale`
   /// scenario then invalidates.
   void _seedWorkflow(_Analysis analysis) {
-    final workflow = _workflows[analysis.gameId] = _Workflow(analysis.gameId);
+    final workflow = _workflows[analysis.gameId] = _Workflow(analysis.gameId)
+      ..targetStage = 'COACHING';
     for (final stage in stages) {
       final coaching = stage == 'COACHING';
       workflow.runs.add(
@@ -363,7 +382,9 @@ class MockBackend {
         // every stage that finished earlier reads STALE. A stage run started
         // after this finishes later and is ready again.
         for (final workflow in _workflows.values) {
-          workflow.movesChangedAt = options.now();
+          workflow
+            ..movesChangedAt = options.now()
+            ..chainTarget = null;
         }
       case 'deletion_blocked':
         deletionBlocked = true;
@@ -455,6 +476,7 @@ class MockBackend {
     'ImportMobileGame': _importMobileGame,
     'DeleteChessGame': _deleteChessGame,
     'EngineStageRun': _engineStageRun,
+    'AnalyseGame': _analyseGame,
     'RunBaseEvaluation': (args) =>
         _runStage('RunBaseEvaluation', 'BASE_EVALUATION', args),
     'RunBaseClassification': (args) =>
@@ -684,11 +706,19 @@ class MockBackend {
   }
 
   /// The whole workflow of one game. This is the poll surface: the runs of
-  /// [workflow] move on by one poll per call.
-  Map<String, dynamic> _workflowJson(_Workflow workflow) {
-    final states = [
-      for (final stage in stages) _stateOf(workflow, stage, poll: true),
-    ];
+  /// [workflow] move on by one poll per call, and a chain that `analyseGame`
+  /// started queues its next stage here, which is what makes the server look
+  /// like it is doing the chaining — because it is.
+  /// With [poll] false nothing moves: that is the copy a mutation answers
+  /// with, which in the real server is a plain read.
+  Map<String, dynamic> _workflowJson(_Workflow workflow, {bool poll = true}) {
+    if (poll) {
+      for (final stage in stages) {
+        _stateOf(workflow, stage, poll: true);
+      }
+      _advanceChain(workflow);
+    }
+    final states = [for (final stage in stages) _stateOf(workflow, stage)];
     final entries = <Map<String, dynamic>>[];
     String? next;
     for (var index = 0; index < stages.length; index++) {
@@ -709,10 +739,124 @@ class MockBackend {
     }
     return {
       'chessGameId': workflow.gameId,
+      'state': _workflowState(states),
+      'progress': _chainProgress(workflow, states),
+      'targetStage': workflow.targetStage,
+      'targetReason': workflow.targetReason,
       'stages': entries,
       'nextRunnableStage': next,
       'isComplete': states.every((state) => state == 'READY'),
     };
+  }
+
+  /// The pipeline as one state, in the order the backend decides it: something
+  /// running wins over everything, then out-of-date, then a failure, then
+  /// anything stored.
+  static String _workflowState(List<String> states) {
+    if (states.any((s) => s == 'QUEUED' || s == 'RUNNING')) return 'ANALYSING';
+    if (states.contains('STALE')) return 'STALE';
+    if (states.contains('FAILED')) return 'FAILED';
+    return states.contains('READY') ? 'READY' : 'IDLE';
+  }
+
+  /// What share of the wall clock each stage is worth. The real backend
+  /// measures; these are the proportions a forty-move game shows.
+  static const Map<String, double> stageWeights = {
+    'BASE_EVALUATION': 0.4,
+    'BASE_CLASSIFICATION': 0.1,
+    'DEEP_EVALUATION': 0.3,
+    'COACHING': 0.2,
+  };
+
+  /// How far the chain has come, 0 to 1, while something runs; null otherwise.
+  ///
+  /// Finished stages count whole, the running one by its own poll counter, and
+  /// everything is measured against the target: a chain that stops at the deep
+  /// evaluation reaches 1 there rather than at 0.8.
+  double? _chainProgress(_Workflow workflow, List<String> states) {
+    if (_workflowState(states) != 'ANALYSING') {
+      return null;
+    }
+    final target = workflow.targetStage ?? stages.last;
+    final limit = stages.indexOf(target);
+    var total = 0.0;
+    var done = 0.0;
+    for (var index = 0; index <= limit; index++) {
+      final stage = stages[index];
+      final weight = stageWeights[stage] ?? 0;
+      total += weight;
+      switch (states[index]) {
+        case 'READY':
+          done += weight;
+        case 'RUNNING':
+          final run = _currentRun(workflow, stage);
+          final progress = run == null ? null : _progressOf(run);
+          final share = progress == null || progress.$2 <= 0
+              ? 0.0
+              : progress.$1 / progress.$2;
+          done += weight * share;
+        default:
+          break;
+      }
+    }
+    if (total <= 0) {
+      return null;
+    }
+    return (done / total).clamp(0.0, 1.0);
+  }
+
+  /// One step of a running chain: with nothing in flight, the first stage up to
+  /// the target that is not stored is queued. A failure or a change of the
+  /// moves ends the chain, which is what makes `analyseGame` the only thing
+  /// that can resume it.
+  void _advanceChain(_Workflow workflow) {
+    final target = workflow.chainTarget;
+    if (target == null) {
+      return;
+    }
+    final limit = stages.indexOf(target);
+    for (var index = 0; index <= limit; index++) {
+      switch (_stateOf(workflow, stages[index])) {
+        case 'READY':
+          continue;
+        case 'QUEUED':
+        case 'RUNNING':
+          return;
+        case 'FAILED':
+        case 'STALE':
+          workflow.chainTarget = null;
+          return;
+        default:
+          _startRun(workflow, stages[index]);
+          return;
+      }
+    }
+    // Everything up to the target is stored.
+    workflow.chainTarget = null;
+  }
+
+  /// Queues a run of [stage]; the coaching stage also spends a quota, exactly
+  /// as the one-stage command does.
+  _StageRun _startRun(_Workflow workflow, String stage) {
+    final coaching = stage == 'COACHING';
+    final run = _StageRun(
+      id: _newId('run'),
+      gameId: workflow.gameId,
+      stage: stage,
+      requestedAt: options.now(),
+      fails: failingStage == stage,
+      // A chained engine stage carries the language on to the coach, which is
+      // what the contract says `run.language` now means.
+      language: workflow.language,
+      persona: coaching ? workflow.persona : null,
+    );
+    workflow.runs.add(run);
+    _workflows[workflow.gameId] = workflow;
+    if (coaching) {
+      _dailyUsed++;
+      _monthlyUsed++;
+    }
+    return run;
   }
 
   /// A run as the workflow reports it: no artifact, but the progress the
@@ -732,7 +876,9 @@ class MockBackend {
       'progressDone': progress?.$1,
       'progressTotal': progress?.$2,
       'persona': coaching ? run.persona : null,
-      'language': coaching ? run.language : null,
+      // Non-null on the engine stages of a chained analysis as well: they hand
+      // the language on to the coach at the end of the chain.
+      'language': run.language,
       'requestedAt': _iso(run.requestedAt),
       'startedAt': run.startedAt == null ? null : _iso(run.startedAt!),
       'finishedAt': run.finishedAt == null ? null : _iso(run.finishedAt!),
@@ -1099,6 +1245,81 @@ class MockBackend {
   Map<String, dynamic> _engineStageRun(Map<String, dynamic> args) {
     final run = _stageRunWithId(args['id']);
     return {'engineStageRun': run == null ? null : _stageRunJson(run)};
+  }
+
+  /// The one button: queues the first stage that is not stored and lets the
+  /// poll chain the rest, as far as the coach when the caller may ask the coach
+  /// now, else as far as the deep evaluation.
+  ///
+  /// The gates of the coach are not errors here. They decide the target and the
+  /// reason; the engine result is produced either way. What is left to refuse
+  /// is the fair-use limit, a game that is gone, a game without moves and a
+  /// coach language the server does not have.
+  Map<String, dynamic> _analyseGame(Map<String, dynamic> input) {
+    const operation = 'AnalyseGame';
+    if (rateLimited) {
+      return _errorOf(operation, 'rate_limited', {
+        if (_retryAfterSeconds != null) 'retryAfterSeconds': _retryAfterSeconds,
+      });
+    }
+    final language = (input['language'] as String? ?? 'en').toLowerCase();
+    if (!coachLanguages.contains(language)) {
+      return _inputInvalid(operation, 'Language');
+    }
+    final gameId = input['chessGameId'];
+    if (gameId is! String || _gameWithId(gameId) == null) {
+      return _notFound(operation);
+    }
+    if (_plyCountOf(gameId) == 0) {
+      return _errorOf(operation, 'input_invalid', {
+        'message': 'web_api_errors.pgn_invalid',
+        'propertyName': 'chessGameId',
+      });
+    }
+    final workflow = _workflows[gameId] ?? _Workflow(gameId);
+    _workflows[gameId] = workflow;
+    final reason = _coachGate();
+    workflow
+      ..language = language
+      ..persona = input['persona'] as String?
+      ..targetStage = reason == null ? 'COACHING' : 'DEEP_EVALUATION'
+      ..targetReason = reason
+      ..chainTarget = reason == null ? 'COACHING' : 'DEEP_EVALUATION';
+    // Idempotent while a stage runs; a failure or a change of the moves is
+    // resumed from here, which is why the states are read before the chain is
+    // advanced.
+    final busy = stages.any((stage) {
+      final state = _stateOf(workflow, stage);
+      return state == 'QUEUED' || state == 'RUNNING';
+    });
+    if (!busy) {
+      _advanceChain(workflow);
+    }
+    return {
+      'analyseGame': {
+        'gameAnalysisWorkflow': _workflowJson(workflow, poll: false),
+        'errors': null,
+      },
+    };
+  }
+
+  /// Why the coach cannot be asked right now, in the order the backend checks
+  /// it; null when nothing stands in the way.
+  String? _coachGate() {
+    if (emailNotVerified) {
+      return 'EMAIL_NOT_VERIFIED';
+    }
+    if (_consents['AI_CONSENT']?.acceptedVersion != legalVersion) {
+      return 'AI_CONSENT_REQUIRED';
+    }
+    if (_activeModelRuns >= options.maxQueuedJobs) {
+      return 'QUEUE_FULL';
+    }
+    if (_dailyUsed >= options.dailyLimit ||
+        _monthlyUsed >= options.monthlyLimit) {
+      return 'LIMIT_REACHED';
+    }
+    return null;
   }
 
   /// The one path behind the four `run*` mutations: the gates in the order the

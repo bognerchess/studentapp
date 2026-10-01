@@ -1,0 +1,12 @@
+{
+  "data": {
+    "analyseGame": {
+      "gameAnalysisWorkflow": null,
+      "errors": [
+        {
+          "__typename": "SomethingNewError"
+        }
+      ]
+    }
+  }
+}

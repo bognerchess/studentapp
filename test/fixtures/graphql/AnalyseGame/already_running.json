@@ -1,0 +1,78 @@
+{
+  "data": {
+    "analyseGame": {
+      "gameAnalysisWorkflow": {
+        "chessGameId": "game-1",
+        "state": "ANALYSING",
+        "progress": 0.4,
+        "targetStage": "COACHING",
+        "targetReason": null,
+        "stages": [
+          {
+            "stage": "BASE_EVALUATION",
+            "state": "READY",
+            "runnable": false,
+            "blockedBy": null,
+            "usesModel": false,
+            "run": {
+              "id": "run-be",
+              "status": "DONE",
+              "hasArtifact": true,
+              "progressStage": null,
+              "progressDone": null,
+              "progressTotal": null,
+              "persona": null,
+              "language": "en",
+              "requestedAt": "2026-09-19T10:00:00.000Z",
+              "startedAt": null,
+              "finishedAt": "2026-09-19T10:01:00.000Z",
+              "failureCode": null,
+              "failureMessage": null
+            }
+          },
+          {
+            "stage": "BASE_CLASSIFICATION",
+            "state": "RUNNING",
+            "runnable": false,
+            "blockedBy": null,
+            "usesModel": false,
+            "run": {
+              "id": "run-bc",
+              "status": "RUNNING",
+              "hasArtifact": false,
+              "progressStage": null,
+              "progressDone": null,
+              "progressTotal": null,
+              "persona": null,
+              "language": "en",
+              "requestedAt": "2026-09-19T10:00:00.000Z",
+              "startedAt": "2026-09-19T10:01:05.000Z",
+              "finishedAt": null,
+              "failureCode": null,
+              "failureMessage": null
+            }
+          },
+          {
+            "stage": "DEEP_EVALUATION",
+            "state": "NOT_RUN",
+            "runnable": false,
+            "blockedBy": "BASE_CLASSIFICATION",
+            "usesModel": false,
+            "run": null
+          },
+          {
+            "stage": "COACHING",
+            "state": "NOT_RUN",
+            "runnable": false,
+            "blockedBy": "DEEP_EVALUATION",
+            "usesModel": true,
+            "run": null
+          }
+        ],
+        "nextRunnableStage": null,
+        "isComplete": false
+      },
+      "errors": null
+    }
+  }
+}
