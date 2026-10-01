@@ -141,7 +141,7 @@ class _Body extends ConsumerWidget {
             hasAnalysis: game.hasAnalysis,
             workflow: workflow,
             // What the cached row remembers, so that a cold open of a game
-            // with a stored engine analysis shows the strip rather than the
+            // with a stored analysis shows "Open analysis" rather than the
             // "Analyse" button.
             summary: game.workflow,
             requesting: state.requesting,
@@ -306,12 +306,14 @@ class _PlayerLine extends StatelessWidget {
   }
 }
 
-/// Where the pipeline of one game stands, and the one thing to do next.
+/// Where the analysis of one game stands, and the one thing to do next.
 ///
-/// The live workflow comes from the tracker while it is watching the game;
-/// [summary] is what the library row remembered from an earlier session, so a
-/// cold open shows the strip rather than the "Analyse" button. Without either
-/// there is only [hasAnalysis], which says whether a coach document exists.
+/// Five states and no more, because the user is not supposed to know that
+/// there are steps: nothing yet, running, ready, out of date, failed. The live
+/// workflow comes from the tracker while it is watching the game; [summary] is
+/// what the library row remembered from an earlier session, so a cold open
+/// shows "Open analysis" rather than the button. Without either there is only
+/// [hasAnalysis], which says whether a coach document exists.
 class _AnalysisCard extends ConsumerWidget {
   const _AnalysisCard({
     required this.gameId,
@@ -338,42 +340,33 @@ class _AnalysisCard extends ConsumerWidget {
 
   bool get _known => workflow != null || summary != null;
 
-  /// The stage whose result is out of date, if any is: the moves changed
-  /// under it, or an earlier stage ran again.
-  AnalysisStage? get _staleStage {
-    for (final stage in AnalysisStage.pipeline) {
-      if (_stateOf(stage) == AnalysisStageState.stale) return stage;
+  /// The one state of the analysis: the server's own word while anybody knows
+  /// it, else what a stored coach document implies.
+  AnalysisWorkflowState get _state {
+    final state = workflow?.workflowState ?? summary?.workflowState;
+    if (state != null) {
+      return state;
     }
-    return null;
-  }
-
-  AnalysisStage? get _failedStage {
-    for (final stage in AnalysisStage.pipeline) {
-      if (_stateOf(stage) == AnalysisStageState.failed) return stage;
-    }
-    return null;
-  }
-
-  AnalysisStage? get _activeStage {
-    for (final stage in AnalysisStage.pipeline) {
-      if (_stateOf(stage).isActive) return stage;
-    }
-    return null;
+    return hasAnalysis
+        ? AnalysisWorkflowState.ready
+        : AnalysisWorkflowState.idle;
   }
 
   bool get _coachReady =>
       _stateOf(AnalysisStage.coaching) == AnalysisStageState.ready ||
       (!_known && hasAnalysis);
 
-  bool get _deepReady =>
-      _stateOf(AnalysisStage.deepEvaluation) == AnalysisStageState.ready;
-
-  /// Something is stored that the review screen can already show.
+  /// Something is stored that the review screen can already show, so the
+  /// review can be opened while the rest is still being worked out.
   bool get _readable =>
       _coachReady ||
       AnalysisStage.engineStages.any(
         (s) => _stateOf(s) == AnalysisStageState.ready,
       );
+
+  /// Why there is no coach text, when the server said so.
+  AnalysisTargetReason? get _targetReason =>
+      workflow?.targetReason ?? summary?.targetReason;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -382,167 +375,134 @@ class _AnalysisCard extends ConsumerWidget {
     final colors = AppColors.of(context);
     final controller = ref.read(gameDetailControllerProvider(gameId).notifier);
 
-    void chain() => unawaited(runFreeChain(context, controller));
-
     // Do not gate this on the cached usage numbers, however tempting: only
     // the server knows the quota, and the server is what counts the pressure
     // on it. Its mutation writes the `analysis_limit_hit` event (once per
-    // person per day, inside the quota lock) when it refuses, because the
-    // client-side event proved unreliable. An app that stops asking at the
-    // limit makes that metric read zero, which looks exactly like a product
-    // nobody bumps into. `UsageSummary` below warns before the tap; the
-    // refusal comes back typed and `_LimitSheet` explains it (LIM-2).
-    void askCoach() => unawaited(runCoachRequest(context, controller));
-
-    final failed = _failedStage;
-    final stale = _staleStage;
-    final active = _activeStage;
+    // person per day, inside the quota lock) when it decides not to ask the
+    // coach, because the client-side event proved unreliable. An app that
+    // stops asking at the limit makes that metric read zero, which looks
+    // exactly like a product nobody bumps into. `UsageSummary` warns before
+    // the tap; afterwards `targetReason` says what happened (LIM-2).
+    void analyse() => unawaited(runAnalyse(context, controller));
 
     final List<Widget> children;
-    if (stale != null) {
-      children = [
-        _CardTitle(
-          icon: Icons.history,
-          color: colors.warning,
-          text: l10n.gameDetailStaleTitle,
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Text(l10n.gameDetailStaleMessage, style: theme.textTheme.bodyMedium),
-        const SizedBox(height: AppSpacing.md),
-        Identified(
-          GameDetailIds.reanalyse,
-          child: FilledButton.icon(
-            onPressed: requesting ? null : chain,
-            icon: const Icon(Icons.refresh),
-            label: Text(l10n.gameDetailReanalyse),
+    switch (_state) {
+      case AnalysisWorkflowState.stale:
+        children = [
+          _CardTitle(
+            icon: Icons.history,
+            color: colors.warning,
+            text: l10n.gameDetailStaleTitle,
           ),
-        ),
-      ];
-    } else if (failed != null) {
-      children = [
-        _CardTitle(
-          icon: Icons.error_outline,
-          color: theme.colorScheme.error,
-          text: l10n.gameDetailStepFailedTitle,
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Text(
-          stageFailureText(l10n, _failureCodeOf(failed)),
-          style: theme.textTheme.bodyMedium,
-        ),
-        const SizedBox(height: AppSpacing.md),
-        _StageStrip(workflow: workflow, summary: summary),
-        const SizedBox(height: AppSpacing.md),
-        Identified(
-          GameDetailIds.retryStage,
-          child: FilledButton.icon(
-            onPressed: requesting
-                ? null
-                : () => unawaited(runStageRetry(context, controller, failed)),
-            icon: const Icon(Icons.refresh),
-            label: Text(l10n.gameDetailRetryStage),
-          ),
-        ),
-        if (failed.usesModel) ...[
           const SizedBox(height: AppSpacing.sm),
-          const UsageSummary(),
-        ],
-      ];
-    } else if (active != null) {
-      children = [
-        _CardTitle(
-          icon: Icons.hourglass_top,
-          text: l10n.gameDetailRunningTitle,
-        ),
-        const SizedBox(height: AppSpacing.md),
-        _StageStrip(workflow: workflow, summary: summary),
-        const SizedBox(height: AppSpacing.sm),
-        Text(
-          l10n.gameDetailLeaveHint,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ];
-    } else if (_coachReady) {
-      // A finished analysis has nothing left to offer — except to whoever is
-      // developing the coach's voice, who wants to read the new text in
-      // place. Every run spends a quota, so only an account that has none to
-      // spend is offered it. `_activeStage` is checked above this branch, so
-      // the card turns into the strip as soon as the new run is published.
-      final unlimited =
-          ref.watch(usageProvider).value?.policy == UsagePolicy.unlimited;
-      children = [
-        _CardTitle(
-          icon: Icons.check_circle_outline,
-          color: colors.success,
-          text: l10n.gameDetailReadyMessage,
-        ),
-        if (unlimited) ...[
-          const SizedBox(height: AppSpacing.xs),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Identified(
-              GameDetailIds.rerunCoach,
-              child: TextButton.icon(
-                onPressed: requesting ? null : askCoach,
-                icon: const Icon(Icons.refresh),
-                label: Text(l10n.gameDetailRerunCoach),
-              ),
+          Text(l10n.gameDetailStaleMessage, style: theme.textTheme.bodyMedium),
+          const SizedBox(height: AppSpacing.md),
+          Identified(
+            GameDetailIds.reanalyse,
+            child: FilledButton.icon(
+              onPressed: requesting ? null : analyse,
+              icon: const Icon(Icons.refresh),
+              label: Text(l10n.gameDetailReanalyse),
             ),
           ),
-        ],
-      ];
-    } else if (_deepReady) {
-      children = [
-        _StageStrip(workflow: workflow, summary: summary),
-        const SizedBox(height: AppSpacing.md),
-        Text(l10n.gameDetailAskCoachHint, style: theme.textTheme.bodyMedium),
-        const SizedBox(height: AppSpacing.md),
-        Identified(
-          GameDetailIds.askCoach,
-          child: FilledButton.icon(
-            onPressed: requesting ? null : askCoach,
-            icon: const Icon(Icons.school_outlined),
-            label: Text(l10n.gameDetailAskCoach),
+        ];
+      case AnalysisWorkflowState.failed:
+        children = [
+          _CardTitle(
+            icon: Icons.error_outline,
+            color: theme.colorScheme.error,
+            text: l10n.gameDetailFailedTitle,
           ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        const UsageSummary(),
-      ];
-    } else if (_readable) {
-      // Stage 1 or 2 is stored and the chain has stopped: the eval graph and
-      // the key positions are there to look at, and the rest can be resumed.
-      children = [
-        _StageStrip(workflow: workflow, summary: summary),
-        const SizedBox(height: AppSpacing.md),
-        Identified(
-          GameDetailIds.analyse,
-          child: FilledButton.icon(
-            onPressed: requesting ? null : chain,
-            icon: const Icon(Icons.auto_awesome_outlined),
-            label: Text(l10n.gameDetailAnalyse),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            l10n.gameDetailFailedMessage,
+            style: theme.textTheme.bodyMedium,
           ),
-        ),
-      ];
-    } else {
-      children = [
-        Text(l10n.gameDetailStagedHint, style: theme.textTheme.bodyMedium),
-        const SizedBox(height: AppSpacing.md),
-        Identified(
-          GameDetailIds.analyse,
-          child: FilledButton.icon(
-            onPressed: requesting ? null : chain,
-            icon: requesting
-                ? const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.auto_awesome_outlined),
-            label: Text(l10n.gameDetailAnalyse),
+          const SizedBox(height: AppSpacing.md),
+          Identified(
+            GameDetailIds.retryAnalysis,
+            child: FilledButton.icon(
+              onPressed: requesting ? null : analyse,
+              icon: const Icon(Icons.refresh),
+              label: Text(l10n.gameDetailTryAgain),
+            ),
           ),
-        ),
-      ];
+        ];
+      case AnalysisWorkflowState.analysing:
+        children = [
+          _CardTitle(
+            icon: Icons.hourglass_top,
+            text: l10n.gameDetailRunningTitle,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _Progress(
+            value: workflow?.progress,
+            phase: _phaseText(l10n),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            l10n.gameDetailLeaveHint,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ];
+      case AnalysisWorkflowState.ready:
+        children = [
+          _CardTitle(
+            icon: Icons.check_circle_outline,
+            color: colors.success,
+            text: l10n.gameDetailReadyMessage,
+          ),
+          if (_targetReason case final reason? when !_coachReady) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              l10n.gameDetailNoCoach(targetReasonText(l10n, reason)),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            const UsageSummary(textAlign: TextAlign.start),
+          ],
+          if (_coachReady && _isUnlimited(ref)) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Identified(
+                GameDetailIds.rerunCoach,
+                child: TextButton.icon(
+                  onPressed: requesting
+                      ? null
+                      : () => unawaited(runRerunCoach(context, controller)),
+                  icon: const Icon(Icons.refresh),
+                  label: Text(l10n.gameDetailRerunCoach),
+                ),
+              ),
+            ),
+          ],
+        ];
+      case AnalysisWorkflowState.idle:
+      case AnalysisWorkflowState.unknown:
+        children = [
+          Text(l10n.gameDetailAnalyseIntro, style: theme.textTheme.bodyMedium),
+          const SizedBox(height: AppSpacing.xs),
+          const UsageSummary(textAlign: TextAlign.start),
+          const SizedBox(height: AppSpacing.md),
+          Identified(
+            GameDetailIds.analyse,
+            child: FilledButton.icon(
+              onPressed: requesting ? null : analyse,
+              icon: requesting
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.auto_awesome_outlined),
+              label: Text(l10n.gameDetailAnalyse),
+            ),
+          ),
+        ];
     }
 
     return Semantics(
@@ -556,6 +516,9 @@ class _AnalysisCard extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               ...children,
+              // Shown next to the progress bar as well: the engine result is
+              // in the cache long before the coach has written, and reading it
+              // is the whole point of opening early.
               if (_readable) ...[
                 const SizedBox(height: AppSpacing.md),
                 Identified(
@@ -580,146 +543,60 @@ class _AnalysisCard extends ConsumerWidget {
     );
   }
 
-  String? _failureCodeOf(AnalysisStage stage) =>
-      workflow?.stageOf(stage)?.run?.failureCode;
-}
+  bool _isUnlimited(WidgetRef ref) =>
+      ref.watch(usageProvider).value?.policy == UsagePolicy.unlimited;
 
-/// The four stages of the pipeline, one row each: what it is, where it
-/// stands, and a progress bar while it runs.
-///
-/// A deliberate reversal of the WP-26-28 decision not to show a progress bar:
-/// back then there was one opaque job and a bar would have been a decoration.
-/// Now each stage reports `progressDone` / `progressTotal`, so the bar shows
-/// something real; a stage that reports nothing gets the indeterminate one,
-/// which at least says "this is the step that is moving".
-class _StageStrip extends StatelessWidget {
-  const _StageStrip({required this.workflow, required this.summary});
+  /// What the app says it is doing. Named after what the user gets, not after
+  /// the stage that is running.
+  String _phaseText(AppLocalizations l10n) => switch (_runningStage) {
+    AnalysisStage.deepEvaluation => l10n.gameDetailPhaseCritical,
+    AnalysisStage.coaching => l10n.gameDetailPhaseCoach,
+    // Stages 1 and 2, a stage this build does not know, and the moment between
+    // two stages, where nothing is running yet.
+    _ => l10n.gameDetailPhaseReading,
+  };
 
-  final AnalysisWorkflow? workflow;
-  final GameWorkflowSummary? summary;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    return Semantics(
-      identifier: GameDetailIds.stageStrip,
-      container: true,
-      label: l10n.gameDetailStageStripLabel,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (final stage in AnalysisStage.pipeline)
-            _StageRow(
-              stage: stage,
-              state:
-                  workflow?.stateOf(stage) ??
-                  summary?.stateOf(stage) ??
-                  AnalysisStageState.notRun,
-              run: workflow?.stageOf(stage)?.run,
-            ),
-        ],
-      ),
-    );
+  AnalysisStage? get _runningStage {
+    for (final stage in AnalysisStage.pipeline) {
+      if (_stateOf(stage).isActive) return stage;
+    }
+    return null;
   }
 }
 
-class _StageRow extends StatelessWidget {
-  const _StageRow({required this.stage, required this.state, this.run});
+/// How far the analysis has come, with one line saying what is happening.
+///
+/// Determinate whenever the server reports a number; a server that does not
+/// say gets the indeterminate bar, which at least says something is moving.
+class _Progress extends StatelessWidget {
+  const _Progress({required this.value, required this.phase});
 
-  final AnalysisStage stage;
-  final AnalysisStageState state;
-  final StageRunSummary? run;
+  final double? value;
+  final String phase;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final theme = Theme.of(context);
-    final colors = AppColors.of(context);
-    final name = stageName(l10n, stage);
-    final (icon, color) = switch (state) {
-      AnalysisStageState.ready => (Icons.check_circle_outline, colors.success),
-      AnalysisStageState.failed => (
-        Icons.error_outline,
-        theme.colorScheme.error,
-      ),
-      AnalysisStageState.stale => (Icons.history, colors.warning),
-      AnalysisStageState.queued ||
-      AnalysisStageState.running ||
-      AnalysisStageState.unknown => (
-        Icons.hourglass_top,
-        theme.colorScheme.primary,
-      ),
-      AnalysisStageState.notRun => (
-        Icons.radio_button_unchecked,
-        theme.colorScheme.onSurfaceVariant,
-      ),
-    };
-    final progress = state == AnalysisStageState.running ? run?.progress : null;
-    final text = switch (state) {
-      AnalysisStageState.notRun => l10n.gameDetailStageStateNotRun,
-      AnalysisStageState.queued => l10n.gameDetailStageStateWaiting,
-      AnalysisStageState.running => _runningText(l10n),
-      AnalysisStageState.ready => l10n.gameDetailStageStateReady,
-      AnalysisStageState.stale => l10n.gameDetailStageStateStale,
-      AnalysisStageState.failed => l10n.gameDetailStageStateFailed,
-      AnalysisStageState.unknown => l10n.gameDetailStageStateWaiting,
-    };
     return Semantics(
-      identifier: GameDetailIds.stageRow(stage),
+      identifier: GameDetailIds.progress,
       container: true,
-      label: l10n.gameDetailStageRowSemantics(name, text),
+      label: phase,
       child: ExcludeSemantics(
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: Icon(icon, size: 18, color: color),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  // Both flexible: "Noch nicht gestartet" next to
-                  // "Schlüsselstellungen" does not fit on an SE at text
-                  // scale 1.3, and a fixed state column would clip it.
-                  Expanded(
-                    flex: 3,
-                    child: Text(name, style: theme.textTheme.bodyMedium),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    flex: 2,
-                    child: Text(
-                      text,
-                      textAlign: TextAlign.end,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            LinearProgressIndicator(value: value),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              phase,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
               ),
-              if (state.isActive && state != AnalysisStageState.queued) ...[
-                const SizedBox(height: AppSpacing.xs),
-                LinearProgressIndicator(value: progress),
-              ],
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
-  }
-
-  String _runningText(AppLocalizations l10n) {
-    final done = run?.progressDone;
-    final total = run?.progressTotal;
-    if (done != null && total != null && total > 0) {
-      return l10n.gameDetailStageStateProgress(done, total);
-    }
-    return l10n.gameDetailStageStateRunning;
   }
 }
 

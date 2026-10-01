@@ -21,8 +21,10 @@ enum LibraryStatus {
   /// A pipeline stage is queued or running.
   analysing,
 
-  /// The engine stages are stored, so there are evals, key positions and
-  /// variations to look at; the coach has not written.
+  /// There is something to read — evals, key moments, variations — but the
+  /// coach has not written yet. The badge says the same as [analysisReady]:
+  /// the user is not shown the difference. Kept apart because the tracker and
+  /// the game screen are.
   engineReady,
 
   analysisReady,

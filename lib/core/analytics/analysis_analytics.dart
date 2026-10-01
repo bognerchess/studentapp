@@ -5,27 +5,21 @@
 import 'package:bogner_chess/core/analytics/analytics.dart';
 import 'package:bogner_chess/core/api/models/stage_models.dart';
 
-/// The staged analysis pipeline's events, in one place.
+/// The analysis pipeline's events, in one place.
 ///
-/// Three callers start a stage (the game screen, its coach button and the
-/// submit queue) and the tracker starts the rest; keeping the property names
-/// and the `analysis_requested` rule here is what stops the four from
-/// drifting apart. `docs/analytics-events.md` is the catalogue.
+/// Two callers ask for an analysis (the game screen and the submit queue) and
+/// the tracker reports what the server then does with it; keeping the property
+/// names here is what stops the three from drifting apart.
+/// `docs/analytics-events.md` is the catalogue.
 extension AnalysisStageAnalytics on Analytics {
-  /// The server accepted a stage command. [source] is what asked for it:
-  /// `game_detail`, `game_detail_coach`, `submit_queue` or `chain`.
+  /// The server took a request to analyse a game: the PRD's "time to first
+  /// analysis" clock. [source] is what asked for it: `game_detail` or
+  /// `submit_queue`.
   ///
-  /// An accepted base evaluation is also `analysis_requested`, the PRD's
-  /// "time to first analysis" clock: on the staged pipeline that first stage
-  /// *is* the analysis being asked for, and only one place should decide that.
-  void stageStarted(AnalysisStage stage, {required String source}) {
-    track(AnalyticsEvents.analysisStageStarted, {
-      'stage': ?_wire(stage),
-      'source': source,
-    });
-    if (stage == AnalysisStage.baseEvaluation) {
-      track(AnalyticsEvents.analysisRequested, {'source': source});
-    }
+  /// One event per tap, whatever the server then runs — the stages are its
+  /// business, and since WP-61 the app does not start them.
+  void analysisRequested({required String source}) {
+    track(AnalyticsEvents.analysisRequested, {'source': source});
   }
 
   /// A stage is stored. [took] is from the request to the finish, which is

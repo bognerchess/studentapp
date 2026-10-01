@@ -18,10 +18,11 @@
 //
 //   game:<id>     open the game screen of <id>
 //   review:<id>   open the review of <id>
-//   analyse       press "Analyse this game" on the open game screen: the
-//                 three free engine stages, the real flow
-//   coach         press "Ask the coach" on the open game screen (the real
-//                 flow, sheets and the consent round trip included)
+//   analyse       press "Analyse this game" on the open game screen: one
+//                 request, the whole pipeline, the real flow with its sheets
+//                 and the consent round trip
+//   coach         press "Run the coach again" on the open game screen (an
+//                 account without a limit only)
 //   open          press "Open analysis" on the open game screen
 //   search:<text> type into the library's search field
 //   refresh       pull to refresh the library
@@ -77,9 +78,9 @@ Future<void> main() async {
       case 'review':
         unawaited(router.push(AppRoutes.gameReview(argument)));
       case 'analyse' when openGame != null:
-        _onGame(container, openGame, runFreeChain);
+        _onGame(container, openGame, runAnalyse);
       case 'coach' when openGame != null:
-        _onGame(container, openGame, runCoachRequest);
+        _onGame(container, openGame, runRerunCoach);
       case 'open' when openGame != null:
         unawaited(router.push(AppRoutes.gameReview(openGame)));
       case 'search':

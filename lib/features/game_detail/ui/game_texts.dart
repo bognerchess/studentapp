@@ -2,7 +2,6 @@
 // Copyright (C) 2026 Bogner Chess
 // Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
 
-import 'package:bogner_chess/core/api/stage_api.dart' show AnalysisStage;
 import 'package:bogner_chess/core/game/game_metadata.dart';
 import 'package:bogner_chess/core/l10n/l10n.dart';
 import 'package:intl/intl.dart';
@@ -62,30 +61,3 @@ String timeControlText(AppLocalizations l10n, TimeControl control) {
   }
   return detail == null ? kind : '$kind · $detail';
 }
-
-/// The name of one pipeline stage, as the stage strip lists it.
-String stageName(AppLocalizations l10n, AnalysisStage stage) => switch (stage) {
-  AnalysisStage.baseEvaluation => l10n.gameDetailStageNameEngine,
-  AnalysisStage.baseClassification => l10n.gameDetailStageNameKeyPositions,
-  AnalysisStage.deepEvaluation => l10n.gameDetailStageNameDeep,
-  AnalysisStage.coaching => l10n.gameDetailStageNameCoach,
-  // A stage this build does not know is listed by the pipeline it knows, so
-  // this is unreachable today. Kept exhaustive on purpose.
-  AnalysisStage.unknown => l10n.gameDetailStageOther,
-};
-
-/// What a failed stage means for the user, by the server's failure code.
-///
-/// Every code the backend can send is either one of these or the generic
-/// text, which says that the attempt did not count.
-String stageFailureText(AppLocalizations l10n, String? failureCode) =>
-    switch (failureCode) {
-      'stage_input_missing' => l10n.gameDetailFailureInputMissing,
-      'invalid_pgn' => l10n.gameDetailFailureInvalidPgn,
-      'expired' ||
-      'chess_ai_job_lost' ||
-      'worker_lost' ||
-      'timeout' => l10n.gameDetailFailureTimeout,
-      'too_many_attempts' => l10n.gameDetailFailureTooManyAttempts,
-      _ => l10n.gameDetailFailedMessage,
-    };

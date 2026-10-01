@@ -21,13 +21,9 @@ import 'review_l10n.dart';
 /// (on a move the coach said nothing about) one engine fact and the way to
 /// the next key moment. A horizontal swipe moves between key moments.
 class CoachTab extends ConsumerWidget {
-  const CoachTab({super.key, required this.gameId, required this.onAskCoach});
+  const CoachTab({super.key, required this.gameId});
 
   final String gameId;
-
-  /// Starts the coaching stage. The last button of an engine-only analysis
-  /// is this rather than "See your lessons": there are no lessons yet.
-  final VoidCallback onAskCoach;
 
   /// Fling speed, in logical pixels per second, that counts as a swipe.
   static const double _swipeVelocity = 250;
@@ -95,7 +91,6 @@ class CoachTab extends ConsumerWidget {
         hasCoachText: controller.hasCoachText,
         onNextMoment: controller.nextMoment,
         onOpenSummary: () => controller.setTab(ReviewTab.summary),
-        onAskCoach: onAskCoach,
       );
     }
 
@@ -494,7 +489,6 @@ class _EngineFact extends StatelessWidget {
     required this.hasCoachText,
     required this.onNextMoment,
     required this.onOpenSummary,
-    required this.onAskCoach,
   });
 
   final AnalysisDocument document;
@@ -503,13 +497,13 @@ class _EngineFact extends StatelessWidget {
   final AnalysisNode? node;
   final bool hasNextMoment;
 
-  /// False on an engine assembly: the last button then asks the coach
-  /// instead of opening a summary that has no lessons in it.
+  /// False while the coach has not written: after the last key moment there
+  /// is then nothing to open, and the panel says so instead of offering a
+  /// summary with no lessons in it.
   final bool hasCoachText;
 
   final VoidCallback onNextMoment;
   final VoidCallback onOpenSummary;
-  final VoidCallback onAskCoach;
 
   @override
   Widget build(BuildContext context) {
@@ -579,20 +573,18 @@ class _EngineFact extends StatelessWidget {
       ];
     }
 
-    final terminal = !hasCoachText
+    // After the last key moment: the summary, once the coach has written it.
+    // Null while it has not, and then the panel says that in words — there is
+    // nothing for the reader to do about it, the analysis is already running.
+    final (String, String, IconData, VoidCallback)? terminal = hasCoachText
         ? (
-            l10n.reviewAskCoach,
-            ReviewIds.stageAskCoach,
-            Icons.school,
-            onAskCoach,
-          )
-        : (
             l10n.reviewOpenSummary,
             ReviewIds.coachNext,
             Icons.school,
             onOpenSummary,
-          );
-    final (nextLabel, nextId, nextIcon, onNext) = hasNextMoment
+          )
+        : null;
+    final action = hasNextMoment
         ? (
             node == null ? l10n.reviewFirstMoment : l10n.reviewNextMoment,
             ReviewIds.coachNext,
@@ -613,17 +605,30 @@ class _EngineFact extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.sm + 4),
-        ReviewIdentified(
-          identifier: nextId,
-          label: nextLabel,
-          onTap: onNext,
-          child: FilledButton.tonalIcon(
-            onPressed: onNext,
-            style: FilledButton.styleFrom(minimumSize: const Size(64, 44)),
-            icon: Icon(nextIcon),
-            label: Text(nextLabel),
+        if (action case (
+          final nextLabel,
+          final nextId,
+          final nextIcon,
+          final onNext,
+        ))
+          ReviewIdentified(
+            identifier: nextId,
+            label: nextLabel,
+            onTap: onNext,
+            child: FilledButton.tonalIcon(
+              onPressed: onNext,
+              style: FilledButton.styleFrom(minimumSize: const Size(64, 44)),
+              icon: Icon(nextIcon),
+              label: Text(nextLabel),
+            ),
+          )
+        else
+          Text(
+            l10n.reviewSummaryNoCoach,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
           ),
-        ),
       ],
     );
   }
