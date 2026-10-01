@@ -8,9 +8,9 @@ reach. Nothing else from the backend is copied here. Never edit the copy.
 | | |
 | --- | --- |
 | Source | backend repository, `contracts/mobile-schema.graphql` (generated there by `scripts/export-mobile-schema.sh`) |
-| Backend commit | `41c2bbb` (branch `feat/staged-coaching-document`; the engine-stage rate limit and the message keys, BE-22/A3) |
-| Copied on | 2026-09-30 |
-| SHA-256 | `9c84b3f2d1d5c103e446e3a348c6fefb25a7a38919ce6c40cfdd8c2393b90d3d` |
+| Backend commit | `1517aa8` (`main`, PR #22; `analyseGame` and the one-state view of the workflow, BE-23) |
+| Copied on | 2026-10-01 |
+| SHA-256 | `3020ccdba55f84200d22a994bd341633cb14b81a326fc4e5bc1529ce3e7e4d8b` |
 
 Both copies of this branch are **purely additive** over the ones before them; no diff removes a
 line. `48cd383` (2026-09-29) added the staged analysis surface — `engineStageRun`,
@@ -21,6 +21,15 @@ inputs and error unions, the `EngineStage` and `AnalysisStageState` enums, and `
 description; `graphql/operations/stages.graphql` now selects `retryAfterSeconds` on all four
 commands, so a rate-limited engine stage carries the server's number instead of the one-minute
 fallback.
+
+`1517aa8` (2026-10-01, BE-23) adds the one-button surface WP-61 is built on: the mutation
+`analyseGame` with `AnalyseGameInput`, `AnalyseGamePayload` and the error union `AnalyseGameError`
+(`RateLimitedError`, `BusinessError`, `InputValidationError`, `TechnicalError`), the enums
+`AnalysisWorkflowState` and `AnalysisTargetReason`, and four fields on `GameAnalysisWorkflow`:
+`state`, `progress`, `targetStage` and `targetReason`. Quota, queue cap, rate limit, unverified
+e-mail and missing AI consent are never errors of `analyseGame`; the engine result is produced
+anyway and `targetReason` says why the chain stopped short of the coach. The same change notes that
+`run.language` is now set on the engine stages of a chained analysis, which hand it on to the coach.
 
 The same backend change also turned three raw English sentences into message keys:
 `api_errors.entity_not_found` for a game that is gone, `web_api_errors.stage_prerequisite_missing`

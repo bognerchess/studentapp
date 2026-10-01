@@ -222,14 +222,16 @@ void main() {
       expect(input['pgn'], contains(_foolsMatePgn));
       expect(input['pgn'], contains('[Black "Fake User"]'));
       expect(
-        (h.api.requestsOf('RunBaseEvaluation').single.variables['input']
+        (h.api.requestsOf('AnalyseGame').single.variables['input']
             as Map)['chessGameId'],
         'game-10',
       );
-      // The row the workflow tracker watches; the coach is not asked here.
+      // The row the workflow tracker watches. One request, and the server
+      // chains the stages; the app starts none of them itself.
       final pending = await h.db.pendingWorkflowsDao.getActive(kFlowUser.sub);
       expect(pending.single.gameId, 'game-10');
-      expect(pending.single.targetStage, 'DEEP_EVALUATION');
+      expect(pending.single.targetStage, 'COACHING');
+      expect(h.api.requestsOf('RunBaseEvaluation'), isEmpty);
       expect(h.api.requestsOf('RunCoaching'), isEmpty);
 
       // Uploaded: the banner has nothing to say, the snack bar does.
@@ -274,7 +276,7 @@ void main() {
       expect(meta.metadata.playerColor, PlayerColor.black);
       expect(meta.orientation, Side.black);
       expect(h.api.requestsOf('ImportMobileGame'), hasLength(1));
-      expect(h.api.requestsOf('RunBaseEvaluation'), isEmpty);
+      expect(h.api.requestsOf('AnalyseGame'), isEmpty);
       expect(h.api.requestsOf('MyAiConsent'), isEmpty);
       expect(find.text('Game uploaded.'), findsOneWidget);
       await finish(tester);
@@ -326,7 +328,7 @@ void main() {
       expect(input['source'], 'MOBILE_PGN');
       expect(input['playerColor'], 'WHITE');
       expect(input['clientGameId'], draft.clientGameId);
-      expect(h.api.requestsOf('RunBaseEvaluation'), hasLength(1));
+      expect(h.api.requestsOf('AnalyseGame'), hasLength(1));
       await finish(tester);
     });
 
@@ -349,7 +351,7 @@ void main() {
       expect(meta.metadata.blackName, 'Jonas Keller');
       expect(meta.metadata.playedDate, isNull);
       expect(meta.metadata.result, GameResult.blackWins);
-      expect(h.api.requestsOf('RunBaseEvaluation'), isEmpty);
+      expect(h.api.requestsOf('AnalyseGame'), isEmpty);
       await finish(tester);
     });
 
@@ -402,7 +404,7 @@ void main() {
 
       expect(locationOf(tester), AppRoutes.games);
       expect((await h.drafts()).single.wantsAnalysis, isTrue);
-      expect(h.api.requestsOf('RunBaseEvaluation'), hasLength(1));
+      expect(h.api.requestsOf('AnalyseGame'), hasLength(1));
       await finish(tester);
     });
 
@@ -423,15 +425,16 @@ void main() {
       final draft = (await h.drafts()).single;
       expect(draft.wantsAnalysis, isFalse);
       expect(draft.state, DraftState.submitted);
-      expect(h.api.requestsOf('RunBaseEvaluation'), isEmpty);
+      expect(h.api.requestsOf('AnalyseGame'), isEmpty);
       await finish(tester);
     });
 
     testWidgets('the server cannot be asked: the game is saved anyway and the '
         'queue starts the engine', (tester) async {
-      // Consent is for the coach, and the coach is asked on the game screen.
-      // A consent check that cannot reach the server therefore does not stop
-      // the free stages.
+      // Consent is for the coach, and `analyseGame` is never refused for it:
+      // the engine result is produced and the workflow says the coach was
+      // left out. A consent check that cannot reach the server therefore does
+      // not stop the analysis.
       final api = FixtureLink()
         ..fail('MyAiConsent', const SocketException('offline'));
       final h = await pumpFlow(tester, api: api);
@@ -441,7 +444,7 @@ void main() {
       final draft = (await h.drafts()).single;
       expect(draft.state, DraftState.submitted);
       expect(DraftMeta.decode(draft.metaJson).analysisHold, isNull);
-      expect(h.api.requestsOf('RunBaseEvaluation'), hasLength(1));
+      expect(h.api.requestsOf('AnalyseGame'), hasLength(1));
       await finish(tester);
     });
   });
@@ -493,13 +496,13 @@ void main() {
       await pumpFrames(tester, 60);
     });
 
-    testWidgets('fair use refuses the first stage: the game is saved and the '
+    testWidgets('fair use refuses the request: the game is saved and the '
         'reason is said', (tester) async {
-      // The quota cannot refuse this path any more — the engine stages are
-      // free — so the one refusal left is the rate limit.
+      // The quota cannot refuse this path — `analyseGame` is never refused for
+      // it — so the one refusal left is the rate limit.
       final h = await pumpFlow(
         tester,
-        api: FixtureLink({'RunBaseEvaluation': 'rate_limited'}),
+        api: FixtureLink({'AnalyseGame': 'rate_limited'}),
       );
       await openImport(tester, _pgnOfUser);
       await tapSave(tester);

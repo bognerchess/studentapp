@@ -35,15 +35,23 @@ Scenarios:  curl -X POST localhost:5299/__scenario -d '{"name": "limit_reached"}
   stage_fails [stage] | rate_limited [retryAfterSeconds] | stale |
   deletion_blocked | fixture (operation, scenario)
 
-  The four stages run in this order: BASE_EVALUATION, BASE_CLASSIFICATION,
-  DEEP_EVALUATION (all three free) and COACHING (metered).
+  analyseGame queues the first stage that is not stored and every poll of
+  GameAnalysisWorkflow moves the chain on to the next one, exactly as the real
+  server does. The four stages run in this order: BASE_EVALUATION,
+  BASE_CLASSIFICATION, DEEP_EVALUATION (all three free) and COACHING (metered).
+  A closed gate of the coach (consent_required, email_not_verified,
+  limit_reached) is never an error of analyseGame: the chain stops at
+  DEEP_EVALUATION and the workflow's targetReason says why.
 
   stage_fails    every run of that stage fails; the stage defaults to
                  BASE_EVALUATION, e.g. {"name": "stage_fails",
-                 "stage": "DEEP_EVALUATION"}
-  rate_limited   the four run* mutations answer RateLimitedError
+                 "stage": "DEEP_EVALUATION"}. A chain stops there; one more
+                 analyseGame resumes it.
+  rate_limited   analyseGame and the four run* mutations answer
+                 RateLimitedError
   stale          the moves of every game with a pipeline changed just now, so
-                 its finished stages read STALE
+                 its finished stages read STALE and the workflow's state is
+                 STALE; one analyseGame runs them all again
 State:      curl localhost:5299/__state
 ''';
 

@@ -78,6 +78,10 @@ final Map<String, _Operation> _operations = {
     parse: Query$EngineStageRun.fromJson,
     call: (e) => StageApi(e).artifact('run-be'),
   ),
+  'AnalyseGame': (
+    parse: Mutation$AnalyseGame.fromJson,
+    call: (e) => StageApi(e).analyseGame('game-1'),
+  ),
   'RunBaseEvaluation': (
     parse: Mutation$RunBaseEvaluation.fromJson,
     call: (e) => StageApi(e).runBaseEvaluation('game-1'),
@@ -163,6 +167,7 @@ const Map<String, Set<String>> _errorUnions = {
     'BusinessError',
     'InputValidationError',
   },
+  'AnalyseGame': {'RateLimitedError', ..._generic},
   'RunBaseEvaluation': {'RateLimitedError', ..._generic},
   'RunBaseClassification': {'RateLimitedError', ..._generic},
   'RunDeepEvaluation': {'RateLimitedError', ..._generic},

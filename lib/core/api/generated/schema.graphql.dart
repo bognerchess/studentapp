@@ -2,6 +2,103 @@
 // ignore_for_file: type=lint
 import 'package:bogner_chess/core/api/scalars.dart';
 
+class Input$AnalyseGameInput {
+  factory Input$AnalyseGameInput({
+    required String chessGameId,
+    String? language,
+    String? persona,
+  }) => Input$AnalyseGameInput._({
+    r'chessGameId': chessGameId,
+    if (language != null) r'language': language,
+    if (persona != null) r'persona': persona,
+  });
+
+  Input$AnalyseGameInput._(this._$data);
+
+  factory Input$AnalyseGameInput.fromJson(Map<String, dynamic> data) {
+    final result$data = <String, dynamic>{};
+    final l$chessGameId = data['chessGameId'];
+    result$data['chessGameId'] = (l$chessGameId as String);
+    if (data.containsKey('language')) {
+      final l$language = data['language'];
+      result$data['language'] = (l$language as String);
+    }
+    if (data.containsKey('persona')) {
+      final l$persona = data['persona'];
+      result$data['persona'] = (l$persona as String?);
+    }
+    return Input$AnalyseGameInput._(result$data);
+  }
+
+  Map<String, dynamic> _$data;
+
+  String get chessGameId => (_$data['chessGameId'] as String);
+
+  String? get language => (_$data['language'] as String?);
+
+  String? get persona => (_$data['persona'] as String?);
+
+  Map<String, dynamic> toJson() {
+    final result$data = <String, dynamic>{};
+    final l$chessGameId = chessGameId;
+    result$data['chessGameId'] = l$chessGameId;
+    if (_$data.containsKey('language')) {
+      final l$language = language;
+      result$data['language'] = (l$language as String);
+    }
+    if (_$data.containsKey('persona')) {
+      final l$persona = persona;
+      result$data['persona'] = l$persona;
+    }
+    return result$data;
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! Input$AnalyseGameInput || runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$chessGameId = chessGameId;
+    final lOther$chessGameId = other.chessGameId;
+    if (l$chessGameId != lOther$chessGameId) {
+      return false;
+    }
+    final l$language = language;
+    final lOther$language = other.language;
+    if (_$data.containsKey('language') !=
+        other._$data.containsKey('language')) {
+      return false;
+    }
+    if (l$language != lOther$language) {
+      return false;
+    }
+    final l$persona = persona;
+    final lOther$persona = other.persona;
+    if (_$data.containsKey('persona') != other._$data.containsKey('persona')) {
+      return false;
+    }
+    if (l$persona != lOther$persona) {
+      return false;
+    }
+    return true;
+  }
+
+  @override
+  int get hashCode {
+    final l$chessGameId = chessGameId;
+    final l$language = language;
+    final l$persona = persona;
+    return Object.hashAll([
+      l$chessGameId,
+      _$data.containsKey('language') ? l$language : const {},
+      _$data.containsKey('persona') ? l$persona : const {},
+    ]);
+  }
+}
+
 class Input$DeleteChessGameInput {
   factory Input$DeleteChessGameInput({required String chessGameId}) =>
       Input$DeleteChessGameInput._({r'chessGameId': chessGameId});
@@ -1680,6 +1777,102 @@ Enum$AnalysisStageState fromJson$Enum$AnalysisStageState(String value) {
   }
 }
 
+enum Enum$AnalysisTargetReason {
+  LIMIT_REACHED,
+  QUEUE_FULL,
+  RATE_LIMITED,
+  EMAIL_NOT_VERIFIED,
+  AI_CONSENT_REQUIRED,
+  $unknown;
+
+  factory Enum$AnalysisTargetReason.fromJson(String value) =>
+      fromJson$Enum$AnalysisTargetReason(value);
+
+  String toJson() => toJson$Enum$AnalysisTargetReason(this);
+}
+
+String toJson$Enum$AnalysisTargetReason(Enum$AnalysisTargetReason e) {
+  switch (e) {
+    case Enum$AnalysisTargetReason.LIMIT_REACHED:
+      return r'LIMIT_REACHED';
+    case Enum$AnalysisTargetReason.QUEUE_FULL:
+      return r'QUEUE_FULL';
+    case Enum$AnalysisTargetReason.RATE_LIMITED:
+      return r'RATE_LIMITED';
+    case Enum$AnalysisTargetReason.EMAIL_NOT_VERIFIED:
+      return r'EMAIL_NOT_VERIFIED';
+    case Enum$AnalysisTargetReason.AI_CONSENT_REQUIRED:
+      return r'AI_CONSENT_REQUIRED';
+    case Enum$AnalysisTargetReason.$unknown:
+      return r'$unknown';
+  }
+}
+
+Enum$AnalysisTargetReason fromJson$Enum$AnalysisTargetReason(String value) {
+  switch (value) {
+    case r'LIMIT_REACHED':
+      return Enum$AnalysisTargetReason.LIMIT_REACHED;
+    case r'QUEUE_FULL':
+      return Enum$AnalysisTargetReason.QUEUE_FULL;
+    case r'RATE_LIMITED':
+      return Enum$AnalysisTargetReason.RATE_LIMITED;
+    case r'EMAIL_NOT_VERIFIED':
+      return Enum$AnalysisTargetReason.EMAIL_NOT_VERIFIED;
+    case r'AI_CONSENT_REQUIRED':
+      return Enum$AnalysisTargetReason.AI_CONSENT_REQUIRED;
+    default:
+      return Enum$AnalysisTargetReason.$unknown;
+  }
+}
+
+enum Enum$AnalysisWorkflowState {
+  IDLE,
+  ANALYSING,
+  READY,
+  STALE,
+  FAILED,
+  $unknown;
+
+  factory Enum$AnalysisWorkflowState.fromJson(String value) =>
+      fromJson$Enum$AnalysisWorkflowState(value);
+
+  String toJson() => toJson$Enum$AnalysisWorkflowState(this);
+}
+
+String toJson$Enum$AnalysisWorkflowState(Enum$AnalysisWorkflowState e) {
+  switch (e) {
+    case Enum$AnalysisWorkflowState.IDLE:
+      return r'IDLE';
+    case Enum$AnalysisWorkflowState.ANALYSING:
+      return r'ANALYSING';
+    case Enum$AnalysisWorkflowState.READY:
+      return r'READY';
+    case Enum$AnalysisWorkflowState.STALE:
+      return r'STALE';
+    case Enum$AnalysisWorkflowState.FAILED:
+      return r'FAILED';
+    case Enum$AnalysisWorkflowState.$unknown:
+      return r'$unknown';
+  }
+}
+
+Enum$AnalysisWorkflowState fromJson$Enum$AnalysisWorkflowState(String value) {
+  switch (value) {
+    case r'IDLE':
+      return Enum$AnalysisWorkflowState.IDLE;
+    case r'ANALYSING':
+      return Enum$AnalysisWorkflowState.ANALYSING;
+    case r'READY':
+      return Enum$AnalysisWorkflowState.READY;
+    case r'STALE':
+      return Enum$AnalysisWorkflowState.STALE;
+    case r'FAILED':
+      return Enum$AnalysisWorkflowState.FAILED;
+    default:
+      return Enum$AnalysisWorkflowState.$unknown;
+  }
+}
+
 enum Enum$ApnsEnvironment {
   SANDBOX,
   PRODUCTION,
@@ -2250,6 +2443,12 @@ const possibleTypesMap = <String, Set<String>>{
     'InputValidationError',
     'PgnInvalidError',
     'RateLimitedError',
+    'TechnicalError',
+  },
+  'AnalyseGameError': {
+    'RateLimitedError',
+    'BusinessError',
+    'InputValidationError',
     'TechnicalError',
   },
   'DeleteChessGameError': {

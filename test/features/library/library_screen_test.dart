@@ -174,9 +174,11 @@ void main() {
       expect(find.text('Not analysed'), findsOneWidget);
     });
 
-    testWidgets('a stored engine analysis gets its own badge', (tester) async {
-      // What the tracker wrote next to the game: the three engine stages are
-      // stored, the coach has not been asked.
+    testWidgets('a readable analysis without the coach reads as ready', (
+      tester,
+    ) async {
+      // What the tracker wrote next to the game: there is something to read,
+      // the coach has not written. The user is not shown the difference.
       await seedCachedGame(db, id: 'game-9', black: 'Engine Only');
       await db.gamesCacheDao.upsertPage(owner, [
         CachedGameInput(
@@ -205,10 +207,11 @@ void main() {
       api.fail('MyMobileGames', const SocketException('offline'));
 
       await pumpScreen(tester, const LibraryScreen(), overrides: overrides());
-      expect(find.text('Engine analysis'), findsOneWidget);
+      expect(find.text('Analysis ready'), findsOneWidget);
+      expect(find.text('Engine analysis'), findsNothing);
     });
 
-    testWidgets('a failed step shows as failed', (tester) async {
+    testWidgets('a failed analysis shows as failed', (tester) async {
       await seedCachedGame(db, id: 'game-9', black: 'Stopped Opponent');
       await db.gamesCacheDao.upsertPage(owner, [
         CachedGameInput(

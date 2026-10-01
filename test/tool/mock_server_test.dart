@@ -135,6 +135,33 @@ void main() {
     fail('$stage of $gameId never finished');
   }
 
+  /// The payload of `AnalyseGame`, errors and all.
+  Future<Map<String, dynamic>> analyseGame(
+    String gameId, [
+    Map<String, dynamic> extra = const {},
+  ]) async {
+    final result = await data('AnalyseGame', {
+      'input': {'chessGameId': gameId, ...extra},
+    });
+    return result['analyseGame'] as Map<String, dynamic>;
+  }
+
+  /// One `analyseGame`, then the workflow polled until nothing is running.
+  Future<Map<String, dynamic>> analyseToEnd(
+    String gameId, [
+    Map<String, dynamic> extra = const {},
+  ]) async {
+    final payload = await analyseGame(gameId, extra);
+    expect(payload['errors'], isNull, reason: jsonEncode(payload));
+    for (var i = 0; i < 60; i++) {
+      final workflow = await workflowOf(gameId);
+      if (workflow['state'] != 'ANALYSING') {
+        return workflow;
+      }
+    }
+    fail('the analysis of $gameId never stopped running');
+  }
+
   /// The three free stages of [gameId], up to DEEP_EVALUATION READY.
   Future<void> engineChain(String gameId) async {
     await finishStage('RunBaseEvaluation', 'BASE_EVALUATION', gameId);
@@ -942,6 +969,202 @@ void main() {
       state = jsonDecode((await http.get(base.resolve('__state'))).body) as Map;
       expect(state['workflows'], isEmpty);
     });
+  });
+
+  group('analyseGame chains the stages', () {
+    test(
+      'one request, and every poll moves the chain on to the coach',
+      () async {
+        await scenario({'name': 'consent_accepted'});
+        final id = await importGame('c-1');
+
+        final payload = await analyseGame(id, {'language': 'de'});
+        expect(payload['errors'], isNull);
+        var workflow = payload['gameAnalysisWorkflow'] as Map<String, dynamic>;
+        expect(workflow['state'], 'ANALYSING');
+        expect(workflow['targetStage'], 'COACHING');
+        expect(workflow['targetReason'], isNull);
+        expect(statesOf(workflow)['BASE_EVALUATION'], 'QUEUED');
+        expect(
+          statesOf(workflow)['BASE_CLASSIFICATION'],
+          'NOT_RUN',
+          reason: 'one stage at a time',
+        );
+
+        // The app fires nothing else: the polls are what carry the chain.
+        final seen = <String>{};
+        for (var i = 0; i < 60; i++) {
+          workflow = await workflowOf(id);
+          seen.addAll(
+            statesOf(workflow).entries
+                .where((e) => e.value == 'QUEUED' || e.value == 'RUNNING')
+                .map((e) => e.key),
+          );
+          if (workflow['state'] != 'ANALYSING') break;
+        }
+        expect(seen, {
+          'BASE_EVALUATION',
+          'BASE_CLASSIFICATION',
+          'DEEP_EVALUATION',
+          'COACHING',
+        }, reason: 'all four ran, one after the other');
+        expect(workflow['state'], 'READY');
+        expect(statesOf(workflow).values, everyElement('READY'));
+        expect(workflow['isComplete'], isTrue);
+        expect(workflow['progress'], isNull);
+        expect((stageOf(workflow, 'COACHING')['run'] as Map)['language'], 'de');
+        expect(
+          (stageOf(workflow, 'BASE_EVALUATION')['run'] as Map)['language'],
+          'de',
+          reason: 'the engine stages of a chain hand the language on',
+        );
+        expect((await data('MyAnalysisUsage'))['myAnalysisUsage'], isNotNull);
+        expect(
+          ((await data('GameAnalysis', {'gameId': id}))['gameAnalysis']
+              as Map)['chessGameId'],
+          id,
+        );
+      },
+    );
+
+    test('progress rises to 1 and then stops being reported', () async {
+      await scenario({'name': 'consent_accepted'});
+      final id = await importGame('c-1');
+      await analyseGame(id);
+
+      final seen = <double>[];
+      for (var i = 0; i < 60; i++) {
+        final workflow = await workflowOf(id);
+        final progress = workflow['progress'];
+        if (progress != null) seen.add((progress as num).toDouble());
+        if (workflow['state'] != 'ANALYSING') break;
+      }
+      expect(seen, isNotEmpty);
+      expect(seen, everyElement(inInclusiveRange(0.0, 1.0)));
+      expect(
+        seen.last,
+        greaterThanOrEqualTo(seen.first),
+        reason: 'it never goes backwards',
+      );
+    });
+
+    test('a closed gate of the coach is a reason, not an error', () async {
+      // No AI consent recorded: the engine still runs.
+      final id = await importGame('c-1');
+      final payload = await analyseGame(id);
+      expect(payload['errors'], isNull);
+      final started = payload['gameAnalysisWorkflow'] as Map<String, dynamic>;
+      expect(started['targetStage'], 'DEEP_EVALUATION');
+      expect(started['targetReason'], 'AI_CONSENT_REQUIRED');
+
+      final workflow = await analyseToEnd(id);
+      expect(workflow['state'], 'READY');
+      expect(statesOf(workflow)['DEEP_EVALUATION'], 'READY');
+      expect(statesOf(workflow)['COACHING'], 'NOT_RUN');
+      expect(workflow['targetReason'], 'AI_CONSENT_REQUIRED');
+      expect(
+        (await data('GameAnalysis', {'gameId': id}))['gameAnalysis'],
+        isNull,
+      );
+    });
+
+    test('every gate of the coach has its reason', () async {
+      for (final (name, reason) in const [
+        ('email_not_verified', 'EMAIL_NOT_VERIFIED'),
+        ('consent_required', 'AI_CONSENT_REQUIRED'),
+        ('limit_reached', 'LIMIT_REACHED'),
+      ]) {
+        await scenario({'name': 'reset'});
+        if (name != 'consent_required') {
+          await scenario({'name': 'consent_accepted'});
+        }
+        await scenario({'name': name});
+        final id = await importGame('c-$name');
+        final workflow =
+            (await analyseGame(id))['gameAnalysisWorkflow']
+                as Map<String, dynamic>;
+        expect(workflow['targetReason'], reason, reason: name);
+        expect(workflow['targetStage'], 'DEEP_EVALUATION', reason: name);
+      }
+    });
+
+    test('asking again while a stage runs changes nothing', () async {
+      await scenario({'name': 'consent_accepted'});
+      final id = await importGame('c-1');
+      await analyseGame(id);
+      final first = (await workflowOf(id))['stages'] as List;
+      final runs = first
+          .cast<Map<String, dynamic>>()
+          .where((stage) => stage['run'] != null)
+          .length;
+
+      await analyseGame(id);
+      final again = stagesOf(await workflowOf(id))
+          .where((stage) => stage['run'] != null)
+          .length;
+      expect(again, runs, reason: 'no second run was queued');
+    });
+
+    test(
+      'a failed stage stops the chain; one more request resumes it',
+      () async {
+        await scenario({'name': 'consent_accepted'});
+        await scenario({'name': 'stage_fails', 'stage': 'BASE_CLASSIFICATION'});
+        final id = await importGame('c-1');
+        var workflow = await analyseToEnd(id);
+
+        expect(workflow['state'], 'FAILED');
+        expect(statesOf(workflow)['BASE_EVALUATION'], 'READY');
+        expect(statesOf(workflow)['BASE_CLASSIFICATION'], 'FAILED');
+        expect(statesOf(workflow)['DEEP_EVALUATION'], 'NOT_RUN');
+        expect(workflow['progress'], isNull);
+
+        // Polling on its own never restarts it.
+        await workflowOf(id);
+        expect(statesOf(await workflowOf(id))['BASE_CLASSIFICATION'], 'FAILED');
+
+        await scenario({'name': 'default'});
+        workflow = await analyseToEnd(id);
+        expect(workflow['state'], 'READY');
+        expect(statesOf(workflow).values, everyElement('READY'));
+      },
+    );
+
+    test('moves that changed: stale, and one request analyses again', () async {
+      await scenario({'name': 'stale'});
+      var workflow = await workflowOf('game-1');
+      expect(workflow['state'], 'STALE');
+      expect(statesOf(workflow).values, everyElement('STALE'));
+
+      await scenario({'name': 'consent_accepted'});
+      workflow = await analyseToEnd('game-1');
+      expect(workflow['state'], 'READY');
+      expect(statesOf(workflow).values, everyElement('READY'));
+    });
+
+    test('the fair-use limit is the one refusal', () async {
+      await scenario({'name': 'rate_limited', 'retryAfterSeconds': 12});
+      final payload = await analyseGame('game-1');
+      final error = (payload['errors'] as List).single as Map;
+      expect(error['__typename'], 'RateLimitedError');
+      expect(error['retryAfterSeconds'], 12);
+      expect(payload['gameAnalysisWorkflow'], isNull);
+    });
+
+    test(
+      'a game that is gone, and a coach language the server has not',
+      () async {
+        expect(
+          (((await analyseGame('nope'))['errors'] as List).single
+              as Map)['message'],
+          'web_api_errors.entity_not_found',
+        );
+        final invalid = await analyseGame('game-1', {'language': 'fr'});
+        final error = (invalid['errors'] as List).single as Map;
+        expect(error['__typename'], 'InputValidationError');
+        expect(error['propertyName'], 'Language');
+      },
+    );
   });
 
   group('legal, devices, events, account', () {

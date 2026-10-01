@@ -11,22 +11,31 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'fixture_link.dart';
 
 export 'package:bogner_chess/features/analysis_status/domain/workflow_tracker_providers.dart'
-    show AnalysisStage, AnalysisStageState, AnalysisWorkflow;
+    show
+        AnalysisStage,
+        AnalysisStageState,
+        AnalysisTargetReason,
+        AnalysisWorkflow,
+        AnalysisWorkflowState;
 
 /// One of the `GameAnalysisWorkflow` fixtures as the domain model, so that a
 /// screen test can stand the pipeline anywhere without a poller.
 ///
 /// [patch] changes the stage list first, for the states the fixtures do not
-/// cover on their own (progress numbers, a different failure code).
+/// cover on their own (progress numbers, a different failure code);
+/// [patchWorkflow] changes the one-state view around it (no progress number, a
+/// target this build does not know).
 AnalysisWorkflow workflowFixture(
   FixtureStore store,
   String scenario, {
   void Function(List<Map<String, dynamic>> stages)? patch,
+  void Function(Map<String, dynamic> workflow)? patchWorkflow,
 }) {
   final workflow =
       store.data('GameAnalysisWorkflow', scenario)['gameAnalysisWorkflow']
           as Map<String, dynamic>;
   patch?.call((workflow['stages'] as List).cast<Map<String, dynamic>>());
+  patchWorkflow?.call(workflow);
   return workflowOf(Fragment$WorkflowFields.fromJson(workflow));
 }
 

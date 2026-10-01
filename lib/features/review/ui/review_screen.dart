@@ -205,23 +205,23 @@ class _ReviewBodyState extends ConsumerState<_ReviewBody> {
     unawaited(precacheBoardTheme(_boardTheme).catchError((Object _) {}));
   }
 
-  /// The coaching stage is started where it is explained: `game_detail` owns
-  /// the quota, e-mail and consent sheets, and reaches them through its
-  /// feature barrel.
-  void _askCoach() {
+  /// Analysing is started where it is explained: `game_detail` owns the quota,
+  /// e-mail and consent sheets, and reaches them through its feature barrel.
+  /// One request covers "try again" and "analyse again" both: the server
+  /// resumes wherever it stopped.
+  void _analyse() {
     final controller = ref.read(
       gameDetailControllerProvider(widget.gameId).notifier,
     );
-    unawaited(runCoachRequest(context, controller));
+    unawaited(runAnalyse(context, controller));
   }
 
-  /// A failed step runs again: the free chain, which the server resumes at
-  /// whatever stage it stopped on.
-  void _retryStage() {
+  /// Writes the coach's text again, for an account without a limit.
+  void _rerunCoach() {
     final controller = ref.read(
       gameDetailControllerProvider(widget.gameId).notifier,
     );
-    unawaited(runFreeChain(context, controller));
+    unawaited(runRerunCoach(context, controller));
   }
 
   @override
@@ -246,13 +246,12 @@ class _ReviewBodyState extends ConsumerState<_ReviewBody> {
 
     final workflow = ref.watch(trackedWorkflowsProvider)[widget.gameId];
     // Whoever is developing the coach's voice reads the new text here, so the
-    // banner keeps a way to ask for one over a finished pipeline. It costs a
+    // banner keeps a way to ask for one over a finished analysis. It costs a
     // quota per run, so only an account without one is offered it. The quota
-    // is only asked about when there is a finished pipeline to offer it on,
+    // is only asked about when there is a finished analysis to offer it on,
     // so an ordinary review still opens without that request.
     final stage = _StageBannerState.of(
       workflow,
-      controller.data.source,
       canRerunCoach:
           workflow?.isComplete == true &&
           ref.watch(usageProvider).value?.policy == UsagePolicy.unlimited,
@@ -329,8 +328,8 @@ class _ReviewBodyState extends ConsumerState<_ReviewBody> {
                       if (stage != null && document != null) ...[
                         _StageBanner(
                           state: stage,
-                          onAskCoach: _askCoach,
-                          onRetry: _retryStage,
+                          onAnalyse: _analyse,
+                          onRerunCoach: _rerunCoach,
                         ),
                         const SizedBox(height: AppSpacing.sm),
                       ],
@@ -348,10 +347,7 @@ class _ReviewBodyState extends ConsumerState<_ReviewBody> {
                 Expanded(
                   child: _FadingEdge(
                     child: switch ((document, state.tab)) {
-                      (_?, ReviewTab.coach) => CoachTab(
-                        gameId: widget.gameId,
-                        onAskCoach: _askCoach,
-                      ),
+                      (_?, ReviewTab.coach) => CoachTab(gameId: widget.gameId),
                       (final document?, ReviewTab.summary) => SummaryTab(
                         document: document,
                         source: controller.data.source,
@@ -943,79 +939,71 @@ class _FadingEdgeState extends State<_FadingEdge> {
   }
 }
 
-/// The analysis is of a newer major version: board and moves still work.
-/// What the stage banner says, and what it offers.
+/// What the banner above the tabs says, and what it offers.
+///
+/// Three cases and no more: the coach is still writing, the analysis stopped,
+/// the moves moved on. A finished analysis says nothing — the text is in the
+/// coach tab, where the reader is looking.
 enum _StageBannerState {
-  running,
-  lookingForKeyPositions,
-  deepRunning,
-  deepReady,
   coachWriting,
-  complete,
   failed,
-  stale;
+  stale,
 
-  /// Null when there is no pipeline to report: nothing is being watched, or
-  /// everything is stored.
+  /// A finished analysis of an account without a limit: nothing to report,
+  /// only the offer to write the coach's text again.
+  rerunCoach;
+
+  /// Null when there is nothing to report.
   ///
-  /// [canRerunCoach] is the one exception to "everything is stored": an
-  /// account without a quota gets [complete], which is the way to read a new
-  /// coach text in place while the voice is being developed.
+  /// [canRerunCoach] is the one case that shows a banner over a finished
+  /// analysis: the way to read a new coach text in place while the voice is
+  /// being developed.
   static _StageBannerState? of(
-    AnalysisWorkflow? workflow,
-    AnalysisSource _, {
+    AnalysisWorkflow? workflow, {
     required bool canRerunCoach,
   }) {
     if (workflow == null) {
       return null;
     }
-    for (final stage in AnalysisStage.pipeline) {
-      if (workflow.stateOf(stage) == AnalysisStageState.stale) return stale;
+    switch (workflow.workflowState) {
+      case AnalysisWorkflowState.stale:
+        return stale;
+      case AnalysisWorkflowState.failed:
+        return failed;
+      case AnalysisWorkflowState.analysing:
+        // Something is running and the reader is already looking at a
+        // document, so what is running is the part that is still missing.
+        return coachWriting;
+      case AnalysisWorkflowState.ready:
+      case AnalysisWorkflowState.idle:
+      case AnalysisWorkflowState.unknown:
+        return workflow.coachReady && canRerunCoach ? rerunCoach : null;
     }
-    if (workflow.failedStage != null) {
-      return failed;
-    }
-    return switch (workflow.activeStage) {
-      AnalysisStage.coaching => coachWriting,
-      AnalysisStage.deepEvaluation => deepRunning,
-      AnalysisStage.baseClassification => lookingForKeyPositions,
-      AnalysisStage.baseEvaluation => running,
-      // Nothing is moving: either the coach has written, which needs no
-      // banner, or the engine is done and the coach is one tap away.
-      _ =>
-        workflow.coachReady
-            ? (workflow.isComplete && canRerunCoach ? complete : null)
-            : workflow.engineReady
-            ? deepReady
-            : null,
-    };
   }
-
-  /// The quota line belongs under the one state that can spend it.
-  bool get showsUsage => this == deepReady;
 }
 
-/// One line above the tabs: where the pipeline of this game stands, and the
-/// one thing to do about it.
+/// One line above the tabs: whether anything is still coming, and the one
+/// thing to do about it.
 ///
 /// Mutually exclusive with [_UpdateBanner], which only shows when there is no
 /// document at all.
 class _StageBanner extends StatelessWidget {
   const _StageBanner({
     required this.state,
-    required this.onAskCoach,
-    required this.onRetry,
+    required this.onAnalyse,
+    required this.onRerunCoach,
   });
 
   final _StageBannerState state;
-  final VoidCallback onAskCoach;
-  final VoidCallback onRetry;
+
+  /// Analyses the game again, which the server resumes where it stopped.
+  final VoidCallback onAnalyse;
+  final VoidCallback onRerunCoach;
 
   /// What the board layout has to leave for it. Scaled like the status line,
   /// and capped, so a huge text setting shrinks the board only so far.
   static double heightOf(_StageBannerState state, double textScale) {
-    final scale = textScale.clamp(1.0, 2.0);
-    return (34 + (state.showsUsage ? 18 : 0)) * scale + AppSpacing.sm;
+    return 34 * textScale.clamp(1.0, 2.0) + AppSpacing.sm;
   }
 
   @override
@@ -1024,36 +1012,16 @@ class _StageBanner extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = AppColors.of(context);
     // Null for the one state whose whole banner is its action: a finished
-    // pipeline has no news, only the offer to write the coach text again.
+    // analysis has no news, only the offer to write the coach text again.
     final (String, IconData, Color)? line = switch (state) {
-      _StageBannerState.complete => null,
-      _StageBannerState.running => (
-        l10n.reviewStageRunning,
-        Icons.hourglass_top,
-        theme.colorScheme.onSurfaceVariant,
-      ),
-      _StageBannerState.lookingForKeyPositions => (
-        l10n.reviewStageLookingForKeyPositions,
-        Icons.hourglass_top,
-        theme.colorScheme.onSurfaceVariant,
-      ),
-      _StageBannerState.deepRunning => (
-        l10n.reviewStageDeepRunning,
-        Icons.hourglass_top,
-        theme.colorScheme.onSurfaceVariant,
-      ),
-      _StageBannerState.deepReady => (
-        l10n.reviewStageDeepReady,
-        Icons.check_circle_outline,
-        theme.colorScheme.onSurfaceVariant,
-      ),
+      _StageBannerState.rerunCoach => null,
       _StageBannerState.coachWriting => (
         l10n.reviewStageCoachWriting,
         Icons.edit_outlined,
         theme.colorScheme.onSurfaceVariant,
       ),
       _StageBannerState.failed => (
-        l10n.reviewStageFailed,
+        l10n.reviewAnalysisFailed,
         Icons.error_outline,
         theme.colorScheme.error,
       ),
@@ -1066,55 +1034,49 @@ class _StageBanner extends StatelessWidget {
     // Its identifier, its label, what it does, and the icon it carries when
     // it stands on its own rather than at the end of a line of text.
     final (String, String, VoidCallback, IconData?)? action = switch (state) {
-      _StageBannerState.deepReady => (
-        ReviewIds.stageAskCoach,
-        l10n.reviewAskCoach,
-        onAskCoach,
-        null,
-      ),
       _StageBannerState.failed => (
         ReviewIds.stageRetry,
         l10n.reviewStageRetry,
-        onRetry,
+        onAnalyse,
         null,
       ),
-      _StageBannerState.complete => (
+      _StageBannerState.stale => (
+        ReviewIds.stageRetry,
+        l10n.gameDetailReanalyse,
+        onAnalyse,
+        null,
+      ),
+      _StageBannerState.rerunCoach => (
         ReviewIds.stageRerunCoach,
         l10n.gameDetailRerunCoach,
-        onAskCoach,
+        onRerunCoach,
         Icons.refresh,
       ),
-      _ => null,
+      _StageBannerState.coachWriting => null,
     };
     return Semantics(
       container: true,
       identifier: ReviewIds.stageBanner,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Row(
         children: [
-          Row(
-            children: [
-              if (line case (final text, final icon, final color)) ...[
-                Icon(icon, size: 16, color: color),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Text(
-                    text,
-                    style: theme.textTheme.bodySmall?.copyWith(color: color),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-              ],
-              if (action case (final id, final label, final onTap, final icon))
-                // On its own the button takes the width, so that its label is
-                // laid out against the screen and not against its own text.
-                if (line == null)
-                  Expanded(child: _button(id, label, onTap, icon))
-                else
-                  _button(id, label, onTap, icon),
-            ],
-          ),
-          if (state.showsUsage) const UsageSummary(textAlign: TextAlign.start),
+          if (line case (final text, final icon, final color)) ...[
+            Icon(icon, size: 16, color: color),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                text,
+                style: theme.textTheme.bodySmall?.copyWith(color: color),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+          ],
+          if (action case (final id, final label, final onTap, final icon))
+            // On its own the button takes the width, so that its label is
+            // laid out against the screen and not against its own text.
+            if (line == null)
+              Expanded(child: _button(id, label, onTap, icon))
+            else
+              _button(id, label, onTap, icon),
         ],
       ),
     );
@@ -1154,6 +1116,7 @@ class _StageBanner extends StatelessWidget {
   }
 }
 
+/// The analysis is of a newer major version: board and moves still work.
 class _UpdateBanner extends StatelessWidget {
   const _UpdateBanner();
 

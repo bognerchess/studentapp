@@ -22,14 +22,14 @@ abstract final class ReviewIds {
   static const String graph = 'review-eval-graph';
   static const String updateBanner = 'review-update-banner';
 
-  /// The line above the tabs that says where the pipeline stands.
+  /// The line above the tabs that says whether anything is still coming.
   static const String stageBanner = 'review-stage-banner';
 
-  /// Its action: start the coaching stage, or run the failed step again.
-  static const String stageAskCoach = 'review-stage-ask-coach';
+  /// Its action: analyse the game again, which the server resumes where it
+  /// stopped. Shown on a failed and on an out-of-date analysis.
   static const String stageRetry = 'review-stage-retry';
 
-  /// Its action on a finished pipeline: write the coach document again.
+  /// Its action on a finished analysis: write the coach's text again.
   /// Only shown to accounts whose usage policy is unlimited, because every
   /// run spends a quota (see `GameDetailIds.rerunCoach`).
   static const String stageRerunCoach = 'review-stage-rerun-coach';

@@ -2,6 +2,10 @@
   "data": {
     "gameAnalysisWorkflow": {
       "chessGameId": "game-1",
+      "state": "ANALYSING",
+      "progress": 0.1524,
+      "targetStage": "COACHING",
+      "targetReason": null,
       "stages": [
         {
           "stage": "BASE_EVALUATION",

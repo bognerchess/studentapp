@@ -267,7 +267,7 @@ void main() {
 
   group('GameWorkflowSummary', () {
     test('survives the round trip through the library cache', () async {
-      link.use('GameAnalysisWorkflow', 'engine_ready');
+      link.use('GameAnalysisWorkflow', 'no_coach_limit');
       final workflow = (await api().workflow('game-1'))!;
       final summary = GameWorkflowSummary.of(workflow);
 
@@ -282,6 +282,8 @@ void main() {
           'COACHING': 'NOT_RUN',
         },
         'isComplete': false,
+        'state': 'READY',
+        'targetReason': 'LIMIT_REACHED',
       });
       expect(
         GameWorkflowSummary.fromJson(json! as Map<String, dynamic>),
@@ -291,6 +293,19 @@ void main() {
       expect(summary.coachReady, isFalse);
       expect(summary.anyActive, isFalse);
       expect(summary.failedStage, isNull);
+      expect(summary.workflowState, AnalysisWorkflowState.ready);
+      expect(summary.targetReason, AnalysisTargetReason.limitReached);
+    });
+
+    test('a state of the future is read off the stages instead', () async {
+      link.use('GameAnalysisWorkflow', 'unknown_stage');
+      final workflow = (await api().workflow('game-1'))!;
+
+      expect(workflow.state, AnalysisWorkflowState.unknown);
+      // Read off the four stages this build knows. The stage of the future is
+      // not one of them, so what is left is one stored stage: ready.
+      expect(workflow.workflowState, AnalysisWorkflowState.ready);
+      expect(workflow.targetStage, AnalysisStage.unknown);
     });
 
     test('a row an older build wrote reads as nothing known', () {
@@ -307,6 +322,19 @@ void main() {
         AnalysisStageState.unknown,
       );
       expect(summary.anyActive, isTrue);
+      // A row from before WP-61 carries no one-state view; the stage states
+      // are what it meant.
+      expect(summary.state, AnalysisWorkflowState.unknown);
+      expect(summary.workflowState, AnalysisWorkflowState.analysing);
+      expect(summary.targetReason, isNull);
+    });
+
+    test('a targetReason this build does not know reads as unknown', () async {
+      link.use('GameAnalysisWorkflow', 'unknown_reason');
+      final workflow = (await api().workflow('game-1'))!;
+
+      expect(workflow.targetReason, AnalysisTargetReason.unknown);
+      expect(workflow.workflowState, AnalysisWorkflowState.ready);
     });
 
     test('a failed stage is named, earliest first', () async {
@@ -315,6 +343,95 @@ void main() {
 
       expect(summary.failedStage, AnalysisStage.deepEvaluation);
       expect(summary.engineReady, isFalse);
+    });
+  });
+
+  group('analyseGame', () {
+    test('accepted: the workflow of the chain that was started', () async {
+      final outcome = await api().analyseGame('game-1', language: 'DE');
+
+      expect(outcome, isA<AnalysisAccepted>());
+      final accepted = outcome as AnalysisAccepted;
+      // No run: the server picks the stage, so there is nothing to name.
+      expect(accepted.run, isNull);
+      expect(accepted.stage, isNull);
+      final workflow = accepted.workflow!;
+      expect(workflow.state, AnalysisWorkflowState.analysing);
+      expect(workflow.targetStage, AnalysisStage.coaching);
+      expect(workflow.targetReason, isNull);
+      expect(workflow.progress, 0.0);
+      expect(link.requestsOf('AnalyseGame').single.variables['input'], {
+        'chessGameId': 'game-1',
+        'language': 'de',
+      });
+    });
+
+    test('a closed gate of the coach is a reason, not an error', () async {
+      link.use('AnalyseGame', 'no_coach');
+      final outcome = await api().analyseGame('game-1');
+
+      final accepted = outcome as AnalysisAccepted;
+      expect(accepted.targetReason, AnalysisTargetReason.limitReached);
+      expect(accepted.workflow!.targetStage, AnalysisStage.deepEvaluation);
+      // The engine analysis is on its way all the same.
+      expect(accepted.workflow!.state, AnalysisWorkflowState.analysing);
+    });
+
+    test('asking again while a stage runs changes nothing', () async {
+      link.use('AnalyseGame', 'already_running');
+      final workflow =
+          ((await api().analyseGame('game-1')) as AnalysisAccepted).workflow!;
+
+      expect(workflow.state, AnalysisWorkflowState.analysing);
+      expect(workflow.activeStage, AnalysisStage.baseClassification);
+    });
+
+    test('rate limited, with the seconds the server asked for', () async {
+      link.use('AnalyseGame', 'rate_limited');
+      final outcome = await api().analyseGame('game-1');
+
+      expect(
+        (outcome as AnalysisRateLimited).retryAfter,
+        const Duration(seconds: 42),
+      );
+    });
+
+    test('a game that is gone is a plain failure', () async {
+      link.use('AnalyseGame', 'business_error');
+      final outcome = await api().analyseGame('game-1');
+
+      final error = (outcome as AnalysisRequestFailed).error as ApiRejected;
+      expect(error.messageKey, 'api_errors.entity_not_found');
+    });
+
+    test('an invalid input is a failure with the property', () async {
+      link.use('AnalyseGame', 'input_invalid');
+      final outcome = await api().analyseGame('game-1');
+
+      final error = (outcome as AnalysisRequestFailed).error as ApiRejected;
+      expect(error.propertyName, 'ChessGameId');
+    });
+
+    test('a member this build does not know is a failure', () async {
+      link.use('AnalyseGame', 'unknown_error');
+      final outcome = await api().analyseGame('game-1');
+
+      expect(
+        ((outcome as AnalysisRequestFailed).error as ApiRejected).typename,
+        'SomethingNewError',
+      );
+    });
+
+    test('offline is an outcome, never a throw', () async {
+      link.fail('AnalyseGame', const SocketException('offline'));
+      final outcome = await api().analyseGame('game-1');
+
+      expect((outcome as AnalysisRequestFailed).error, isA<ApiNetworkError>());
+    });
+
+    test('a payload with neither workflow nor error is a failure', () async {
+      link.use('AnalyseGame', 'empty_payload');
+      expect(await api().analyseGame('game-1'), isA<AnalysisRequestFailed>());
     });
   });
 
@@ -334,11 +451,14 @@ void main() {
           final outcome = await call(api());
 
           expect(outcome, isA<AnalysisAccepted>());
-          final run = (outcome as AnalysisAccepted).run;
+          final run = (outcome as AnalysisAccepted).run!;
           expect(run.id, 'run-new');
           expect(run.status, JobStatus.queued);
           expect(run.artifact, isNull);
           expect(outcome.stage, run.stage);
+          // A one-stage command answers with a run, not with a workflow.
+          expect(outcome.workflow, isNull);
+          expect(outcome.targetReason, isNull);
           expect(link.requestsOf(operation).single.variables['input'], {
             'chessGameId': 'game-1',
           });

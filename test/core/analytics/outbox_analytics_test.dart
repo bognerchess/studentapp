@@ -150,10 +150,10 @@ void main() {
     for (final name in AnalyticsEvents.all) {
       expect(name, matches(RegExp(r'^[a-z][a-z_]+$')));
     }
-    expect(AnalyticsEvents.all, hasLength(19));
+    expect(AnalyticsEvents.all, hasLength(18));
   });
 
-  group('the staged pipeline', () {
+  group('the analysis pipeline', () {
     late _Recorder analytics;
 
     setUp(() => analytics = _Recorder());
@@ -163,26 +163,20 @@ void main() {
     Iterable<String> names() => analytics.events.map((e) => e.$1);
     Iterable<Map<String, Object?>> props() => analytics.events.map((e) => e.$2);
 
-    test('an accepted base evaluation is a stage and a request', () {
-      analytics.stageStarted(
-        AnalysisStage.baseEvaluation,
-        source: 'game_detail',
-      );
+    test('one request per tap, whatever the server then runs', () {
+      analytics
+        ..analysisRequested(source: 'game_detail')
+        ..analysisRequested(source: 'submit_queue');
 
-      expect(names(), ['analysis_stage_started', 'analysis_requested']);
+      expect(names(), ['analysis_requested', 'analysis_requested']);
       expect(props(), [
-        {'stage': 'base_evaluation', 'source': 'game_detail'},
         {'source': 'game_detail'},
+        {'source': 'submit_queue'},
       ]);
     });
 
-    test('every later stage is only a stage', () {
-      analytics
-        ..stageStarted(AnalysisStage.deepEvaluation, source: 'chain')
-        ..stageStarted(AnalysisStage.coaching, source: 'game_detail_coach');
-
-      expect(names(), ['analysis_stage_started', 'analysis_stage_started']);
-      expect(props().map((p) => p['stage']), ['deep_evaluation', 'coaching']);
+    test('the app no longer has an event for starting a stage', () {
+      expect(AnalyticsEvents.all, isNot(contains('analysis_stage_started')));
     });
 
     test('ready carries the seconds it took, failed its code', () {
@@ -210,14 +204,14 @@ void main() {
     });
 
     test('a stage this build does not know carries no name', () {
-      analytics.stageStarted(AnalysisStage.unknown, source: 'chain');
+      analytics.stageReady(AnalysisStage.unknown);
 
-      expect(props().single, {'source': 'chain'});
+      expect(props().single, <String, Object?>{});
     });
 
     test('every property survives the sanitiser', () {
       analytics
-        ..stageStarted(AnalysisStage.baseClassification, source: 'submit_queue')
+        ..analysisRequested(source: 'submit_queue')
         ..stageReady(AnalysisStage.coaching, took: const Duration(seconds: 3))
         ..stageFailed(AnalysisStage.deepEvaluation, code: 'too_many_attempts');
 

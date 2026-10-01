@@ -10,19 +10,33 @@ import 'package:flutter/foundation.dart';
 /// The window of a quota. A value this build does not know reads as [unknown].
 enum LimitWindow { day, month, unknown }
 
-/// What one of the four stage commands came to. Everything but
+/// What one of the analysis commands came to. Everything but
 /// [AnalysisRequestFailed] is a decision of the server, not a fault.
 sealed class RequestAnalysisOutcome {
   const RequestAnalysisOutcome();
 }
 
-/// The stage run was queued. Also the answer when a run of that stage was
-/// already under way.
+/// The server took the request. For `analyseGame` that means the chain is
+/// under way; for one of the four stage commands, that the stage run was
+/// queued — also when a run of that stage was already going.
 final class AnalysisAccepted extends RequestAnalysisOutcome {
-  const AnalysisAccepted(this.run);
-  final StageRun run;
+  const AnalysisAccepted({this.run, this.workflow});
 
-  AnalysisStage get stage => run.stage;
+  /// The run a one-stage command started. Null for `analyseGame`, which
+  /// queues whichever stage is next rather than one the caller named.
+  final StageRun? run;
+
+  /// The pipeline as the server reports it in the same answer. Null for the
+  /// one-stage commands, whose payload carries only the run.
+  final AnalysisWorkflow? workflow;
+
+  /// The stage a one-stage command started; null for a chained analysis.
+  AnalysisStage? get stage => run?.stage;
+
+  /// Why the chain stops short of the coach, when it does. Quota, consent and
+  /// the e-mail check are never errors of `analyseGame`: the engine result is
+  /// produced anyway and this says what the user is missing.
+  AnalysisTargetReason? get targetReason => workflow?.targetReason;
 }
 
 /// A stage was asked for before the stage it builds on was stored, or that

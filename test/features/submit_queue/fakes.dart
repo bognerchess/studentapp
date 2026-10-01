@@ -103,15 +103,20 @@ class FakeStageApi implements StageApi {
   final List<RequestAnalysisOutcome> outcomes = [];
 
   @override
-  Future<RequestAnalysisOutcome> runBaseEvaluation(String gameId) async {
+  Future<RequestAnalysisOutcome> analyseGame(
+    String gameId, {
+    String language = 'en',
+    String? persona,
+  }) async {
     started.add(gameId);
     if (outcomes.isNotEmpty) return outcomes.removeAt(0);
     return AnalysisAccepted(
-      StageRun(
-        id: 'run-${started.length}',
+      workflow: AnalysisWorkflow(
         gameId: gameId,
-        stage: AnalysisStage.baseEvaluation,
-        status: JobStatus.queued,
+        state: AnalysisWorkflowState.analysing,
+        targetStage: AnalysisStage.coaching,
+        stages: const [],
+        isComplete: false,
       ),
     );
   }

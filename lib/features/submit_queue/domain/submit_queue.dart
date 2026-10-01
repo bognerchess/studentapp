@@ -417,25 +417,26 @@ class SubmitQueue {
     if (draft.wantsAnalysis) {
       if (!await _stillOwner(owner)) return false;
       // The row goes in before the mutation, so an app that dies in between
-      // still resumes the pipeline on the next start — the same order
-      // `WorkflowTracker.startChain` uses.
+      // still has the tracker pick the analysis up on the next start — the
+      // same order `WorkflowTracker.track` uses.
       await _database().pendingWorkflowsDao.upsert(
         owner,
         gameId: gameId,
-        targetStage: AnalysisStage.deepEvaluation.wire!,
+        targetStage: AnalysisStage.coaching.wire!,
       );
-      final outcome = await _stages().runBaseEvaluation(gameId);
+      final outcome = await _stages().analyseGame(gameId);
       switch (outcome) {
-        case AnalysisAccepted(:final stage):
+        case AnalysisAccepted():
           analysis = SubmittedAnalysis.started;
-          _analytics.stageStarted(stage, source: 'submit_queue');
+          _analytics.analysisRequested(source: 'submit_queue');
         case AnalysisRateLimited():
-          // Fair use on the engine commands. The game is saved; the user
+          // Fair use on the analysis commands. The game is saved; the user
           // taps Analyse when they get to it.
           hold = AnalysisHold.rateLimited;
-        // The engine stages are free and need no consent, so the quota, the
-        // queue cap, the e-mail check and the consent cannot come back here.
-        // Their enum values stay for the coach path on the game screen.
+        // `analyseGame` never refuses for quota, the queue cap, an unconfirmed
+        // address or a missing consent: the engine result is produced anyway
+        // and the workflow says why there is no coach text. The enum values
+        // stay for `runCoaching` on the game screen.
         case AnalysisPrerequisiteMissing():
         case AnalysisLimitReached():
         case AnalysisQueueFull():
@@ -448,9 +449,9 @@ class SubmitQueue {
               ? _nextAttemptAt(draft.attempts)
               : null;
           if (nextAttemptAt != null) {
-            // The game is saved (server_game_id is set); only the stage
-            // command is repeated. The `pending_workflows` row stays, so a
-            // tracker that starts meanwhile fires it instead.
+            // The game is saved (server_game_id is set); only the analysis
+            // request is repeated. The `pending_workflows` row stays, so a
+            // tracker that starts meanwhile watches the game anyway.
             await dao.markSubmitFailed(
               owner,
               draft.id,

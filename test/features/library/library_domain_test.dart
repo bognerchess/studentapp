@@ -3,6 +3,8 @@
 // Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
 
 import 'package:bogner_chess/core/api/games_api.dart';
+import 'package:bogner_chess/core/api/stage_api.dart'
+    show AnalysisTargetReason, AnalysisWorkflowState;
 import 'package:bogner_chess/core/game/game_metadata.dart';
 import 'package:bogner_chess/core/storage/app_database.dart' show DraftState;
 import 'package:bogner_chess/features/library/domain/game_summary_codec.dart';
@@ -13,7 +15,14 @@ import 'package:flutter_test/flutter_test.dart';
 GameWorkflowSummary flow(
   Map<AnalysisStage, AnalysisStageState> states, {
   bool isComplete = false,
-}) => GameWorkflowSummary(states: states, isComplete: isComplete);
+  AnalysisWorkflowState state = AnalysisWorkflowState.unknown,
+  AnalysisTargetReason? targetReason,
+}) => GameWorkflowSummary(
+  states: states,
+  isComplete: isComplete,
+  state: state,
+  targetReason: targetReason,
+);
 
 const _engineReady = {
   AnalysisStage.baseEvaluation: AnalysisStageState.ready,
@@ -61,9 +70,49 @@ void main() {
       expect(back.workflow, full.workflow);
     });
 
-    test('version 2 is what is written', () {
-      expect(GameSummaryCodec.version, 2);
-      expect(GameSummaryCodec.toJson(full)['v'], 2);
+    test('version 3 is what is written', () {
+      expect(GameSummaryCodec.version, 3);
+      expect(GameSummaryCodec.toJson(full)['v'], 3);
+    });
+
+    test('a version-2 row has no one-state view and reads its stages', () {
+      // What a build before WP-61 wrote: `workflow` without `state`. The stage
+      // states are what that row meant, so nothing is lost.
+      final back = GameSummaryCodec.decode(
+        '{"v":2,"id":"g","playerColor":"white","result":"1-0",'
+        '"workflow":{"states":{"BASE_EVALUATION":"READY",'
+        '"BASE_CLASSIFICATION":"RUNNING"},"isComplete":false}}',
+      )!;
+      expect(back.workflow!.state, AnalysisWorkflowState.unknown);
+      expect(back.workflow!.workflowState, AnalysisWorkflowState.analysing);
+      expect(back.workflow!.targetReason, isNull);
+    });
+
+    test('the one-state view and the reason survive the round trip', () {
+      final summary = flow(
+        _engineReady,
+        state: AnalysisWorkflowState.ready,
+        targetReason: AnalysisTargetReason.limitReached,
+      );
+      final json = GameSummaryCodec.encode(
+        gameSummaryWith(full, hasAnalysis: false, workflow: summary),
+      );
+      final back = GameSummaryCodec.decode(json)!;
+      expect(back.workflow!.state, AnalysisWorkflowState.ready);
+      expect(back.workflow!.targetReason, AnalysisTargetReason.limitReached);
+    });
+
+    test('a state and a reason of the future read as unknown', () {
+      final back = GameSummaryCodec.decode(
+        '{"v":3,"id":"g","playerColor":"white","result":"1-0",'
+        '"workflow":{"states":{"BASE_EVALUATION":"READY"},'
+        '"isComplete":false,"state":"PAUSING",'
+        '"targetReason":"COACH_ON_HOLIDAY"}}',
+      )!;
+      expect(back.workflow!.state, AnalysisWorkflowState.unknown);
+      // Read off the stages instead, so the card is never blank.
+      expect(back.workflow!.workflowState, AnalysisWorkflowState.ready);
+      expect(back.workflow!.targetReason, AnalysisTargetReason.unknown);
     });
 
     test('a version-1 row reads as a game with no pipeline known, and its '
@@ -169,6 +218,7 @@ void main() {
       expect(
         statusOfGame(hasAnalysis: false, workflow: flow(_engineReady)),
         LibraryStatus.engineReady,
+        reason: 'kept apart in the enum, the same words on the badge',
       );
       expect(
         statusOfGame(

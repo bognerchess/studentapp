@@ -199,7 +199,41 @@ def stage_run(id, status, done=None, total=None, step=None, finished=None, failu
             'startedAt': started, 'finishedAt': finished,
             'failureCode': failure, 'failureMessage': None if failure is None else 'stage failed'}
 
-def workflow(states, runs=None, game='game-1'):
+# What share of the wall clock each stage is worth, which is how the backend
+# turns four stage states into one `progress` number. Same weights as the mock
+# server's `stageWeights`.
+WEIGHTS = {'BASE_EVALUATION': 0.4, 'BASE_CLASSIFICATION': 0.1,
+           'DEEP_EVALUATION': 0.3, 'COACHING': 0.2}
+
+def one_state(states):
+    """The pipeline as one state, the way the backend derives it."""
+    if any(s in ('QUEUED', 'RUNNING') for s in states):
+        return 'ANALYSING'
+    if 'STALE' in states:
+        return 'STALE'
+    if 'FAILED' in states:
+        return 'FAILED'
+    return 'READY' if 'READY' in states else 'IDLE'
+
+def chain_progress(states, runs, target):
+    """0..1 while something runs, else None."""
+    if one_state(states) != 'ANALYSING':
+        return None
+    limit = STAGES.index(target)
+    total = done = 0.0
+    for index in range(limit + 1):
+        weight = WEIGHTS[STAGES[index]]
+        total += weight
+        if states[index] == 'READY':
+            done += weight
+        elif states[index] == 'RUNNING':
+            run = runs.get(STAGES[index]) or {}
+            d, tt = run.get('progressDone'), run.get('progressTotal')
+            if d and tt:
+                done += weight * d / tt
+    return None if total <= 0 else round(min(done / total, 1.0), 4)
+
+def workflow(states, runs=None, game='game-1', target='COACHING', reason=None):
     """A GameAnalysisWorkflow from one state per stage; everything else follows."""
     runs = runs or {}
     stages = []
@@ -216,13 +250,23 @@ def workflow(states, runs=None, game='game-1'):
         })
     nxt = next((s['stage'] for s in stages if s['runnable']), None)
     return {'gameAnalysisWorkflow': {
-        'chessGameId': game, 'stages': stages, 'nextRunnableStage': nxt,
+        'chessGameId': game,
+        'state': one_state(states),
+        'progress': None if target is None else chain_progress(states, runs, target),
+        'targetStage': target,
+        'targetReason': reason,
+        'stages': stages, 'nextRunnableStage': nxt,
         'isComplete': all(s == 'READY' for s in states)}}
 
+# A chained analysis hands the coach language down the engine stages, so
+# `run.language` is set on all four of them.
 READY_RUNS = {
-    'BASE_EVALUATION': stage_run('run-be', 'DONE', finished='2026-09-19T10:01:00.000Z'),
-    'BASE_CLASSIFICATION': stage_run('run-bc', 'DONE', finished='2026-09-19T10:01:20.000Z'),
-    'DEEP_EVALUATION': stage_run('run-de', 'DONE', finished='2026-09-19T10:03:00.000Z'),
+    'BASE_EVALUATION': stage_run('run-be', 'DONE', finished='2026-09-19T10:01:00.000Z',
+                                 language='en'),
+    'BASE_CLASSIFICATION': stage_run('run-bc', 'DONE', finished='2026-09-19T10:01:20.000Z',
+                                     language='en'),
+    'DEEP_EVALUATION': stage_run('run-de', 'DONE', finished='2026-09-19T10:03:00.000Z',
+                                 language='en'),
     'COACHING': stage_run('run-co', 'DONE', finished='2026-09-19T10:04:30.000Z',
                           persona='house', language='en'),
 }
@@ -231,15 +275,35 @@ write('GameAnalysisWorkflow', 'default', workflow(
     ['RUNNING', 'NOT_RUN', 'NOT_RUN', 'NOT_RUN'],
     {'BASE_EVALUATION': stage_run('run-be', 'RUNNING', done=8, total=21, step='scan',
                                   started='2026-09-19T10:00:05.000Z')}))
-write('GameAnalysisWorkflow', 'not_run', workflow(['NOT_RUN'] * 4))
+write('GameAnalysisWorkflow', 'not_run', workflow(['NOT_RUN'] * 4, target=None))
 write('GameAnalysisWorkflow', 'running', workflow(
     ['READY', 'RUNNING', 'NOT_RUN', 'NOT_RUN'],
     {'BASE_EVALUATION': READY_RUNS['BASE_EVALUATION'],
      'BASE_CLASSIFICATION': stage_run('run-bc', 'RUNNING', started='2026-09-19T10:01:05.000Z')}))
+ENGINE_RUNS = {k: v for k, v in READY_RUNS.items() if k != 'COACHING'}
 write('GameAnalysisWorkflow', 'engine_ready', workflow(
-    ['READY', 'READY', 'READY', 'NOT_RUN'],
-    {k: v for k, v in READY_RUNS.items() if k != 'COACHING'}))
+    ['READY', 'READY', 'READY', 'NOT_RUN'], ENGINE_RUNS))
 write('GameAnalysisWorkflow', 'all_ready', workflow(['READY'] * 4, READY_RUNS))
+# The engine ran and the coach was never asked, because a gate of it was shut.
+# Never an error of `analyseGame`: the result is there, `targetReason` says what
+# is missing.
+write('GameAnalysisWorkflow', 'no_coach_limit', workflow(
+    ['READY', 'READY', 'READY', 'NOT_RUN'], ENGINE_RUNS,
+    target='DEEP_EVALUATION', reason='LIMIT_REACHED'))
+write('GameAnalysisWorkflow', 'no_coach_consent', workflow(
+    ['READY', 'READY', 'READY', 'NOT_RUN'], ENGINE_RUNS,
+    target='DEEP_EVALUATION', reason='AI_CONSENT_REQUIRED'))
+# The coach is writing over an engine result that can already be read.
+write('GameAnalysisWorkflow', 'coach_writing', workflow(
+    ['READY', 'READY', 'READY', 'RUNNING'],
+    {**ENGINE_RUNS,
+     'COACHING': stage_run('run-co', 'RUNNING', started='2026-09-19T10:03:10.000Z',
+                           language='en', has_artifact=False)}))
+# A reason this build does not know, which has to read as "unknown" and still
+# leave the engine result readable.
+write('GameAnalysisWorkflow', 'unknown_reason', workflow(
+    ['READY', 'READY', 'READY', 'NOT_RUN'], ENGINE_RUNS,
+    target='DEEP_EVALUATION', reason='COACH_ON_HOLIDAY'))
 write('GameAnalysisWorkflow', 'stage_failed', workflow(
     ['READY', 'READY', 'FAILED', 'NOT_RUN'],
     {'BASE_EVALUATION': READY_RUNS['BASE_EVALUATION'],
@@ -254,6 +318,8 @@ unknown = workflow(['READY', 'PAUSED', 'NOT_RUN', 'NOT_RUN'],
                    {'BASE_EVALUATION': READY_RUNS['BASE_EVALUATION']})
 unknown['gameAnalysisWorkflow']['stages'][1]['stage'] = 'SHINY_NEW_STAGE'
 unknown['gameAnalysisWorkflow']['nextRunnableStage'] = 'SHINY_NEW_STAGE'
+unknown['gameAnalysisWorkflow']['state'] = 'PAUSING'
+unknown['gameAnalysisWorkflow']['targetStage'] = 'SHINY_NEW_STAGE'
 write('GameAnalysisWorkflow', 'unknown_stage', unknown)
 # The game is gone or is somebody else's: the field is non-null in the schema,
 # so the server can only answer with a top-level error.
@@ -381,3 +447,28 @@ mutation('RunCoaching', 'runCoaching', 'engineStageRun',
                                   'requiredVersion': 1},
           'prerequisite_missing': PREREQUISITE},
          STAGE_GENERIC)
+
+# The one button. Its payload carries the workflow, not a run: the server
+# decides which stage to queue. Its error union is the engine commands' one —
+# quota, consent and the e-mail check are `targetReason` on the workflow, never
+# an error here.
+mutation('AnalyseGame', 'analyseGame', 'gameAnalysisWorkflow', {
+    'default': workflow(['QUEUED', 'NOT_RUN', 'NOT_RUN', 'NOT_RUN'],
+                        {'BASE_EVALUATION': stage_run('run-new', 'QUEUED',
+                                                      has_artifact=False,
+                                                      language='en')})['gameAnalysisWorkflow'],
+    'no_coach': workflow(['QUEUED', 'NOT_RUN', 'NOT_RUN', 'NOT_RUN'],
+                         {'BASE_EVALUATION': stage_run('run-new', 'QUEUED',
+                                                       has_artifact=False,
+                                                       language='en')},
+                         target='DEEP_EVALUATION',
+                         reason='LIMIT_REACHED')['gameAnalysisWorkflow'],
+    'already_running': workflow(
+        ['READY', 'RUNNING', 'NOT_RUN', 'NOT_RUN'],
+        {'BASE_EVALUATION': READY_RUNS['BASE_EVALUATION'],
+         'BASE_CLASSIFICATION': stage_run('run-bc', 'RUNNING', language='en',
+                                          started='2026-09-19T10:01:05.000Z',
+                                          has_artifact=False)})['gameAnalysisWorkflow'],
+}, {'rate_limited': RATE}, STAGE_GENERIC)
+write('AnalyseGame', 'empty_payload',
+      {'analyseGame': {'gameAnalysisWorkflow': None, 'errors': None}})

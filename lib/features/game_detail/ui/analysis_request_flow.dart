@@ -3,10 +3,12 @@
 // Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
 
 import 'package:bogner_chess/core/api/analysis_api.dart';
-import 'package:bogner_chess/core/api/stage_api.dart' show AnalysisStage;
+import 'package:bogner_chess/core/api/stage_api.dart' show AnalysisTargetReason;
 import 'package:bogner_chess/core/l10n/l10n.dart';
 import 'package:bogner_chess/core/ui/theme.dart';
+import 'package:bogner_chess/features/usage/usage.dart';
 import 'package:bogner_chess/router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -14,36 +16,53 @@ import '../domain/game_detail_controller.dart';
 import 'game_detail_ids.dart';
 import 'game_texts.dart';
 
-/// Starts the three free engine stages of the [controller]'s game.
+/// Analyses the [controller]'s game and explains whatever is missing.
+/// [context] must be below a navigator and a scaffold messenger.
 ///
-/// There is nothing to explain when it works: the card turns into the stage
-/// strip and fills in as each stage lands. The engine stages cannot be
-/// refused for quota, consent or an unconfirmed address — only fair use and a
-/// plain failure are left, and both are one line.
-Future<void> runFreeChain(
-  BuildContext context,
-  GameDetailController controller,
-) async {
-  final outcome = await controller.startFreeChain();
-  if (outcome != null && context.mounted) {
-    await _explain(context, controller, outcome);
-  }
-}
-
-/// Asks the coach to write about the [controller]'s game and explains
-/// whatever comes back. [context] must be below a navigator and a scaffold
-/// messenger.
+/// One request runs the whole thing, so there is nothing to say when it works:
+/// the card turns into a progress bar and then into "Open analysis". What is
+/// left to explain is why there will be no coach text, which the server sends
+/// as `targetReason` rather than as an error — the engine analysis runs either
+/// way, and every sheet says so.
 ///
-/// Accepted: nothing to say, the card shows the coach step running. AI
-/// consent missing: the consent screen opens; when it pops with `true` the
-/// request is sent once more. Everything else is a sheet or a snack bar.
-Future<void> runCoachRequest(
+/// A missing AI consent is the one reason with a way out on this screen: the
+/// consent screen opens and, when the user agrees, the game is analysed again,
+/// this time with the coach.
+Future<void> runAnalyse(
   BuildContext context,
   GameDetailController controller,
 ) async {
   // The coach writes in the language the app is showing.
   final language = Localizations.localeOf(context).languageCode;
-  var outcome = await controller.askCoach(languageCode: language);
+  var outcome = await controller.analyse(languageCode: language);
+  if (_reasonOf(outcome) == AnalysisTargetReason.aiConsentRequired) {
+    if (!context.mounted) {
+      return;
+    }
+    final accepted = await context.push<bool>(AppRoutes.consentAi);
+    if (!context.mounted) {
+      return;
+    }
+    if (accepted != true) {
+      _snack(context, context.l10n.gameDetailConsentNeeded);
+      return;
+    }
+    outcome = await controller.analyse(languageCode: language);
+  }
+  if (context.mounted) {
+    await _explain(context, controller, outcome);
+  }
+}
+
+/// Writes the coach's text again over a finished analysis (an account without
+/// a limit only). The one path left that asks for a single stage, so the whole
+/// set of refusals is still possible.
+Future<void> runRerunCoach(
+  BuildContext context,
+  GameDetailController controller,
+) async {
+  final language = Localizations.localeOf(context).languageCode;
+  var outcome = await controller.rerunCoach(languageCode: language);
   if (outcome is AnalysisAiConsentRequired) {
     if (!context.mounted) {
       return;
@@ -56,24 +75,65 @@ Future<void> runCoachRequest(
       _snack(context, context.l10n.gameDetailConsentNeeded);
       return;
     }
-    outcome = await controller.askCoach(languageCode: language);
+    outcome = await controller.rerunCoach(languageCode: language);
   }
   if (context.mounted) {
     await _explain(context, controller, outcome);
   }
 }
 
-/// Runs the stage that stopped the pipeline once more. An engine stage needs
-/// no explaining; coaching is the metered one, so it goes the long way.
-Future<void> runStageRetry(
+/// The reason the chain stopped short of the coach, when the server took the
+/// request and said so. Null for every other outcome.
+AnalysisTargetReason? _reasonOf(RequestAnalysisOutcome outcome) =>
+    outcome is AnalysisAccepted ? outcome.targetReason : null;
+
+/// What one sentence of [reason] says, for the quiet line on the card.
+String targetReasonText(AppLocalizations l10n, AnalysisTargetReason reason) =>
+    switch (reason) {
+      AnalysisTargetReason.limitReached => l10n.gameDetailReasonLimit,
+      AnalysisTargetReason.queueFull => l10n.gameDetailReasonQueue,
+      AnalysisTargetReason.rateLimited => l10n.gameDetailReasonRateLimited,
+      AnalysisTargetReason.emailNotVerified => l10n.gameDetailReasonEmail,
+      AnalysisTargetReason.aiConsentRequired => l10n.gameDetailReasonConsent,
+      AnalysisTargetReason.unknown => l10n.gameDetailReasonOther,
+    };
+
+/// The engine analysis is on its way and only the coach is missing: a sheet
+/// for the two reasons that are worth a page of text, a snack bar for the rest.
+Future<void> _explainTargetReason(
   BuildContext context,
   GameDetailController controller,
-  AnalysisStage stage,
+  AnalysisTargetReason reason,
 ) async {
-  if (stage.usesModel) {
-    await runCoachRequest(context, controller);
-  } else {
-    await runFreeChain(context, controller);
+  final l10n = context.l10n;
+  switch (reason) {
+    case AnalysisTargetReason.limitReached:
+      // The typed numbers come with a refusal, and this is not one, so the
+      // sheet reads them from the usage the screen already has.
+      await _showSheet<void>(
+        context,
+        identifier: GameDetailIds.limitSheet,
+        builder: (_) => const _CoachLimitSheet(),
+      );
+    case AnalysisTargetReason.emailNotVerified:
+      final next = await _showSheet<RequestAnalysisOutcome>(
+        context,
+        builder: (_) => _EmailSheet(controller),
+      );
+      if (next != null && context.mounted) {
+        await _explain(context, controller, next);
+      }
+    case AnalysisTargetReason.aiConsentRequired:
+      // Still required after the user agreed: the consent was not recorded.
+      _snack(context, l10n.gameDetailRequestFailed);
+    case AnalysisTargetReason.queueFull:
+    case AnalysisTargetReason.rateLimited:
+    case AnalysisTargetReason.unknown:
+      _snack(
+        context,
+        '${l10n.gameDetailNoCoach(targetReasonText(l10n, reason))} '
+        '${l10n.gameDetailAnalysisRunsAnyway}',
+      );
   }
 }
 
@@ -84,11 +144,15 @@ Future<void> _explain(
 ) async {
   final l10n = context.l10n;
   switch (outcome) {
-    case AnalysisAccepted():
+    case AnalysisAccepted(:final targetReason):
+      if (targetReason != null) {
+        await _explainTargetReason(context, controller, targetReason);
+      }
       return;
     case AnalysisPrerequisiteMissing():
-      // The stage before this one is not stored (any more). Running the free
-      // chain again is what fixes it, and the card offers exactly that.
+      // Only reachable from `runCoaching`: what the coach reads is not
+      // stored any more. Analysing the game again is what fixes it, and the card
+      // offers exactly that.
       _snack(context, l10n.gameDetailFailureInputMissing);
     case AnalysisLimitReached():
       await _showSheet<void>(
@@ -259,6 +323,40 @@ class _LimitSheet extends StatelessWidget {
   }
 }
 
+/// LIM-2 on the one-button path: the coach's quota is used up, which is not a
+/// refusal — the analysis itself is running. The numbers come from
+/// `myAnalysisUsage` rather than from an error, because there is no error.
+class _CoachLimitSheet extends ConsumerWidget {
+  const _CoachLimitSheet();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final usage = ref.watch(usageProvider).value;
+    final monthly = usage != null && usage.monthlyRemaining == 0;
+    final limit = (monthly ? usage.monthlyLimit : usage?.dailyLimit) ?? 0;
+    final resetAt = monthly ? usage.monthlyResetAt : usage?.dailyResetAt;
+    return _InfoSheet(
+      icon: Icons.event_available,
+      title: monthly
+          ? l10n.gameDetailLimitTitleMonth
+          : l10n.gameDetailLimitTitleDay,
+      paragraphs: [
+        if (limit > 0)
+          monthly
+              ? l10n.gameDetailLimitBodyMonth(limit)
+              : l10n.gameDetailLimitBodyDay(limit),
+        if (resetAt != null)
+          l10n.gameDetailLimitReset(
+            formatResetAt(l10n, resetAt, DateTime.now()),
+          ),
+        l10n.gameDetailAnalysisRunsAnyway,
+      ],
+      footer: l10n.gameDetailLimitFree,
+    );
+  }
+}
+
 /// LIM-4: analyses need a confirmed e-mail address. The button fetches fresh
 /// tokens and asks again; the sheet pops with the outcome of that request,
 /// unless the address is still unconfirmed, which it says itself.
@@ -282,13 +380,18 @@ class _EmailSheetState extends State<_EmailSheet> {
       _busy = true;
       _stillUnverified = false;
     });
-    final outcome = await widget.controller.recheckEmailAndAskCoach(
+    final outcome = await widget.controller.recheckEmailAndAnalyse(
       languageCode: _language,
     );
     if (!mounted) {
       return;
     }
-    if (outcome is AnalysisEmailNotVerified) {
+    // Either shape says the same thing: `analyseGame` reports it as the reason
+    // the chain stopped short of the coach, `runCoaching` as a refusal.
+    final still =
+        outcome is AnalysisEmailNotVerified ||
+        _reasonOf(outcome) == AnalysisTargetReason.emailNotVerified;
+    if (still) {
       setState(() {
         _busy = false;
         _stillUnverified = true;

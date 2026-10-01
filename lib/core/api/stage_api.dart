@@ -22,12 +22,16 @@ export 'package:bogner_chess/core/api/models/stage_models.dart';
 const String kStagePrerequisiteMissingKey =
     'web_api_errors.stage_prerequisite_missing';
 
-/// The staged analysis pipeline: the workflow of a game, the artifact of one
-/// run, and the four commands that start a stage.
+/// The analysis pipeline: the workflow of a game, the artifact of one run,
+/// [analyseGame] for the whole chain, and the four commands that start one
+/// stage each.
 ///
-/// The three engine stages are free and the app chains them; `runCoaching` is
-/// the only one that can be refused, and it is where the quota, the consent
-/// and the e-mail check live.
+/// [analyseGame] is what the app uses. The server chains the stages and goes
+/// as far as the coach when the coach is allowed; a closed gate of the coach
+/// is not an error of it, it is `targetReason` on the workflow it answers
+/// with. The four `run*` commands are the backend's one-stage surface, kept
+/// here because `runCoaching` is still how an account without a limit asks
+/// the coach to write again.
 class StageApi {
   StageApi(this._executor);
 
@@ -72,6 +76,54 @@ class StageApi {
     );
     final run = data.engineStageRun;
     return run == null ? null : stageRunOf(run);
+  }
+
+  /// Runs the whole analysis of [gameId]: the server queues the first stage
+  /// that is not stored and chains the ones after it, as far as the coach when
+  /// the caller may ask the coach now, else as far as the deep evaluation.
+  ///
+  /// Idempotent while a stage runs, and after a failure it resumes at the
+  /// stage that failed, so this is the retry as well. The quota, the queue
+  /// cap, the fair-use limit of the coach, an unconfirmed address and a
+  /// missing AI consent are **never** errors here: the engine result is
+  /// produced anyway and `AnalysisWorkflow.targetReason` says what the user is
+  /// missing. What is left is the fair-use limit of the engine commands, a
+  /// game that is gone, and a game without readable moves.
+  ///
+  /// [language] is one of `MobileConfig.supportedCoachLanguages` (see
+  /// `MobileConfig.coachLanguageFor`); it is what the coach writes in should
+  /// the chain reach it. Never throws.
+  Future<RequestAnalysisOutcome> analyseGame(
+    String gameId, {
+    String language = 'en',
+    String? persona,
+  }) async {
+    final Mutation$AnalyseGame data;
+    try {
+      data = await _executor.mutate(
+        document: documentNodeMutationAnalyseGame,
+        operationName: 'AnalyseGame',
+        variables: Variables$Mutation$AnalyseGame(
+          input: Input$AnalyseGameInput(
+            chessGameId: gameId,
+            language: language.toLowerCase(),
+            persona: persona,
+          ),
+        ).toJson(),
+        parse: Mutation$AnalyseGame.fromJson,
+      );
+    } on ApiError catch (e) {
+      return AnalysisRequestFailed(e);
+    }
+    final payload = data.analyseGame;
+    final error = MutationError.firstOf(payload.errors?.map((e) => e.toJson()));
+    if (error != null) {
+      return outcomeOf(error);
+    }
+    final workflow = payload.gameAnalysisWorkflow;
+    return workflow == null
+        ? AnalysisRequestFailed(emptyPayload('AnalyseGame'))
+        : AnalysisAccepted(workflow: workflowOf(workflow));
   }
 
   /// Stage 1: one engine pass over every position. Free, never refused for
@@ -199,7 +251,7 @@ class StageApi {
     }
     return run == null
         ? AnalysisRequestFailed(emptyPayload(operationName))
-        : AnalysisAccepted(stageRunOf(run));
+        : AnalysisAccepted(run: stageRunOf(run));
   }
 
   /// A top-level GraphQL error that means "this game is not yours or is
@@ -230,9 +282,11 @@ class StageApi {
 
 /// What a mutation's error union means for the caller.
 ///
-/// Shared by [StageApi] and, until B12 removes it, by `AnalysisApi.request`:
-/// the members are the same on both, and the staged path adds only
-/// [AnalysisPrerequisiteMissing] on top.
+/// Shared by every command of [StageApi]: the members are a subset of one
+/// another, and the staged path adds only [AnalysisPrerequisiteMissing] on
+/// top. `analyseGame` can only answer with the rate limit and the generic
+/// members, so the quota and consent cases below are dead code on that path —
+/// and must stay, because the one-stage `runCoaching` still reaches them.
 RequestAnalysisOutcome outcomeOf(MutationError error) {
   switch (error.typename) {
     case 'AnalysisLimitReachedError':

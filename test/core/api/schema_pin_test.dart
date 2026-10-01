@@ -12,7 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// this checksum and `graphql/SCHEMA_SOURCE.md`, run `tool/gen.sh`, fix what
 /// no longer compiles.
 const String kSchemaSha256 =
-    '9c84b3f2d1d5c103e446e3a348c6fefb25a7a38919ce6c40cfdd8c2393b90d3d';
+    '3020ccdba55f84200d22a994bd341633cb14b81a326fc4e5bc1529ce3e7e4d8b';
 
 void main() {
   test('graphql/schema.graphql is the pinned contract', () {
@@ -51,6 +51,7 @@ void main() {
       'SubmitCoachCommentFeedback',
       'GameAnalysisWorkflow',
       'EngineStageRun',
+      'AnalyseGame',
       'RunBaseEvaluation',
       'RunBaseClassification',
       'RunDeepEvaluation',

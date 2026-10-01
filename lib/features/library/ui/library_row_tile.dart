@@ -189,10 +189,14 @@ class LibraryStatusBadge extends StatelessWidget {
         l10n.libraryStatusAnalysing,
         scheme.primary,
       ),
+      // Deliberately the same words and icon as `analysisReady`: there is
+      // something to read, and the user is not told whether the coach has
+      // written yet. The value stays, because the tracker and the game screen
+      // still tell the two apart.
       LibraryStatus.engineReady => (
-        Icons.insights_outlined,
-        l10n.libraryStatusEngineReady,
-        scheme.primary,
+        Icons.check_circle_outline,
+        l10n.libraryStatusReady,
+        colors.success,
       ),
       LibraryStatus.analysisReady => (
         Icons.check_circle_outline,
