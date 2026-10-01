@@ -13,7 +13,9 @@ import 'package:bogner_chess/core/game/game_metadata.dart';
 /// a row this build cannot read is null and simply does not show until the
 /// next refresh replaces it. Version 2 added `workflow`, so a version-1 row
 /// reads as a game whose pipeline this device knows nothing about — which is
-/// exactly what it was.
+/// exactly what it was. Version 3 added `state` and `targetReason` inside
+/// `workflow` (WP-61); a version-2 row has neither, and
+/// `GameWorkflowSummary.workflowState` reads its stage states instead.
 ///
 /// A version-1 row also carries a `job` key, the whole-game analysis job of
 /// the path WP-60 replaced. It is read past: that job is transient state of a
@@ -21,7 +23,7 @@ import 'package:bogner_chess/core/game/game_metadata.dart';
 /// it (`hasAnalysis` and `workflow` decide). The next refresh writes the row
 /// without the key.
 abstract final class GameSummaryCodec {
-  static const int version = 2;
+  static const int version = 3;
 
   static String encode(GameSummary game) => jsonEncode(toJson(game));
 

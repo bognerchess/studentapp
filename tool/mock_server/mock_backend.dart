@@ -138,8 +138,13 @@ class _Workflow {
 
   /// The target of the chain that is still running, which is what makes the
   /// next stage start on the next poll. Cleared when the chain is over, has
-  /// failed, or went stale.
+  /// failed, or the moves changed under it.
   String? chainTarget;
+
+  /// When the running chain was asked for. A stage that is STALE but was
+  /// already stale then is simply a stage to run; moves that change *while*
+  /// the chain runs end it.
+  DateTime? chainStartedAt;
 
   /// The coach language and character the chain carries, so the coaching stage
   /// at the end of it writes in the language the request asked for.
@@ -808,13 +813,27 @@ class MockBackend {
   /// One step of a running chain: with nothing in flight, the first stage up to
   /// the target that is not stored is queued.
   ///
-  /// A failure or a change of the moves ends the chain, which is what makes
-  /// `analyseGame` the only thing that can resume it — and with [resume] that
-  /// is exactly what it does: a failed or out-of-date stage is started again
-  /// rather than stopping the chain before it begins.
+  /// A failure ends the chain, and so do moves that change while it runs;
+  /// `analyseGame` is then the only thing that can resume it, which is what
+  /// [resume] does — a failed stage is started again rather than stopping the
+  /// chain before it begins.
+  ///
+  /// A STALE stage is simply a stage that is not stored for the current moves,
+  /// so it is run. What stops the chain is the *change*: when the moves moved
+  /// on after this chain was asked for, whatever it produces would be about
+  /// the old game.
   void _advanceChain(_Workflow workflow, {bool resume = false}) {
     final target = workflow.chainTarget;
     if (target == null) {
+      return;
+    }
+    final changed = workflow.movesChangedAt;
+    final started = workflow.chainStartedAt;
+    if (!resume &&
+        changed != null &&
+        started != null &&
+        changed.isAfter(started)) {
+      workflow.chainTarget = null;
       return;
     }
     final limit = stages.indexOf(target);
@@ -826,7 +845,6 @@ class MockBackend {
         case 'RUNNING':
           return;
         case 'FAILED':
-        case 'STALE':
           if (!resume) {
             workflow.chainTarget = null;
             return;
@@ -1291,7 +1309,8 @@ class MockBackend {
       ..persona = input['persona'] as String?
       ..targetStage = reason == null ? 'COACHING' : 'DEEP_EVALUATION'
       ..targetReason = reason
-      ..chainTarget = reason == null ? 'COACHING' : 'DEEP_EVALUATION';
+      ..chainTarget = reason == null ? 'COACHING' : 'DEEP_EVALUATION'
+      ..chainStartedAt = options.now();
     // Idempotent while a stage runs; a failure or a change of the moves is
     // resumed from here, which is why the states are read before the chain is
     // advanced.

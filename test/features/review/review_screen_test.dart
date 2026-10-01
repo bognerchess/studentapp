@@ -14,7 +14,6 @@ import 'package:bogner_chess/features/review/ui/eval_graph.dart';
 import 'package:bogner_chess/features/review/ui/moves_tab.dart';
 import 'package:bogner_chess/features/review/ui/review_ids.dart';
 import 'package:bogner_chess/features/review/ui/summary_tab.dart';
-import 'package:bogner_chess/features/usage/usage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -683,9 +682,9 @@ void main() {
     });
   });
 
-  group('the stage banner', () {
-    /// The forty-move game with no coach text at all: what an engine
-    /// assembly looks like.
+  group('the banner above the tabs', () {
+    /// The forty-move game with no coach text at all: what the review of a
+    /// game whose coach has not written looks like.
     void withoutCoach(Map<String, dynamic> json) {
       json['comments'] = <Object?>[];
       (json['summary'] as Map<String, dynamic>)['lessons'] = <Object?>[];
@@ -704,80 +703,41 @@ void main() {
         .first
         .data!;
 
-    testWidgets('the classification is looking for key positions', (
+    testWidgets('anything still running reads as the coach writing', (
       tester,
     ) async {
-      await pumpReview(
-        tester,
-        patch: withoutCoach,
-        source: AnalysisSource.engine,
-        workflow: workflowFixture(FixtureStore(), 'running'),
-      );
-      expect(
-        bannerText(tester),
-        'Engine analysis ready. Looking for key positions\u2026',
-      );
+      // What the reader is looking at is the engine result; what is missing is
+      // the coach's text, whichever step the server is actually on.
+      for (final scenario in const ['running', 'coach_writing']) {
+        await pumpReview(
+          tester,
+          patch: withoutCoach,
+          source: AnalysisSource.engine,
+          workflow: workflowFixture(FixtureStore(), scenario),
+        );
+        expect(
+          bannerText(tester),
+          'Your coach is writing…',
+          reason: scenario,
+        );
+      }
     });
 
-    testWidgets('the deep analysis is running', (tester) async {
-      await pumpReview(
-        tester,
-        patch: withoutCoach,
-        source: AnalysisSource.engine,
-        workflow: workflowFixture(
-          FixtureStore(),
-          'running',
-          patch: (stages) {
-            stages[1]['state'] = 'READY';
-            stages[2]['state'] = 'RUNNING';
-          },
-        ),
-      );
-      expect(
-        bannerText(tester),
-        'Key positions marked. Deep analysis running\u2026',
-      );
-    });
-
-    testWidgets('the engine is done: the coach is one tap away', (
+    testWidgets('a finished analysis without the coach says nothing', (
       tester,
     ) async {
-      final api = FixtureLink();
+      // There is nothing to wait for and nothing to do: the summary tab says
+      // the coach has not written, and the game screen says why.
       await pumpReview(
         tester,
         patch: withoutCoach,
         source: AnalysisSource.engine,
-        workflow: workflowFixture(api.store, 'engine_ready'),
-        api: api,
+        workflow: workflowFixture(FixtureStore(), 'no_coach_limit'),
       );
-      expect(bannerText(tester), 'Deep analysis ready.');
-      expect(
-        tester.reviewControl(UsageSummary.semanticsId),
-        findsWidgets,
-        reason: 'the quota belongs next to the one step that spends it',
-      );
-
-      await tester.tapReview(ReviewIds.stageAskCoach);
-      final input =
-          api.requestsOf('RunCoaching').single.variables['input'] as Map;
-      expect(input['chessGameId'], kReviewGameId);
+      expect(tester.reviewControl(ReviewIds.stageBanner), findsNothing);
     });
 
-    testWidgets('the coach is writing', (tester) async {
-      await pumpReview(
-        tester,
-        patch: withoutCoach,
-        source: AnalysisSource.engine,
-        workflow: workflowFixture(
-          FixtureStore(),
-          'engine_ready',
-          patch: (stages) => stages[3]['state'] = 'RUNNING',
-        ),
-      );
-      expect(bannerText(tester), 'Your coach is writing\u2026');
-    });
-
-    testWidgets('a failed step, with the way to run it again', (tester) async {
+    testWidgets('a failed analysis, with the one way on', (tester) async {
       final api = FixtureLink();
       await pumpReview(
         tester,
@@ -785,24 +745,28 @@ void main() {
         source: AnalysisSource.engine,
         workflow: workflowFixture(api.store, 'stage_failed'),
         api: api,
-        overrides: pollingOverrides(),
       );
-      expect(bannerText(tester), 'This step failed.');
+      expect(bannerText(tester), 'The analysis failed.');
 
-      api.use('GameAnalysisWorkflow', 'stage_failed');
       await tester.tapReview(ReviewIds.stageRetry);
-      expect(api.requestsOf('RunDeepEvaluation'), hasLength(1));
+      expect(api.requestsOf('AnalyseGame'), hasLength(1));
+      expect(api.requestsOf('RunDeepEvaluation'), isEmpty);
     });
 
     testWidgets('the moves changed under the analysis', (tester) async {
+      final api = FixtureLink();
       await pumpReview(
         tester,
-        workflow: workflowFixture(FixtureStore(), 'stale'),
+        workflow: workflowFixture(api.store, 'stale'),
+        api: api,
       );
       expect(bannerText(tester), 'Your moves changed since this analysis.');
+
+      await tester.tapReview(ReviewIds.stageRetry);
+      expect(api.requestsOf('AnalyseGame'), hasLength(1));
     });
 
-    testWidgets('a finished pipeline says nothing', (tester) async {
+    testWidgets('a finished analysis says nothing', (tester) async {
       await pumpReview(
         tester,
         workflow: workflowFixture(FixtureStore(), 'all_ready'),
@@ -815,7 +779,7 @@ void main() {
       );
     });
 
-    testWidgets('a finished pipeline without a limit: the coach again', (
+    testWidgets('a finished analysis without a limit: the coach again', (
       tester,
     ) async {
       final api = FixtureLink({'MyAnalysisUsage': 'unlimited'});
@@ -824,7 +788,7 @@ void main() {
         workflow: workflowFixture(api.store, 'all_ready'),
         api: api,
       );
-      // The finished pipeline has no news, so the banner is the offer alone.
+      // A finished analysis has no news, so the banner is the offer alone.
       expect(bannerText(tester), 'Run the coach again');
 
       await tester.tapReview(ReviewIds.stageRerunCoach);
@@ -839,7 +803,7 @@ void main() {
       expect(tester.reviewControl(ReviewIds.updateBanner), findsNothing);
     });
 
-    testWidgets('a stage that lands makes the screen load again', (
+    testWidgets('what the server stores makes the screen load again', (
       tester,
     ) async {
       final harness = await pumpReview(
@@ -850,7 +814,7 @@ void main() {
       );
       expect(harness.repository.loads, hasLength(1));
 
-      // The tracker reports the classification stored, with a run id.
+      // The tracker reports one more result stored, with a run id.
       workflowsOf(containerOf(tester)).report(
         kReviewGameId,
         workflowFixture(
@@ -867,7 +831,7 @@ void main() {
     });
   });
 
-  group('an engine-only analysis', () {
+  group('an analysis without the coach', () {
     void withoutCoach(Map<String, dynamic> json) {
       json['comments'] = <Object?>[];
       (json['summary'] as Map<String, dynamic>)['lessons'] = <Object?>[];
@@ -884,11 +848,13 @@ void main() {
       );
       expect(tester.reviewState.tab, ReviewTab.moves);
       expect(find.byType(MovesTab), findsOneWidget);
-      // The eval graph is stage 1's, and it is there.
+      // The eval graph is there from the first result on.
       expect(find.byType(EvalGraph), findsOneWidget);
     });
 
-    testWidgets('the coach tab ends with "Ask the coach"', (tester) async {
+    testWidgets('the coach tab ends by saying the coach has not written', (
+      tester,
+    ) async {
       final api = FixtureLink();
       await pumpReview(
         tester,
@@ -902,10 +868,11 @@ void main() {
       await tester.tapReview(ReviewIds.tabCoach);
       expect(find.byType(CoachTab), findsOneWidget);
       expect(find.text('See your lessons'), findsNothing);
-      expect(find.text('Ask the coach'), findsWidgets);
-
-      await tester.tapReview(ReviewIds.stageAskCoach);
-      expect(api.requestsOf('RunCoaching'), hasLength(1));
+      // No button at all: there is nothing for the reader to do about it.
+      expect(find.text('Ask the coach'), findsNothing);
+      expect(find.text('The coach has not written yet.'), findsWidgets);
+      expect(api.requestsOf('RunCoaching'), isEmpty);
+      expect(api.requestsOf('AnalyseGame'), isEmpty);
     });
 
     testWidgets('the summary says the coach has not written', (tester) async {
@@ -933,11 +900,16 @@ void main() {
         tester,
         patch: withoutCoach,
         source: AnalysisSource.engine,
-        workflow: workflowFixture(FixtureStore(), 'engine_ready'),
+        workflow: workflowFixture(FixtureStore(), 'coach_writing'),
         locale: const Locale('de'),
       );
-      expect(find.text('Tiefenanalyse fertig.'), findsOneWidget);
-      expect(find.text('Coach fragen'), findsWidgets);
+      expect(find.text('Dein Coach schreibt…'), findsOneWidget);
+
+      await tester.tapReview(ReviewIds.tabSummary);
+      expect(
+        find.text('Der Coach hat noch nichts geschrieben.'),
+        findsOneWidget,
+      );
     });
   });
 }
