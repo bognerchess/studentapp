@@ -3,8 +3,7 @@
 // Additional permission under GPL-3.0 section 7: see LICENSE-APP-STORE-PERMISSION.md.
 
 import 'package:bogner_chess/core/api/analysis_api.dart';
-import 'package:bogner_chess/core/api/stage_api.dart'
-    show AnalysisTargetReason;
+import 'package:bogner_chess/core/api/stage_api.dart' show AnalysisTargetReason;
 import 'package:bogner_chess/core/l10n/l10n.dart';
 import 'package:bogner_chess/core/ui/theme.dart';
 import 'package:bogner_chess/features/usage/usage.dart';

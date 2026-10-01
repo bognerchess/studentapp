@@ -97,19 +97,18 @@ AnalysisWorkflowState workflowStateOf(Enum$AnalysisWorkflowState value) =>
       Enum$AnalysisWorkflowState.$unknown => AnalysisWorkflowState.unknown,
     };
 
-AnalysisTargetReason targetReasonOf(Enum$AnalysisTargetReason value) =>
-    switch (value) {
-      Enum$AnalysisTargetReason.LIMIT_REACHED =>
-        AnalysisTargetReason.limitReached,
-      Enum$AnalysisTargetReason.QUEUE_FULL => AnalysisTargetReason.queueFull,
-      Enum$AnalysisTargetReason.RATE_LIMITED =>
-        AnalysisTargetReason.rateLimited,
-      Enum$AnalysisTargetReason.EMAIL_NOT_VERIFIED =>
-        AnalysisTargetReason.emailNotVerified,
-      Enum$AnalysisTargetReason.AI_CONSENT_REQUIRED =>
-        AnalysisTargetReason.aiConsentRequired,
-      Enum$AnalysisTargetReason.$unknown => AnalysisTargetReason.unknown,
-    };
+AnalysisTargetReason targetReasonOf(
+  Enum$AnalysisTargetReason value,
+) => switch (value) {
+  Enum$AnalysisTargetReason.LIMIT_REACHED => AnalysisTargetReason.limitReached,
+  Enum$AnalysisTargetReason.QUEUE_FULL => AnalysisTargetReason.queueFull,
+  Enum$AnalysisTargetReason.RATE_LIMITED => AnalysisTargetReason.rateLimited,
+  Enum$AnalysisTargetReason.EMAIL_NOT_VERIFIED =>
+    AnalysisTargetReason.emailNotVerified,
+  Enum$AnalysisTargetReason.AI_CONSENT_REQUIRED =>
+    AnalysisTargetReason.aiConsentRequired,
+  Enum$AnalysisTargetReason.$unknown => AnalysisTargetReason.unknown,
+};
 
 AnalysisWorkflow workflowOf(Fragment$WorkflowFields workflow) {
   final next = workflow.nextRunnableStage;

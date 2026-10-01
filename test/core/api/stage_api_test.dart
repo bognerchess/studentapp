@@ -372,18 +372,15 @@ void main() {
 
       final accepted = outcome as AnalysisAccepted;
       expect(accepted.targetReason, AnalysisTargetReason.limitReached);
-      expect(
-        accepted.workflow!.targetStage,
-        AnalysisStage.deepEvaluation,
-      );
+      expect(accepted.workflow!.targetStage, AnalysisStage.deepEvaluation);
       // The engine analysis is on its way all the same.
       expect(accepted.workflow!.state, AnalysisWorkflowState.analysing);
     });
 
     test('asking again while a stage runs changes nothing', () async {
       link.use('AnalyseGame', 'already_running');
-      final workflow = ((await api().analyseGame('game-1')) as AnalysisAccepted)
-          .workflow!;
+      final workflow =
+          ((await api().analyseGame('game-1')) as AnalysisAccepted).workflow!;
 
       expect(workflow.state, AnalysisWorkflowState.analysing);
       expect(workflow.activeStage, AnalysisStage.baseClassification);

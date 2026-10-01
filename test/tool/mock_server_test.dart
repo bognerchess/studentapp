@@ -972,61 +972,60 @@ void main() {
   });
 
   group('analyseGame chains the stages', () {
-    test('one request, and every poll moves the chain on to the coach',
-        () async {
-      await scenario({'name': 'consent_accepted'});
-      final id = await importGame('c-1');
+    test(
+      'one request, and every poll moves the chain on to the coach',
+      () async {
+        await scenario({'name': 'consent_accepted'});
+        final id = await importGame('c-1');
 
-      final payload = await analyseGame(id, {'language': 'de'});
-      expect(payload['errors'], isNull);
-      var workflow = payload['gameAnalysisWorkflow'] as Map<String, dynamic>;
-      expect(workflow['state'], 'ANALYSING');
-      expect(workflow['targetStage'], 'COACHING');
-      expect(workflow['targetReason'], isNull);
-      expect(statesOf(workflow)['BASE_EVALUATION'], 'QUEUED');
-      expect(
-        statesOf(workflow)['BASE_CLASSIFICATION'],
-        'NOT_RUN',
-        reason: 'one stage at a time',
-      );
-
-      // The app fires nothing else: the polls are what carry the chain.
-      final seen = <String>{};
-      for (var i = 0; i < 60; i++) {
-        workflow = await workflowOf(id);
-        seen.addAll(
-          statesOf(workflow).entries
-              .where((e) => e.value == 'QUEUED' || e.value == 'RUNNING')
-              .map((e) => e.key),
+        final payload = await analyseGame(id, {'language': 'de'});
+        expect(payload['errors'], isNull);
+        var workflow = payload['gameAnalysisWorkflow'] as Map<String, dynamic>;
+        expect(workflow['state'], 'ANALYSING');
+        expect(workflow['targetStage'], 'COACHING');
+        expect(workflow['targetReason'], isNull);
+        expect(statesOf(workflow)['BASE_EVALUATION'], 'QUEUED');
+        expect(
+          statesOf(workflow)['BASE_CLASSIFICATION'],
+          'NOT_RUN',
+          reason: 'one stage at a time',
         );
-        if (workflow['state'] != 'ANALYSING') break;
-      }
-      expect(seen, {
-        'BASE_EVALUATION',
-        'BASE_CLASSIFICATION',
-        'DEEP_EVALUATION',
-        'COACHING',
-      }, reason: 'all four ran, one after the other');
-      expect(workflow['state'], 'READY');
-      expect(statesOf(workflow).values, everyElement('READY'));
-      expect(workflow['isComplete'], isTrue);
-      expect(workflow['progress'], isNull);
-      expect(
-        (stageOf(workflow, 'COACHING')['run'] as Map)['language'],
-        'de',
-      );
-      expect(
-        (stageOf(workflow, 'BASE_EVALUATION')['run'] as Map)['language'],
-        'de',
-        reason: 'the engine stages of a chain hand the language on',
-      );
-      expect((await data('MyAnalysisUsage'))['myAnalysisUsage'], isNotNull);
-      expect(
-        ((await data('GameAnalysis', {'gameId': id}))['gameAnalysis']
-            as Map)['chessGameId'],
-        id,
-      );
-    });
+
+        // The app fires nothing else: the polls are what carry the chain.
+        final seen = <String>{};
+        for (var i = 0; i < 60; i++) {
+          workflow = await workflowOf(id);
+          seen.addAll(
+            statesOf(workflow).entries
+                .where((e) => e.value == 'QUEUED' || e.value == 'RUNNING')
+                .map((e) => e.key),
+          );
+          if (workflow['state'] != 'ANALYSING') break;
+        }
+        expect(seen, {
+          'BASE_EVALUATION',
+          'BASE_CLASSIFICATION',
+          'DEEP_EVALUATION',
+          'COACHING',
+        }, reason: 'all four ran, one after the other');
+        expect(workflow['state'], 'READY');
+        expect(statesOf(workflow).values, everyElement('READY'));
+        expect(workflow['isComplete'], isTrue);
+        expect(workflow['progress'], isNull);
+        expect((stageOf(workflow, 'COACHING')['run'] as Map)['language'], 'de');
+        expect(
+          (stageOf(workflow, 'BASE_EVALUATION')['run'] as Map)['language'],
+          'de',
+          reason: 'the engine stages of a chain hand the language on',
+        );
+        expect((await data('MyAnalysisUsage'))['myAnalysisUsage'], isNotNull);
+        expect(
+          ((await data('GameAnalysis', {'gameId': id}))['gameAnalysis']
+              as Map)['chessGameId'],
+          id,
+        );
+      },
+    );
 
     test('progress rises to 1 and then stops being reported', () async {
       await scenario({'name': 'consent_accepted'});
@@ -1063,8 +1062,10 @@ void main() {
       expect(statesOf(workflow)['DEEP_EVALUATION'], 'READY');
       expect(statesOf(workflow)['COACHING'], 'NOT_RUN');
       expect(workflow['targetReason'], 'AI_CONSENT_REQUIRED');
-      expect((await data('GameAnalysis', {'gameId': id}))['gameAnalysis'],
-          isNull);
+      expect(
+        (await data('GameAnalysis', {'gameId': id}))['gameAnalysis'],
+        isNull,
+      );
     });
 
     test('every gate of the coach has its reason', () async {
@@ -1104,28 +1105,30 @@ void main() {
       expect(again, runs, reason: 'no second run was queued');
     });
 
-    test('a failed stage stops the chain; one more request resumes it',
-        () async {
-      await scenario({'name': 'consent_accepted'});
-      await scenario({'name': 'stage_fails', 'stage': 'BASE_CLASSIFICATION'});
-      final id = await importGame('c-1');
-      var workflow = await analyseToEnd(id);
+    test(
+      'a failed stage stops the chain; one more request resumes it',
+      () async {
+        await scenario({'name': 'consent_accepted'});
+        await scenario({'name': 'stage_fails', 'stage': 'BASE_CLASSIFICATION'});
+        final id = await importGame('c-1');
+        var workflow = await analyseToEnd(id);
 
-      expect(workflow['state'], 'FAILED');
-      expect(statesOf(workflow)['BASE_EVALUATION'], 'READY');
-      expect(statesOf(workflow)['BASE_CLASSIFICATION'], 'FAILED');
-      expect(statesOf(workflow)['DEEP_EVALUATION'], 'NOT_RUN');
-      expect(workflow['progress'], isNull);
+        expect(workflow['state'], 'FAILED');
+        expect(statesOf(workflow)['BASE_EVALUATION'], 'READY');
+        expect(statesOf(workflow)['BASE_CLASSIFICATION'], 'FAILED');
+        expect(statesOf(workflow)['DEEP_EVALUATION'], 'NOT_RUN');
+        expect(workflow['progress'], isNull);
 
-      // Polling on its own never restarts it.
-      await workflowOf(id);
-      expect(statesOf(await workflowOf(id))['BASE_CLASSIFICATION'], 'FAILED');
+        // Polling on its own never restarts it.
+        await workflowOf(id);
+        expect(statesOf(await workflowOf(id))['BASE_CLASSIFICATION'], 'FAILED');
 
-      await scenario({'name': 'default'});
-      workflow = await analyseToEnd(id);
-      expect(workflow['state'], 'READY');
-      expect(statesOf(workflow).values, everyElement('READY'));
-    });
+        await scenario({'name': 'default'});
+        workflow = await analyseToEnd(id);
+        expect(workflow['state'], 'READY');
+        expect(statesOf(workflow).values, everyElement('READY'));
+      },
+    );
 
     test('moves that changed: stale, and one request analyses again', () async {
       await scenario({'name': 'stale'});
@@ -1148,17 +1151,20 @@ void main() {
       expect(payload['gameAnalysisWorkflow'], isNull);
     });
 
-    test('a game that is gone, and a coach language the server has not',
-        () async {
-      expect(
-        (((await analyseGame('nope'))['errors'] as List).single as Map)['message'],
-        'web_api_errors.entity_not_found',
-      );
-      final invalid = await analyseGame('game-1', {'language': 'fr'});
-      final error = (invalid['errors'] as List).single as Map;
-      expect(error['__typename'], 'InputValidationError');
-      expect(error['propertyName'], 'Language');
-    });
+    test(
+      'a game that is gone, and a coach language the server has not',
+      () async {
+        expect(
+          (((await analyseGame('nope'))['errors'] as List).single
+              as Map)['message'],
+          'web_api_errors.entity_not_found',
+        );
+        final invalid = await analyseGame('game-1', {'language': 'fr'});
+        final error = (invalid['errors'] as List).single as Map;
+        expect(error['__typename'], 'InputValidationError');
+        expect(error['propertyName'], 'Language');
+      },
+    );
   });
 
   group('legal, devices, events, account', () {

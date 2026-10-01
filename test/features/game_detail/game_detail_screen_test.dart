@@ -71,7 +71,8 @@ void acceptAnalyse(FixtureLink api, {String? targetReason}) {
       'AnalyseGame',
       targetReason == null ? 'default' : 'no_coach',
     );
-    final payload = (body['data'] as Map)['analyseGame'] as Map<String, dynamic>;
+    final payload =
+        (body['data'] as Map)['analyseGame'] as Map<String, dynamic>;
     final workflow = payload['gameAnalysisWorkflow'] as Map<String, dynamic>;
     workflow['chessGameId'] = (variables['input'] as Map)['chessGameId'];
     if (targetReason != null) {
@@ -301,10 +302,7 @@ void main() {
       expect(find.text('Engine'), findsNothing);
       expect(find.text('Key positions'), findsNothing);
       expect(find.text('Deep analysis'), findsNothing);
-      expect(
-        find.bySemanticsIdentifier(GameDetailIds.progress),
-        findsNothing,
-      );
+      expect(find.bySemanticsIdentifier(GameDetailIds.progress), findsNothing);
       expect(
         find.bySemanticsIdentifier(GameDetailIds.openAnalysis),
         findsNothing,
@@ -488,10 +486,7 @@ void main() {
 
       await openGame(tester);
       expect(find.text('Your analysis is ready.'), findsOneWidget);
-      expect(
-        find.textContaining('The coach was not asked'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('The coach was not asked'), findsOneWidget);
       expect(
         find.bySemanticsIdentifier(GameDetailIds.openAnalysis),
         findsOneWidget,

@@ -715,11 +715,7 @@ void main() {
           source: AnalysisSource.engine,
           workflow: workflowFixture(FixtureStore(), scenario),
         );
-        expect(
-          bannerText(tester),
-          'Your coach is writing…',
-          reason: scenario,
-        );
+        expect(bannerText(tester), 'Your coach is writing…', reason: scenario);
       }
     });
 

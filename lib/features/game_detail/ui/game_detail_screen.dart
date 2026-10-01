@@ -414,10 +414,7 @@ class _AnalysisCard extends ConsumerWidget {
             text: l10n.gameDetailFailedTitle,
           ),
           const SizedBox(height: AppSpacing.sm),
-          Text(
-            l10n.gameDetailFailedMessage,
-            style: theme.textTheme.bodyMedium,
-          ),
+          Text(l10n.gameDetailFailedMessage, style: theme.textTheme.bodyMedium),
           const SizedBox(height: AppSpacing.md),
           Identified(
             GameDetailIds.retryAnalysis,
@@ -435,10 +432,7 @@ class _AnalysisCard extends ConsumerWidget {
             text: l10n.gameDetailRunningTitle,
           ),
           const SizedBox(height: AppSpacing.md),
-          _Progress(
-            value: workflow?.progress,
-            phase: _phaseText(l10n),
-          ),
+          _Progress(value: workflow?.progress, phase: _phaseText(l10n)),
           const SizedBox(height: AppSpacing.sm),
           Text(
             l10n.gameDetailLeaveHint,

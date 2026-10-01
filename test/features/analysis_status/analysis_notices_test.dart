@@ -151,9 +151,7 @@ void main() {
     });
 
     expect(
-      find.text(
-        'Your coach has written about your game against Jonas Keller.',
-      ),
+      find.text('Your coach has written about your game against Jonas Keller.'),
       findsOneWidget,
     );
     expect(find.text('Open'), findsOneWidget);

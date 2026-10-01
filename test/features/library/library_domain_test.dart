@@ -84,10 +84,7 @@ void main() {
         '"BASE_CLASSIFICATION":"RUNNING"},"isComplete":false}}',
       )!;
       expect(back.workflow!.state, AnalysisWorkflowState.unknown);
-      expect(
-        back.workflow!.workflowState,
-        AnalysisWorkflowState.analysing,
-      );
+      expect(back.workflow!.workflowState, AnalysisWorkflowState.analysing);
       expect(back.workflow!.targetReason, isNull);
     });
 
@@ -102,10 +99,7 @@ void main() {
       );
       final back = GameSummaryCodec.decode(json)!;
       expect(back.workflow!.state, AnalysisWorkflowState.ready);
-      expect(
-        back.workflow!.targetReason,
-        AnalysisTargetReason.limitReached,
-      );
+      expect(back.workflow!.targetReason, AnalysisTargetReason.limitReached);
     });
 
     test('a state and a reason of the future read as unknown', () {

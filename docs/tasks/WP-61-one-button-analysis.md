@@ -1,7 +1,7 @@
 ---
 id: WP-61
 title: One button for the whole analysis
-status: in-progress
+status: review
 size: L
 depends_on: [WP-60, backend BE-23]
 blocked_by_human: []
@@ -83,8 +83,79 @@ flutter test test/core/api test/tool test/features/game_detail \
 
 ## Evidence
 
-Filled in by the agent: command output, and for UI work screenshots (German and English).
+```
+$ tool/gen.sh
+gen: flutter gen-l10n
+gen: dart run build_runner build
+  Built with build_runner/aot in 1s; wrote 9 outputs.
+
+$ tool/check.sh
+==> 1/7 dependencies: flutter pub get --enforce-lockfile
+==> 2/7 format: dart format --set-exit-if-changed
+==> 3/7 analyze: flutter analyze --fatal-infos
+==> 4/7 licence headers: tool/check_headers.dart
+==> 5/7 layer imports: tool/check_layers.dart
+==> 6/7 codegen is clean: tool/gen.sh, then compare the working tree
+codegen: clean
+==> 7/7 tests: flutter test --exclude-tags golden
+00:26 +2173 ~1: All tests passed!
+
+OK in 35s
+
+$ flutter test test/core/api test/tool test/features/game_detail \
+    test/features/review test/features/analysis_status test/features/library
+00:10 +854 ~1: All tests passed!
+```
+
+The simulator pass (German and English screenshots of the five card states) is
+still open; this branch was taken to green on the gate first.
 
 ## Handoff notes
 
-Filled in by the agent: decisions taken, gotchas, anything the next session needs to know.
+**What was removed.** The stage strip and its rows, `stageName`,
+`stageFailureText`, `GameDetailIds.{askCoach,retryStage,stageStrip,stageRow}`,
+`ReviewIds.stageAskCoach`, `CoachTab.onAskCoach`, the review banner's
+`deepReady` / `lookingForKeyPositions` / `deepRunning` / `running` states,
+`GameDetailController.{startFreeChain,retryStage,askCoach,recheckEmailAndAskCoach}`,
+`runFreeChain` / `runCoachRequest` / `runStageRetry`, the tracker's whole chain
+(`_chain`, `_staleStageUpTo`, `_codeOf`, `_outcomes`, `_restarted`,
+`_justStarted`, the rate-limit `_floor`, `trackCoaching`), `StageStartedEvent`
+and the `analysis_stage_started` event. The ARB files are append-only, so the
+keys those used are still there, unused; a later pass can sweep them.
+
+**What replaced it.** One `AnalyseGame` mutation, one `AnalysisWorkflowState`
+per game, and a card with five branches. `WorkflowTracker.track(gameId)` only
+watches: it fires no mutation at all, which is what the new
+"it never fires a stage mutation" test pins down. It lets go once `state` says
+nothing runs and every ready run id is in the cache, so the artifact of the last
+stage is never missed; a game that reads IDLE for `idleGrace` polls in a row is
+dropped, because a request that never landed must not leave a poller behind.
+
+**`targetReason` replaces the quota errors on the one button.** `analyseGame`
+can only answer with the fair-use limit, a missing game and an unreadable PGN.
+Quota, queue cap, unverified e-mail and missing AI consent come back as
+`targetReason` on the workflow *with* an accepted request, and
+`analysis_request_flow.dart` runs them through the sheets that were already
+there — each one now saying "Your analysis is running. Only the coach's
+comments are missing." The AI-consent round trip is unchanged except that it
+re-calls `analyse()`. The only path that can still be refused outright is
+`runCoaching`, which is "Run the coach again" for an account without a limit.
+
+**The mock server chain.** `AnalyseGame` decides the target (the coach when
+`_coachGate()` is open, else the deep evaluation plus the reason), records it on
+the `_Workflow`, and queues the first stage that is not stored. Every
+`GameAnalysisWorkflow` poll then calls `_advanceChain`, which queues the next
+one — so the chaining really happens on the server side of the wire. A STALE
+stage is a stage to run; what stops a chain is the moves changing *after* it was
+asked for (`chainStartedAt`), and a failure, which one more `analyseGame`
+resumes. `progress` weights the stages by their share of the wall clock and
+normalises against the target, so a chain that stops at the deep evaluation
+still reaches 1.
+
+**Deviations from the brief.** Three, all noted above: `GameDetailIds.progress`
+was added as asked but `retryAnalysis` is now the failed-state button (the brief
+listed both and `retryStage` as separate things); the ARB keys of the removed UI
+were kept rather than deleted, because CLAUDE.md calls the ARB files
+append-only; and the tracker drops an IDLE game after a few polls, which the
+brief did not list among the stop conditions but which is needed now that the
+app, not the tracker, starts the analysis.
