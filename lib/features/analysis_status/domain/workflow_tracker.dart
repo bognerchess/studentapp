@@ -138,10 +138,14 @@ class WorkflowTracker {
   /// The games being watched.
   final Set<String> _tracked = {};
 
-  /// Games whose last poll said IDLE. Nothing runs for them, but the request
-  /// that was supposed to start something may simply not have landed yet, so
-  /// the first idle tick is forgiven and the second gives up.
-  final Set<String> _idle = {};
+  /// How many polls in a row said IDLE, per game. Nothing runs for such a
+  /// game, but the request that was supposed to start something may simply not
+  /// have landed yet — the row is written before the mutation is answered — so
+  /// a few idle polls are forgiven before the tracker gives up.
+  final Map<String, int> _idle = {};
+
+  /// Consecutive IDLE polls after which a game is let go of.
+  static const int idleGrace = 3;
 
   StreamSubscription<List<PendingWorkflow>>? _rows;
   String? _owner;
@@ -467,9 +471,12 @@ class WorkflowTracker {
       case AnalysisWorkflowState.ready:
         await _untrack(owner, gameId, state: WorkflowState.done);
       case AnalysisWorkflowState.idle:
-        // Whoever asked for this game has not got through. One tick of grace,
-        // because the row can be written before the mutation is answered.
-        if (!_idle.add(gameId)) {
+        // Whoever asked for this game has not got through. A few polls of
+        // grace, because the row can be written before the mutation is
+        // answered, and then there is nothing to wait for.
+        final seen = (_idle[gameId] ?? 0) + 1;
+        _idle[gameId] = seen;
+        if (seen >= idleGrace) {
           await _untrack(owner, gameId, state: WorkflowState.failed);
         }
       case AnalysisWorkflowState.analysing:

@@ -26,8 +26,15 @@ Map<String, dynamic> _workflowOf(String gameId) {
   final ready = [
     for (final stage in AnalysisStage.pipeline) states[stage] == 'READY',
   ];
+  final values = [
+    for (final stage in AnalysisStage.pipeline) states[stage] ?? 'NOT_RUN',
+  ];
   return {
     'chessGameId': gameId,
+    'state': _oneState(values),
+    'progress': null,
+    'targetStage': states.isEmpty ? null : 'COACHING',
+    'targetReason': null,
     'stages': [
       for (final (index, stage) in AnalysisStage.pipeline.indexed)
         {
@@ -69,6 +76,14 @@ Map<String, dynamic> _workflowOf(String gameId) {
   };
 }
 
+/// The one state, derived the way the backend derives it.
+String _oneState(List<String> values) {
+  if (values.any((s) => s == 'QUEUED' || s == 'RUNNING')) return 'ANALYSING';
+  if (values.contains('STALE')) return 'STALE';
+  if (values.contains('FAILED')) return 'FAILED';
+  return values.contains('READY') ? 'READY' : 'IDLE';
+}
+
 void main() {
   late AppDatabase db;
   late FixtureLink api;
@@ -99,16 +114,10 @@ void main() {
     ...api.overrides,
   ];
 
-  /// Watches [gameId] up to [target] and takes the first poll, which the
-  /// tracker compares every later one against.
-  Future<void> watch(
-    WidgetTester tester,
-    String gameId, {
-    AnalysisStage target = AnalysisStage.deepEvaluation,
-  }) async {
-    await containerOf(tester)
-        .read(workflowTrackerProvider)
-        .startChain(gameId, target: target);
+  /// Watches [gameId] and takes the first poll, which the tracker compares
+  /// every later one against.
+  Future<void> watch(WidgetTester tester, String gameId) async {
+    await containerOf(tester).read(workflowTrackerProvider).track(gameId);
     await tester.pumpAndSettle();
   }
 
@@ -133,7 +142,7 @@ void main() {
       AnalysisStage.coaching: 'RUNNING',
     });
     await pumpApp(tester, polling: true, overrides: overrides());
-    await watch(tester, 'game-1', target: AnalysisStage.coaching);
+    await watch(tester, 'game-1');
     await report(tester, 'game-1', {
       AnalysisStage.baseEvaluation: 'READY',
       AnalysisStage.baseClassification: 'READY',
@@ -142,13 +151,15 @@ void main() {
     });
 
     expect(
-      find.text('Your game against Jonas Keller has been analysed.'),
+      find.text(
+        'Your coach has written about your game against Jonas Keller.',
+      ),
       findsOneWidget,
     );
     expect(find.text('Open'), findsOneWidget);
   });
 
-  testWidgets('the engine result is announced before the coach has run', (
+  testWidgets('a readable analysis is announced before the coach has run', (
     tester,
   ) async {
     _script('game-1', {
@@ -164,17 +175,16 @@ void main() {
       AnalysisStage.deepEvaluation: 'READY',
     });
 
+    // Nothing about engines or steps: there is something to read, and that
+    // is the whole news.
     expect(
-      find.text(
-        'Your game against Jonas Keller has been analysed by '
-        'the engine.',
-      ),
+      find.text('Your game against Jonas Keller has been analysed.'),
       findsOneWidget,
     );
     expect(find.text('Open'), findsOneWidget);
   });
 
-  testWidgets('the first two stages say nothing', (tester) async {
+  testWidgets('the steps on the way say nothing', (tester) async {
     _script('game-1', {AnalysisStage.baseEvaluation: 'RUNNING'});
     await pumpApp(tester, polling: true, overrides: overrides());
     await watch(tester, 'game-1');
@@ -208,7 +218,9 @@ void main() {
     expect(find.byType(SnackBar), findsNothing);
   });
 
-  testWidgets('a failed step is announced with a way to it', (tester) async {
+  testWidgets('a failed analysis is announced with a way to it', (
+    tester,
+  ) async {
     _script('game-1', {
       AnalysisStage.baseEvaluation: 'READY',
       AnalysisStage.baseClassification: 'RUNNING',
@@ -220,11 +232,14 @@ void main() {
       AnalysisStage.baseClassification: 'FAILED',
     });
 
-    expect(find.text('A step of the analysis failed.'), findsOneWidget);
+    expect(
+      find.text("An analysis failed. It doesn't count towards your limit."),
+      findsOneWidget,
+    );
     expect(find.text('View'), findsOneWidget);
   });
 
-  testWidgets('moves that changed stop the pipeline and say so', (
+  testWidgets('moves that changed stop the analysis and say so', (
     tester,
   ) async {
     _script('game-1', {
@@ -262,7 +277,7 @@ void main() {
       AnalysisStage.deepEvaluation: 'RUNNING',
     });
     await pumpApp(tester, polling: true, overrides: overrides());
-    await watch(tester, 'game-1', target: AnalysisStage.coaching);
+    await watch(tester, 'game-1');
     await watch(tester, 'game-3');
     await tester.tap(find.text('Fake User – Jonas Keller'));
     await tester.pumpAndSettle();
@@ -303,7 +318,7 @@ void main() {
       polling: true,
       overrides: overrides(),
     );
-    await watch(tester, 'game-1', target: AnalysisStage.coaching);
+    await watch(tester, 'game-1');
     await report(tester, 'game-1', {
       AnalysisStage.baseEvaluation: 'READY',
       AnalysisStage.baseClassification: 'READY',
@@ -312,7 +327,9 @@ void main() {
     });
 
     expect(
-      find.text('Deine Partie gegen Jonas Keller ist analysiert.'),
+      find.text(
+        'Dein Coach hat über deine Partie gegen Jonas Keller geschrieben.',
+      ),
       findsOneWidget,
     );
     expect(find.text('Öffnen'), findsOneWidget);

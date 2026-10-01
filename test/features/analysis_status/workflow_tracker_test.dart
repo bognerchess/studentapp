@@ -162,6 +162,24 @@ class StageServer {
     }
   }
 
+  /// What the server does when a stage of a chain finishes: it is READY and the
+  /// next one is QUEUED. The last stage of the chain only becomes READY.
+  void advance(String gameId, String stage) {
+    set(gameId, stage, 'READY');
+    final next = _stages.indexOf(stage) + 1;
+    if (next < _stages.length && next <= _stages.indexOf(targetOf(gameId))) {
+      set(gameId, _stages[next], 'QUEUED');
+    }
+  }
+
+  /// How far the chain of [gameId] was told to go; the coach unless a test
+  /// says otherwise.
+  String targetOf(String gameId) => targets[gameId] ?? _co;
+
+  /// The target of each game's chain, and why it stops short of the coach.
+  final Map<String, String> targets = {};
+  final Map<String, String> reasons = {};
+
   String stateOf(String gameId, String stage) =>
       states[gameId]?[stage] ?? 'NOT_RUN';
 
@@ -199,6 +217,10 @@ class StageServer {
     }
     return {
       'chessGameId': gameId,
+      'state': _oneState(byStage),
+      'progress': active ? 0.5 : null,
+      'targetStage': states.containsKey(gameId) ? targetOf(gameId) : null,
+      'targetReason': reasons[gameId],
       'stages': stages,
       'nextRunnableStage': stages.cast<Map<String, dynamic>?>().firstWhere(
         (s) => s!['runnable'] == true,
@@ -206,6 +228,14 @@ class StageServer {
       )?['stage'],
       'isComplete': byStage.every((s) => s == 'READY'),
     };
+  }
+
+  /// The one state, derived the way the backend derives it.
+  static String _oneState(List<String> byStage) {
+    if (byStage.any((s) => s == 'QUEUED' || s == 'RUNNING')) return 'ANALYSING';
+    if (byStage.contains('STALE')) return 'STALE';
+    if (byStage.contains('FAILED')) return 'FAILED';
+    return byStage.contains('READY') ? 'READY' : 'IDLE';
   }
 
   Map<String, dynamic> _summary(String gameId, String stage, String state) => {
@@ -257,17 +287,6 @@ class StageServer {
   };
 }
 
-const Map<String, dynamic> _rateLimited = {
-  '__typename': 'RateLimitedError',
-  'message': 'web_api_errors.rate_limited',
-  'retryAfterSeconds': 90,
-};
-
-const Map<String, dynamic> _prerequisiteMissing = {
-  '__typename': 'BusinessError',
-  'message': 'web_api_errors.stage_prerequisite_missing',
-};
-
 void main() {
   late FakeClock clock;
   late AppDatabase db;
@@ -311,15 +330,18 @@ void main() {
     });
   }
 
-  /// Signs in and starts a chain on `g1`, then settles.
-  void start(
-    FakeAsync async, {
-    String gameId = 'g1',
-    AnalysisStage target = AnalysisStage.deepEvaluation,
-  }) {
+  /// Signs in and watches `g1`, then settles.
+  ///
+  /// The screen calls `analyseGame` before it calls [WorkflowTracker.track], so
+  /// by the time the tracker polls, the server has the first stage queued. A
+  /// test that scripted the pipeline itself keeps what it set.
+  void start(FakeAsync async, {String gameId = 'g1'}) {
     unawaited(tracker.setOwner(alice));
     async.flushMicrotasks();
-    unawaited(tracker.startChain(gameId, target: target));
+    if (!server.states.containsKey(gameId)) {
+      server.set(gameId, _be, 'QUEUED');
+    }
+    unawaited(tracker.track(gameId));
     async.flushMicrotasks();
   }
 
@@ -385,86 +407,88 @@ void main() {
     });
   });
 
-  group('the chain', () {
-    test('starting it writes the row before anything is fired', () {
+  group('watching', () {
+    test('track writes the row and fires nothing', () {
       fake((async) {
         unawaited(tracker.setOwner(alice));
         async.flushMicrotasks();
+        server.set('g1', _be, 'QUEUED');
 
-        // The mutation only goes out with the poll that follows, but the row
-        // that makes a kill resumable is there before it.
-        unawaited(tracker.startChain('g1'));
+        unawaited(tracker.track('g1'));
         async.flushMicrotasks();
 
+        // The row that makes an app kill resumable, and the aim the user asked
+        // for; the server decides how far the chain really goes.
         final row = settle(async, db.pendingWorkflowsDao.get(alice, 'g1'))!;
-        expect(row.targetStage, 'DEEP_EVALUATION');
+        expect(row.targetStage, 'COACHING');
         expect(row.state, WorkflowState.running);
-        expect(stagesStartedFor('g1'), [_be]);
+        // Nothing was started: that is the server's business now.
+        expect(server.started, isEmpty);
+        expect(server.workflowQueriesOf('g1'), 1);
       });
     });
 
-    test('an accepted stage is visible when startChain resolves', () {
-      fake((async) {
-        unawaited(tracker.setOwner(alice));
-        async.flushMicrotasks();
-
-        // The tap is answered only once the workflow shows the stage queued,
-        // so the button never comes back before the strip replaces it.
-        unawaited(tracker.startChain('g1'));
-        async.flushMicrotasks();
-
-        expect(stagesStartedFor('g1'), [_be]);
-        expect(
-          tracker.workflows.value['g1']?.stateOf(AnalysisStage.baseEvaluation),
-          AnalysisStageState.queued,
-        );
-        expect(server.workflowQueriesOf('g1'), 2);
-      });
-    });
-
-    test('fires stage 2 once stage 1 is ready, and 3 once 2 is', () {
+    test('it never fires a stage mutation, whatever the pipeline does', () {
       fake((async) {
         start(async);
-        expect(stagesStartedFor('g1'), [_be]);
+        // Every state a stage can be in, over several polls: the one thing the
+        // tracker must never do is start anything.
+        for (final script in [
+          {_be: 'RUNNING'},
+          {_be: 'READY', _bc: 'QUEUED'},
+          {_bc: 'READY', _de: 'FAILED'},
+          {_de: 'STALE'},
+        ]) {
+          server.setAll('g1', script);
+          tick(async);
+        }
 
-        // Stage 1 is queued; nothing else is started while it runs.
-        server.set('g1', _be, 'RUNNING');
-        tick(async);
-        expect(stagesStartedFor('g1'), [_be]);
-
-        server.set('g1', _be, 'READY');
-        tick(async);
-        expect(stagesStartedFor('g1'), [_be, _bc]);
-
-        server.set('g1', _bc, 'READY');
-        tick(async);
-        expect(stagesStartedFor('g1'), [_be, _bc, _de]);
+        expect(server.started, isEmpty);
+        expect(link.requestsOf('RunBaseEvaluation'), isEmpty);
+        expect(link.requestsOf('RunBaseClassification'), isEmpty);
+        expect(link.requestsOf('RunDeepEvaluation'), isEmpty);
+        expect(link.requestsOf('RunCoaching'), isEmpty);
       });
     });
 
-    test(
-      'it never starts the coaching stage, even when that is the target',
-      () {
-        fake((async) {
-          start(async, target: AnalysisStage.coaching);
-          server.setAll('g1', {_be: 'READY', _bc: 'READY', _de: 'READY'});
-          tick(async);
-          tick(async);
-
-          expect(stagesStartedFor('g1'), isNot(contains(_co)));
-          expect(link.requestsOf('RunCoaching'), isEmpty);
-          // And it keeps watching, because the coach has not written yet.
-          expect(tracker.trackedGames, contains('g1'));
-        });
-      },
-    );
-
-    test('it stops when the target is stored', () {
+    test('it follows the chain the server runs, stage after stage', () {
       fake((async) {
         start(async);
+        for (final stage in [_be, _bc, _de, _co]) {
+          server.advance('g1', stage);
+          tick(async);
+        }
+
+        expect(events.whereType<StageReadyEvent>().map((e) => e.stage), [
+          AnalysisStage.baseEvaluation,
+          AnalysisStage.baseClassification,
+          AnalysisStage.deepEvaluation,
+          AnalysisStage.coaching,
+        ]);
+        expect(tracker.trackedGames, isEmpty);
+      });
+    });
+
+    test('it watches until nothing is active and the artifacts are stored', () {
+      fake((async) {
+        start(async);
+        // Everything lands between two polls. The state says READY at once,
+        // but the artifact has not been fetched yet, so the first tick keeps
+        // the game.
         server.setAll('g1', {_be: 'READY', _bc: 'READY', _de: 'READY'});
+        link.fail('EngineStageRun', const SocketException('offline'));
+        tick(async);
+        expect(tracker.trackedGames, contains('g1'));
+        expect(settle(async, db.analysisCacheDao.get(alice, 'g1')), isNull);
+
+        link.respond('EngineStageRun', (variables) {
+          return {
+            'data': {'engineStageRun': server._run(variables['id']! as String)},
+          };
+        });
         tick(async);
 
+        expect(settle(async, db.analysisCacheDao.get(alice, 'g1')), isNotNull);
         expect(tracker.trackedGames, isEmpty);
         expect(
           settle(async, db.pendingWorkflowsDao.get(alice, 'g1'))!.state,
@@ -478,7 +502,7 @@ void main() {
       });
     });
 
-    test('a failed stage stops it and says which one failed', () {
+    test('a failed analysis is announced and let go of', () {
       fake((async) {
         start(async);
         server.setAll('g1', {_be: 'READY', _bc: 'FAILED'});
@@ -496,89 +520,65 @@ void main() {
           settle(async, db.pendingWorkflowsDao.get(alice, 'g1'))!.state,
           WorkflowState.failed,
         );
-        expect(stagesStartedFor('g1'), [_be]);
       });
     });
 
-    test('a coaching stage that failed does not stop the engine chain', () {
+    test('a chain that stops short of the coach is still finished', () {
       fake((async) {
+        // The quota was used up, so the server aimed at the deep evaluation
+        // and said why. Nothing is missing, so the tracker lets go.
+        server.targets['g1'] = _de;
+        server.reasons['g1'] = 'LIMIT_REACHED';
+        server.setAll('g1', {_be: 'READY', _bc: 'READY', _de: 'QUEUED'});
         start(async);
-        server.setAll('g1', {_be: 'READY', _co: 'FAILED'});
+        server.advance('g1', _de);
         tick(async);
 
-        // Stage 4 is past the target, so the chain carries on to stage 2.
-        expect(stagesStartedFor('g1'), [_be, _bc]);
-        expect(tracker.trackedGames, contains('g1'));
-      });
-    });
-
-    test('a refused command stops it', () {
-      fake((async) {
-        start(async);
-        server.set('g1', _be, 'READY');
-        server.refuse[_bc] = _prerequisiteMissing;
-        tick(async);
-
-        expect(
-          events.whereType<StageFailedEvent>().single.failureCode,
-          'stage_input_missing',
-        );
         expect(tracker.trackedGames, isEmpty);
+        final workflow = tracker.workflows.value['g1']!;
+        expect(workflow.targetStage, AnalysisStage.deepEvaluation);
+        expect(workflow.targetReason, AnalysisTargetReason.limitReached);
+        expect(workflow.coachReady, isFalse);
       });
     });
 
-    test('two stages are never started at once for the same game', () {
+    test('a game that stays idle is let go of after a few polls', () {
       fake((async) {
-        start(async);
-        server.set('g1', _be, 'READY');
-        // Two polls that overlap: the second is folded into the first.
-        unawaited(tracker.refreshNow());
-        unawaited(tracker.refreshNow());
+        // The request that was supposed to start something never landed. A few
+        // polls of grace, because the row can be written before the answer
+        // arrives, and then there is nothing to wait for.
+        unawaited(tracker.setOwner(alice));
         async.flushMicrotasks();
-
-        expect(stagesStartedFor('g1').where((s) => s == _bc), hasLength(1));
-      });
-    });
-  });
-
-  group('rate limiting', () {
-    test('it waits what the server asked for, then carries on', () {
-      fake((async) {
-        start(async);
-        server.set('g1', _be, 'READY');
-        server.refuse[_bc] = _rateLimited;
-        tick(async);
-
-        // Refused, but not failed: the game is still watched.
+        unawaited(tracker.track('g1'));
+        async.flushMicrotasks();
         expect(tracker.trackedGames, contains('g1'));
-        expect(events.whereType<StageFailedEvent>(), isEmpty);
-        // The wait beats the 3 s cadence: the server said 90 s and the
-        // engine commands now select `retryAfterSeconds`, so that is what
-        // the tracker waits.
-        expect(tracker.currentInterval, const Duration(seconds: 90));
 
-        final polls = server.workflowQueriesOf('g1');
-        async.elapse(const Duration(seconds: 89));
-        expect(server.workflowQueriesOf('g1'), polls);
-        async.elapse(const Duration(seconds: 1));
-        async.flushMicrotasks();
-        // Stage 2 again — the refused attempt is the second entry, the one
-        // that went through the third.
-        expect(stagesStartedFor('g1'), [_be, _bc, _bc]);
-        expect(server.stateOf('g1', _bc), 'QUEUED');
+        for (var i = 0; i < WorkflowTracker.idleGrace; i++) {
+          tick(async);
+        }
+        expect(tracker.trackedGames, isEmpty);
+        expect(
+          settle(async, db.pendingWorkflowsDao.get(alice, 'g1'))!.state,
+          WorkflowState.failed,
+        );
       });
     });
 
-    test('the wait is honoured once, then the cadence is back', () {
+    test('tracking a game again brings the next poll forward', () {
       fake((async) {
         start(async);
-        server.set('g1', _be, 'READY');
-        server.refuse[_bc] = _rateLimited;
+        server.set('g1', _be, 'RUNNING');
         tick(async);
-        expect(tracker.currentInterval, const Duration(seconds: 90));
+        tick(async);
+        expect(tracker.currentInterval, const Duration(milliseconds: 6750));
+        final polls = server.workflowQueriesOf('g1');
 
-        tick(async);
-        expect(tracker.currentInterval, lessThan(const Duration(seconds: 90)));
+        unawaited(tracker.track('g1'));
+        async.flushMicrotasks();
+
+        expect(server.workflowQueriesOf('g1'), polls + 1);
+        expect(tracker.currentInterval, const Duration(seconds: 3));
+        expect(server.started, isEmpty);
       });
     });
   });
@@ -646,7 +646,7 @@ void main() {
   group('idle gating', () {
     test('nobody signed in: nothing is asked', () {
       fake((async) {
-        unawaited(tracker.startChain('g1'));
+        unawaited(tracker.track('g1'));
         async
           ..flushMicrotasks()
           ..elapse(const Duration(minutes: 5));
@@ -728,9 +728,10 @@ void main() {
         async.flushMicrotasks();
 
         expect(tracker.trackedGames, contains('g1'));
-        // Stage 1 was already stored before the kill, so the chain goes on
-        // from stage 2 rather than starting over.
-        expect(stagesStartedFor('g1'), [_be]);
+        // Watched again, and nothing re-started: whatever the server was doing
+        // before the kill it is still doing.
+        expect(server.started, isEmpty);
+        expect(server.workflowQueriesOf('g1'), greaterThan(0));
       });
     });
 
@@ -755,8 +756,10 @@ void main() {
       });
     });
 
-    test('a target this build does not know is watched to the free stages', () {
+    test('a target this build does not know is watched all the same', () {
       fake((async) {
+        // `target_stage` is not read any more: how far the chain goes is the
+        // server's decision, and the column only records what was asked for.
         settle(
           async,
           db.pendingWorkflowsDao.upsert(
@@ -765,10 +768,12 @@ void main() {
             targetStage: 'SHINY_NEW_STAGE',
           ),
         );
+        server.set('g1', _be, 'RUNNING');
         unawaited(tracker.setOwner(alice));
         async.flushMicrotasks();
 
-        expect(stagesStartedFor('g1'), [_be]);
+        expect(tracker.trackedGames, contains('g1'));
+        expect(server.workflowQueriesOf('g1'), greaterThan(0));
       });
     });
 
@@ -875,7 +880,7 @@ void main() {
     test('one fetch per run id: a second poll fetches nothing', () {
       fake((async) {
         start(async);
-        server.set('g1', _be, 'READY');
+        server.advance('g1', _be);
         tick(async);
         expect(server.artifactFetches, [server.runIdOf('g1', _be)]);
 
@@ -890,7 +895,7 @@ void main() {
       () {
         fake((async) {
           start(async);
-          server.set('g1', _be, 'READY');
+          server.advance('g1', _be);
           tick(async);
           final first = server.runIdOf('g1', _be);
 
@@ -908,11 +913,11 @@ void main() {
       () {
         fake((async) {
           start(async);
-          server.set('g1', _be, 'READY');
+          server.advance('g1', _be);
           tick(async);
           final fetches = server.artifactFetches.length;
 
-          server.set('g1', _bc, 'READY');
+          server.setAll('g1', {_bc: 'READY', _de: 'QUEUED'});
           tick(async);
 
           // One more fetch, of stage 2 only.
@@ -1057,9 +1062,9 @@ void main() {
 
     test('a game nothing has cached is no obstacle', () {
       fake((async) {
-        // No `cached_games` row at all: the pipeline still runs.
+        // No `cached_games` row at all: the analysis still runs.
         start(async);
-        server.set('g1', _be, 'READY');
+        server.advance('g1', _be);
         tick(async);
         expect(tracker.trackedGames, contains('g1'));
         expect(settle(async, db.gamesCacheDao.get(alice, 'g1')), isNull);
@@ -1083,13 +1088,14 @@ void main() {
             ]),
           );
           link.use('GameAnalysis', 'short_game');
-          start(async, target: AnalysisStage.coaching);
           server.setAll('g1', {
             _be: 'READY',
             _bc: 'READY',
             _de: 'READY',
-            _co: 'READY',
+            _co: 'RUNNING',
           });
+          start(async);
+          server.set('g1', _co, 'READY');
           tick(async);
 
           final row = settle(async, db.analysisCacheDao.get(alice, 'g1'))!;
@@ -1099,7 +1105,7 @@ void main() {
             events.whereType<StageReadyEvent>().map((e) => e.stage),
             contains(AnalysisStage.coaching),
           );
-          // The pipeline is finished, so the tracker lets go.
+          // Nothing is left to wait for, so the tracker lets go.
           expect(tracker.trackedGames, isEmpty);
           // And the library badge is flipped.
           final game = settle(async, db.gamesCacheDao.get(alice, 'g1'))!;
@@ -1111,14 +1117,13 @@ void main() {
     test('it is fetched once, not on every poll', () {
       fake((async) {
         link.use('GameAnalysis', 'short_game');
-        start(async, target: AnalysisStage.coaching);
         server.setAll('g1', {
           _be: 'READY',
           _bc: 'READY',
           _de: 'READY',
           _co: 'RUNNING',
         });
-        tick(async);
+        start(async);
         server.set('g1', _co, 'READY');
         tick(async);
 
@@ -1129,14 +1134,13 @@ void main() {
     test('a coaching stage that went stale drops the coach row', () {
       fake((async) {
         link.use('GameAnalysis', 'short_game');
-        start(async, target: AnalysisStage.coaching);
         server.setAll('g1', {
           _be: 'READY',
           _bc: 'READY',
           _de: 'READY',
           _co: 'READY',
         });
-        tick(async);
+        start(async);
         expect(
           settle(async, db.analysisCacheDao.get(alice, 'g1'))!.source,
           AnalysisSource.coach,
@@ -1144,9 +1148,9 @@ void main() {
 
         // The user changed the moves: the text is about another game now. The
         // tracker let go when the coach document landed, so this is the app
-        // looking again (a cold open of the game, or a new chain).
+        // looking again (a cold open of the game, or a new analysis).
         server.set('g1', _co, 'STALE');
-        unawaited(tracker.startChain('g1', target: AnalysisStage.coaching));
+        unawaited(tracker.track('g1'));
         async.flushMicrotasks();
 
         expect(settle(async, db.analysisCacheDao.get(alice, 'g1')), isNull);
@@ -1156,18 +1160,17 @@ void main() {
     test('an engine assembly never replaces the coach document', () {
       fake((async) {
         link.use('GameAnalysis', 'short_game');
-        start(async, target: AnalysisStage.coaching);
         server.setAll('g1', {
           _be: 'READY',
           _bc: 'READY',
           _de: 'READY',
           _co: 'READY',
         });
-        tick(async);
+        start(async);
 
         // A stage that is run again while the coach document is stored.
         server.rerun('g1', _de);
-        unawaited(tracker.startChain('g1', target: AnalysisStage.coaching));
+        unawaited(tracker.track('g1'));
         async.flushMicrotasks();
 
         expect(
@@ -1196,11 +1199,11 @@ void main() {
     test('one ready event per stage, as each one lands', () {
       fake((async) {
         start(async);
-        server.set('g1', _be, 'READY');
+        server.advance('g1', _be);
         tick(async);
-        server.set('g1', _bc, 'READY');
+        server.advance('g1', _bc);
         tick(async);
-        server.set('g1', _de, 'READY');
+        server.advance('g1', _de);
         tick(async);
 
         expect(events.whereType<StageReadyEvent>().map((e) => e.stage), [
@@ -1211,20 +1214,19 @@ void main() {
       });
     });
 
-    test('moves that changed are announced once, and the chain stops', () {
+    test('moves that changed are announced once, and watching stops', () {
       fake((async) {
         start(async);
-        server.set('g1', _be, 'READY');
+        server.advance('g1', _be);
         tick(async);
-        final started = stagesStartedFor('g1').length;
 
-        server.set('g1', _be, 'STALE');
+        server.setAll('g1', {_be: 'STALE', _bc: 'STALE'});
         tick(async);
 
         expect(events.whereType<WorkflowStaleEvent>(), hasLength(1));
         expect(tracker.trackedGames, isEmpty);
         // Nothing is re-run behind the user's back.
-        expect(stagesStartedFor('g1'), hasLength(started));
+        expect(server.started, isEmpty);
       });
     });
 
@@ -1245,38 +1247,44 @@ void main() {
   });
 
   group('several games', () {
-    test(
-      'one workflow query per game per tick, and each chain runs on its own',
-      () {
-        fake((async) {
-          unawaited(tracker.setOwner(alice));
-          async.flushMicrotasks();
-          unawaited(tracker.startChain('g1'));
-          unawaited(tracker.startChain('g2'));
-          async.flushMicrotasks();
+    test('one workflow query per game per tick, and each one on its own', () {
+      fake((async) {
+        unawaited(tracker.setOwner(alice));
+        async.flushMicrotasks();
+        server.set('g1', _be, 'QUEUED');
+        server.set('g2', _be, 'QUEUED');
+        unawaited(tracker.track('g1'));
+        unawaited(tracker.track('g2'));
+        async.flushMicrotasks();
 
-          final g1 = server.workflowQueriesOf('g1');
-          final g2 = server.workflowQueriesOf('g2');
-          server.set('g1', _be, 'READY');
-          server.set('g2', _be, 'RUNNING');
-          tick(async);
+        final g1 = server.workflowQueriesOf('g1');
+        final g2 = server.workflowQueriesOf('g2');
+        server.advance('g1', _be);
+        server.set('g2', _be, 'RUNNING');
+        tick(async);
 
-          // g1 started stage 2 in this tick, which earns it one follow-up
-          // query; g2 only waited.
-          expect(server.workflowQueriesOf('g1'), g1 + 2);
-          expect(server.workflowQueriesOf('g2'), g2 + 1);
-          expect(stagesStartedFor('g1'), [_be, _bc]);
-          expect(stagesStartedFor('g2'), [_be]);
-        });
-      },
-    );
+        expect(server.workflowQueriesOf('g1'), g1 + 1);
+        expect(server.workflowQueriesOf('g2'), g2 + 1);
+        expect(
+          tracker.workflows.value['g1']?.activeStage,
+          AnalysisStage.baseClassification,
+        );
+        expect(
+          tracker.workflows.value['g2']?.activeStage,
+          AnalysisStage.baseEvaluation,
+        );
+        expect(server.started, isEmpty);
+      });
+    });
 
     test('one game finishing leaves the other watched', () {
       fake((async) {
         unawaited(tracker.setOwner(alice));
         async.flushMicrotasks();
-        unawaited(tracker.startChain('g1'));
-        unawaited(tracker.startChain('g2'));
+        server.set('g1', _be, 'QUEUED');
+        server.set('g2', _be, 'QUEUED');
+        unawaited(tracker.track('g1'));
+        unawaited(tracker.track('g2'));
         async.flushMicrotasks();
 
         server.setAll('g1', {_be: 'READY', _bc: 'READY', _de: 'READY'});
