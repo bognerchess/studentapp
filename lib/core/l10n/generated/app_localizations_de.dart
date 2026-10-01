@@ -2028,4 +2028,66 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get gameDetailRerunCoach => 'Coach noch einmal fragen';
+
+  @override
+  String get gameDetailAnalyseIntro =>
+      'Die Analyse dauert etwa eine Minute und ist kostenlos. Die Kommentare des Coachs sind begrenzt.';
+
+  @override
+  String get gameDetailPhaseReading => 'Deine Partie wird gelesen…';
+
+  @override
+  String get gameDetailPhaseCritical =>
+      'Die kritischen Momente werden angeschaut…';
+
+  @override
+  String get gameDetailPhaseCoach => 'Dein Coach schreibt…';
+
+  @override
+  String get gameDetailTryAgain => 'Noch einmal versuchen';
+
+  @override
+  String gameDetailNoCoach(String reason) {
+    return 'Der Coach wurde nicht gefragt: $reason';
+  }
+
+  @override
+  String get gameDetailReasonLimit =>
+      'dein Limit für Coach-Kommentare ist aufgebraucht.';
+
+  @override
+  String get gameDetailReasonQueue =>
+      'es werden gerade zu viele deiner Partien gleichzeitig analysiert.';
+
+  @override
+  String get gameDetailReasonRateLimited =>
+      'du hast in kurzer Zeit viel angefordert.';
+
+  @override
+  String get gameDetailReasonEmail =>
+      'deine E-Mail-Adresse ist noch nicht bestätigt.';
+
+  @override
+  String get gameDetailReasonConsent =>
+      'du hast der KI-Verarbeitung noch nicht zugestimmt.';
+
+  @override
+  String get gameDetailReasonOther =>
+      'der Coach ist im Moment nicht verfügbar.';
+
+  @override
+  String get gameDetailAnalysisRunsAnyway =>
+      'Deine Analyse läuft. Es fehlen nur die Kommentare des Coachs.';
+
+  @override
+  String get analysisNoticeCoachReady =>
+      'Dein Coach hat über deine Partie geschrieben.';
+
+  @override
+  String analysisNoticeCoachReadyOpponent(String name) {
+    return 'Dein Coach hat über deine Partie gegen $name geschrieben.';
+  }
+
+  @override
+  String get reviewAnalysisFailed => 'Die Analyse ist fehlgeschlagen.';
 }

@@ -2008,4 +2008,64 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gameDetailRerunCoach => 'Run the coach again';
+
+  @override
+  String get gameDetailAnalyseIntro =>
+      'The analysis takes about a minute and is free. The coach\'s comments are limited.';
+
+  @override
+  String get gameDetailPhaseReading => 'Reading your game…';
+
+  @override
+  String get gameDetailPhaseCritical => 'Looking at the critical moments…';
+
+  @override
+  String get gameDetailPhaseCoach => 'Your coach is writing…';
+
+  @override
+  String get gameDetailTryAgain => 'Try again';
+
+  @override
+  String gameDetailNoCoach(String reason) {
+    return 'The coach was not asked: $reason';
+  }
+
+  @override
+  String get gameDetailReasonLimit =>
+      'your limit for coach comments is used up.';
+
+  @override
+  String get gameDetailReasonQueue =>
+      'too many of your games are being analysed at once.';
+
+  @override
+  String get gameDetailReasonRateLimited =>
+      'you asked for a lot in a short time.';
+
+  @override
+  String get gameDetailReasonEmail =>
+      'your e-mail address is not confirmed yet.';
+
+  @override
+  String get gameDetailReasonConsent =>
+      'you have not agreed to AI processing yet.';
+
+  @override
+  String get gameDetailReasonOther => 'the coach is not available right now.';
+
+  @override
+  String get gameDetailAnalysisRunsAnyway =>
+      'Your analysis is running. Only the coach\'s comments are missing.';
+
+  @override
+  String get analysisNoticeCoachReady =>
+      'Your coach has written about your game.';
+
+  @override
+  String analysisNoticeCoachReadyOpponent(String name) {
+    return 'Your coach has written about your game against $name.';
+  }
+
+  @override
+  String get reviewAnalysisFailed => 'The analysis failed.';
 }

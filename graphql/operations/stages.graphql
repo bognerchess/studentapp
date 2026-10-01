@@ -1,7 +1,10 @@
-# The staged analysis pipeline: base evaluation -> base classification ->
-# deep evaluation -> coaching. The workflow query is what the tracker polls;
-# it carries no artifact, because one stage artifact is hundreds of
-# kilobytes. An artifact is fetched once, by run id, with EngineStageRun.
+# The analysis pipeline: base evaluation -> base classification -> deep
+# evaluation -> coaching. `analyseGame` starts the whole chain and the server
+# runs it; the four `run*` commands start one stage each and are what the web
+# client and the backend's own tooling use. The workflow query is what the
+# tracker polls; it carries no artifact, because one stage artifact is
+# hundreds of kilobytes. An artifact is fetched once, by run id, with
+# EngineStageRun.
 
 fragment StageRunFields on EngineStageRun {
   id
@@ -35,6 +38,10 @@ fragment WorkflowRunFields on GameAnalysisStageRun {
 
 fragment WorkflowFields on GameAnalysisWorkflow {
   chessGameId
+  state
+  progress
+  targetStage
+  targetReason
   nextRunnableStage
   isComplete
   stages {
@@ -164,6 +171,35 @@ mutation RunCoaching($input: RunCoachingInput!) {
       ... on AiConsentRequiredError {
         message
         requiredVersion
+      }
+      ... on BusinessError {
+        message
+      }
+      ... on InputValidationError {
+        message
+        propertyName
+      }
+      ... on TechnicalError {
+        message
+      }
+    }
+  }
+}
+
+# The one button: the server queues the first stage that is missing and runs
+# the ones after it, as far as the coach when the coach is allowed. A closed
+# gate of the coach is not an error here; `targetReason` on the workflow says
+# why the chain stops short of it.
+mutation AnalyseGame($input: AnalyseGameInput!) {
+  analyseGame(input: $input) {
+    gameAnalysisWorkflow {
+      ...WorkflowFields
+    }
+    errors {
+      __typename
+      ... on RateLimitedError {
+        message
+        retryAfterSeconds
       }
       ... on BusinessError {
         message

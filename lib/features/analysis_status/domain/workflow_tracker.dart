@@ -25,23 +25,6 @@ sealed class WorkflowEvent {
   final String gameId;
 }
 
-/// A stage command of [gameId] was accepted by the server.
-///
-/// [chained] says who asked: false when the user just did (the screen or the
-/// submit queue that called [WorkflowTracker.startChain] gets the outcome
-/// back and records it under its own name), true when the chain carried on by
-/// itself. That is the whole difference the tracker can tell, and it is what
-/// keeps one started stage from being counted twice.
-final class StageStartedEvent extends WorkflowEvent {
-  const StageStartedEvent(super.gameId, this.stage, {required this.chained});
-  final AnalysisStage stage;
-  final bool chained;
-
-  @override
-  String toString() =>
-      'StageStartedEvent($gameId, ${stage.name}, chained: $chained)';
-}
-
 /// A stage of [gameId] is stored and its result can be shown.
 final class StageReadyEvent extends WorkflowEvent {
   const StageReadyEvent(super.gameId, this.stage, {this.took});
@@ -55,8 +38,9 @@ final class StageReadyEvent extends WorkflowEvent {
   String toString() => 'StageReadyEvent($gameId, ${stage.name})';
 }
 
-/// A stage of [gameId] failed. Running it again is the way forward; a
-/// coaching stage that failed was refunded by the server.
+/// A stage of [gameId] failed. Analysing the game again is the way forward —
+/// the server resumes at the stage that failed — and a coaching stage that
+/// failed was refunded by the server.
 final class StageFailedEvent extends WorkflowEvent {
   const StageFailedEvent(super.gameId, this.stage, {this.failureCode});
   final AnalysisStage stage;
@@ -67,7 +51,7 @@ final class StageFailedEvent extends WorkflowEvent {
 }
 
 /// What was computed for [gameId] describes moves that have since changed.
-/// The chain stops; the user decides whether to analyse again.
+/// The user decides whether to analyse again.
 final class WorkflowStaleEvent extends WorkflowEvent {
   const WorkflowStaleEvent(super.gameId);
 
@@ -75,16 +59,21 @@ final class WorkflowStaleEvent extends WorkflowEvent {
   String toString() => 'WorkflowStaleEvent($gameId)';
 }
 
-/// Drives and follows the staged analysis of the user's games.
+/// Follows the analysis of the user's games.
 ///
-/// One `gameAnalysisWorkflow` query per tracked game per tick — the pipeline
-/// is per game and the server has no "my running workflows" field, so the
-/// games to ask about come from `pending_workflows`. The first tick comes
-/// after [defaultBaseInterval] (or what `mobileConfig` says); every further
-/// one waits [backoffFactor] times longer, up to [maxInterval]. It only runs
-/// while the app is in the foreground with its UI mounted ([setForeground]),
-/// somebody is signed in and at least one game is tracked. A resume, a newly
-/// tracked game and [refreshNow] poll at once and start the interval again.
+/// It only watches. The chain itself is the server's: `analyseGame` starts it
+/// and runs it to the end, so this class fires no mutation at all — one
+/// `gameAnalysisWorkflow` query per tracked game per tick, and the artifacts
+/// of whatever became ready.
+///
+/// The pipeline is per game and the server has no "my running workflows"
+/// field, so the games to ask about come from `pending_workflows`. The first
+/// tick comes after [defaultBaseInterval] (or what `mobileConfig` says); every
+/// further one waits [backoffFactor] times longer, up to [maxInterval]. It only
+/// runs while the app is in the foreground with its UI mounted
+/// ([setForeground]), somebody is signed in and at least one game is tracked. A
+/// resume, a newly tracked game and [refreshNow] poll at once and start the
+/// interval again.
 ///
 /// Per tick, for each tracked game:
 ///
@@ -103,14 +92,10 @@ final class WorkflowStaleEvent extends WorkflowEvent {
 ///    `AnalysisApi.analysis` and stored as the coach row; a coaching stage
 ///    that went stale drops that row, so the engine assembly shows again
 ///    rather than text written about other moves.
-/// 5. **The chain.** With nothing in flight, the next runnable stage is
-///    started, as long as it is an engine stage no further than the target.
-///    The tracker never starts the coaching stage: that one costs the user
-///    quota and is always a decision of theirs.
-/// 6. It stops when the target is stored, when a stage up to the target
-///    failed, or when what the pipeline was computed from has moved on. A
-///    [startChain] on such a game is the user asking anyway, and gets one
-///    attempt at whatever the server says is runnable.
+/// 5. It stops once `state` says nothing is running any more — READY, STALE or
+///    FAILED — and everything that is ready has been stored. An IDLE game that
+///    stays idle over two ticks is dropped as well: whoever asked for it did
+///    not get through.
 class WorkflowTracker {
   WorkflowTracker({
     required StageApi api,
@@ -132,8 +117,10 @@ class WorkflowTracker {
   static const Duration maxInterval = Duration(seconds: 30);
   static const double backoffFactor = 1.5;
 
-  /// How far a plain "Analyse this game" runs: the three free engine stages.
-  static const AnalysisStage defaultTarget = AnalysisStage.deepEvaluation;
+  /// What the `pending_workflows` row records as the aim of a tracked game.
+  /// The server decides how far the chain actually goes; the column is kept
+  /// because the table has it, and it says what the user asked for.
+  static const AnalysisStage defaultTarget = AnalysisStage.coaching;
 
   static const _log = Log('workflows');
 
@@ -148,28 +135,13 @@ class WorkflowTracker {
   );
   final StreamController<WorkflowEvent> _events = StreamController.broadcast();
 
-  /// The games being watched, and how far each one should run.
-  final Map<String, AnalysisStage> _targets = {};
+  /// The games being watched.
+  final Set<String> _tracked = {};
 
-  /// Games with a stage mutation in flight; a second tick must not fire the
-  /// same stage again.
-  final Set<String> _starting = {};
-
-  /// Games whose stage command was just accepted: they get one more workflow
-  /// query in the same poll, so the caller of [startChain] sees the stage
-  /// queued when its future resolves and the screen never shows the button
-  /// again for the seconds until the next timer tick.
-  final Set<String> _justStarted = {};
-
-  /// What the last stage command of a game answered, kept only until
-  /// [startChain] returns it. This is how the screen that asked gets to
-  /// explain a refusal, even though it is the poll that fires the mutation.
-  final Map<String, RequestAnalysisOutcome> _outcomes = {};
-
-  /// Games the user has just asked for again, read and cleared by the next
-  /// tick. It is what separates "run this failed stage once more, because
-  /// somebody tapped the button" from "the pipeline is stuck, stop".
-  final Set<String> _restarted = {};
+  /// Games whose last poll said IDLE. Nothing runs for them, but the request
+  /// that was supposed to start something may simply not have landed yet, so
+  /// the first idle tick is forgiven and the second gives up.
+  final Set<String> _idle = {};
 
   StreamSubscription<List<PendingWorkflow>>? _rows;
   String? _owner;
@@ -177,10 +149,6 @@ class WorkflowTracker {
   bool _disposed = false;
   Timer? _timer;
   Duration? _interval;
-
-  /// A wait the server asked for (a rate-limited stage command), honoured on
-  /// the next schedule and then forgotten.
-  Duration? _floor;
 
   Future<void>? _polling;
   bool _pollAgain = false;
@@ -195,11 +163,11 @@ class WorkflowTracker {
   @visibleForTesting
   Duration? get currentInterval => _timer == null ? null : _interval;
 
-  bool get hasActiveWorkflows => _targets.isNotEmpty;
+  bool get hasActiveWorkflows => _tracked.isNotEmpty;
 
   /// The games being watched, for a test and for a status line.
   @visibleForTesting
-  Set<String> get trackedGames => Set.unmodifiable(_targets.keys);
+  Set<String> get trackedGames => Set.unmodifiable(_tracked);
 
   /// Who is signed in (null: nobody). Forgets the previous account, reads the
   /// games the new one has in flight and asks the server about them, which is
@@ -212,10 +180,8 @@ class WorkflowTracker {
     _stopTimer();
     unawaited(_rows?.cancel());
     _rows = null;
-    _targets.clear();
-    _starting.clear();
-    _outcomes.clear();
-    _restarted.clear();
+    _tracked.clear();
+    _idle.clear();
     _workflows.value = const {};
     if (owner == null) {
       return;
@@ -238,21 +204,18 @@ class WorkflowTracker {
 
   /// Rows somebody else wrote — the submit queue after "Save & analyse", or
   /// this tracker in an earlier session. What is already watched is ignored.
+  ///
+  /// `target_stage` is not read: how far the chain goes is the server's
+  /// decision now, and the column only records what the user asked for.
   void _adopt(String owner, List<PendingWorkflow> rows) {
     if (_disposed || owner != _owner) {
       return;
     }
     var added = false;
     for (final row in rows) {
-      final target = AnalysisStage.fromWire(row.targetStage);
-      // A target this build does not know: watch the game as far as the free
-      // stages go rather than not at all.
-      final wanted = target == AnalysisStage.unknown ? defaultTarget : target;
-      if (_targets[row.gameId] == wanted) {
-        continue;
+      if (_tracked.add(row.gameId)) {
+        added = true;
       }
-      _targets[row.gameId] = wanted;
-      added = true;
     }
     if (added) {
       unawaited(refreshNow());
@@ -273,52 +236,32 @@ class WorkflowTracker {
     }
   }
 
-  /// Runs the analysis of [gameId] up to [target] — by default the three free
-  /// engine stages — and follows it.
+  /// Watches the analysis of [gameId] and stores what lands.
   ///
-  /// The `pending_workflows` row is written **before** anything is started, so
-  /// an app that is killed in between resumes the chain on the next start. The
-  /// first stage is then started by the poll that follows, which is the one
-  /// place that decides which stage is next: on a game whose base evaluation
-  /// is already stored this starts the classification, not the evaluation
-  /// again.
+  /// It starts nothing. The caller has already called `analyseGame` (the game
+  /// screen) or is about to (the submit queue); this records the game in
+  /// `pending_workflows`, so an app that is killed resumes watching on the next
+  /// start, and polls at once.
   ///
-  /// This is also the retry. A stage whose last attempt failed, and a stage
-  /// whose input moved on, are both runnable as far as the server is
-  /// concerned; the tracker refuses to run them on its own but does so once
-  /// when asked here.
-  /// Returns what the server said about the stage the poll then started, so
-  /// that the screen which asked can explain a refusal. Null when nothing was
-  /// started — the poller is idle because the app is in the background, or
-  /// there was nothing left to run.
-  Future<RequestAnalysisOutcome?> startChain(
-    String gameId, {
-    AnalysisStage target = defaultTarget,
-  }) async {
+  /// Calling it on a game that is already watched only brings the next poll
+  /// forward, which is what "Try again" and "Run the coach again" need.
+  Future<void> track(String gameId) async {
     final owner = _owner;
-    if (_disposed || owner == null || target == AnalysisStage.unknown) {
-      return null;
+    if (_disposed || owner == null) {
+      return;
     }
-    _targets[gameId] = target;
-    _outcomes.remove(gameId);
-    _restarted.add(gameId);
+    _tracked.add(gameId);
+    _idle.remove(gameId);
     try {
       await _db.pendingWorkflowsDao.upsert(
         owner,
         gameId: gameId,
-        targetStage: target.wire!,
+        targetStage: defaultTarget.wire!,
       );
     } on Object catch (e, s) {
       _warn('recording a workflow failed', e, s);
     }
     await refreshNow();
-    return _outcomes.remove(gameId);
-  }
-
-  /// Follows the coaching stage of [gameId], after the user asked for it and
-  /// the server accepted [run]. The tracker never starts this stage itself.
-  Future<void> trackCoaching(String gameId, StageRun run) async {
-    await startChain(gameId, target: AnalysisStage.coaching);
   }
 
   /// Stores what the server already holds for [gameId] without starting
@@ -396,26 +339,17 @@ class WorkflowTracker {
 
   void _schedule() {
     _stopTimer();
-    if (_disposed || !_foreground || _owner == null || _targets.isEmpty) {
+    if (_disposed || !_foreground || _owner == null || _tracked.isEmpty) {
       return;
     }
     final previous = _interval;
     final next = previous == null ? _baseInterval() : previous * backoffFactor;
-    var wait = next > maxInterval ? maxInterval : next;
-    // A rate-limited command said how long to wait; that wins over the
-    // cadence, once.
-    final floor = _floor;
-    if (floor != null) {
-      if (floor > wait) {
-        wait = floor;
-      }
-      _floor = null;
-    }
+    final wait = next > maxInterval ? maxInterval : next;
     _interval = wait;
     _timer = Timer(wait, () async {
       _timer = null;
       await _poll();
-      // Unless somebody (refreshNow, startChain) has scheduled the next one.
+      // Unless somebody (refreshNow, track) has scheduled the next one.
       if (_timer == null) {
         _schedule();
       }
@@ -442,23 +376,20 @@ class WorkflowTracker {
 
   Future<void> _pollOnce() async {
     final owner = _owner;
-    if (_disposed || owner == null || _targets.isEmpty) {
+    if (_disposed || owner == null || _tracked.isEmpty) {
       return;
     }
-    for (final gameId in _targets.keys.toList()) {
+    for (final gameId in _tracked.toList()) {
       if (_disposed || owner != _owner) {
         return;
       }
       try {
         await _tick(owner, gameId);
-        if (_justStarted.remove(gameId) && _targets.containsKey(gameId)) {
-          await _tick(owner, gameId, chain: false);
-        }
       } on Object catch (e, s) {
         _warn('following $gameId failed', e, s);
       }
     }
-    final watched = _targets.keys.toList();
+    final watched = _tracked.toList();
     if (watched.isNotEmpty) {
       try {
         await _db.pendingWorkflowsDao.markPolled(owner, watched);
@@ -468,19 +399,12 @@ class WorkflowTracker {
     }
   }
 
-  /// One look at [gameId]. With [chain] false it only observes and stores:
-  /// the follow-up read after a stage command was accepted must not start
-  /// anything, or a server that has not shown the run queued yet would be
-  /// asked twice in one poll.
-  Future<void> _tick(String owner, String gameId, {bool chain = true}) async {
-    final target = _targets[gameId];
-    if (target == null) {
+  /// One look at [gameId]: what changed, what is there to store, and whether
+  /// there is anything left to wait for.
+  Future<void> _tick(String owner, String gameId) async {
+    if (!_tracked.contains(gameId)) {
       return;
     }
-    // Read once per tick: this is the one tick that may run a stage whose
-    // last attempt failed, or whose input has moved on.
-    final restarted = _restarted.remove(gameId);
-
     final AnalysisWorkflow? workflow;
     try {
       workflow = await _api.workflow(gameId);
@@ -489,7 +413,7 @@ class WorkflowTracker {
       _log.debug('polling $gameId failed: $e');
       return;
     }
-    if (_disposed || owner != _owner || !_targets.containsKey(gameId)) {
+    if (_disposed || owner != _owner || !_tracked.contains(gameId)) {
       return;
     }
     if (workflow == null) {
@@ -509,65 +433,88 @@ class WorkflowTracker {
     // so the progress of a running stage is not held up by this.
     await _storeArtifacts(owner, gameId, workflow);
     await _followCoaching(owner, gameId, workflow);
-    if (_disposed || owner != _owner || !_targets.containsKey(gameId)) {
+    if (_disposed || owner != _owner || !_tracked.contains(gameId)) {
       return;
     }
 
     _workflows.value = {..._workflows.value, gameId: workflow};
     await _rememberSummary(owner, gameId, previous, workflow);
-    if (_disposed || owner != _owner) {
+    if (_disposed || owner != _owner || !_tracked.contains(gameId)) {
       return;
     }
 
-    // Terminal, in the order that decides what the user is told.
-    if (workflow.stateOf(target) == AnalysisStageState.ready) {
-      await _untrack(owner, gameId, state: WorkflowState.done);
+    final state = workflow.workflowState;
+    if (state.isActive) {
+      _idle.remove(gameId);
       return;
     }
-    final failed = workflow.failedStage;
-    final blockedByFailure = failed != null && failed.order <= target.order;
-    final stale = _staleStageUpTo(workflow, target);
-    final blocked = blockedByFailure || stale != null;
-
-    // A pipeline that failed or went stale does not carry on by itself: the
-    // server reports the stage as runnable, and running it would re-analyse
-    // behind the user's back. [startChain] is the user saying otherwise, so
-    // that tick gets one attempt at whatever is runnable.
-    if (blocked && !restarted) {
-      await _stop(owner, gameId, staleStage: blockedByFailure ? null : stale);
+    // Nothing runs. Keep watching only while something that is ready has not
+    // been fetched yet: the artifact of the last stage usually lands one tick
+    // after the state does.
+    if (!await _isStored(owner, gameId, workflow)) {
       return;
     }
-
-    if (!chain) {
+    if (_disposed || owner != _owner || !_tracked.contains(gameId)) {
       return;
     }
-    final started = await _chain(
-      owner,
-      gameId,
-      workflow,
-      target,
-      restarted: restarted,
-    );
-    if (_disposed || owner != _owner) {
-      return;
-    }
-    if (blocked && !started) {
-      // Asked again, but there is nothing left to run.
-      await _stop(owner, gameId, staleStage: blockedByFailure ? null : stale);
+    switch (state) {
+      case AnalysisWorkflowState.stale:
+        _emit(WorkflowStaleEvent(gameId));
+        await _untrack(owner, gameId, state: WorkflowState.failed);
+      case AnalysisWorkflowState.failed:
+        // The failure itself was announced by [_emitChanges].
+        await _untrack(owner, gameId, state: WorkflowState.failed);
+      case AnalysisWorkflowState.ready:
+        await _untrack(owner, gameId, state: WorkflowState.done);
+      case AnalysisWorkflowState.idle:
+        // Whoever asked for this game has not got through. One tick of grace,
+        // because the row can be written before the mutation is answered.
+        if (!_idle.add(gameId)) {
+          await _untrack(owner, gameId, state: WorkflowState.failed);
+        }
+      case AnalysisWorkflowState.analysing:
+      case AnalysisWorkflowState.unknown:
+        // [workflowState] never returns these here: `analysing` is active and
+        // `unknown` is resolved against the stage states.
+        break;
     }
   }
 
-  /// Stops watching [gameId] for the user to act on. A pipeline whose input
-  /// moved on says so; a failed stage speaks through its own event.
-  Future<void> _stop(
+  /// Whether everything the server reports as ready is in the cache, so there
+  /// is nothing left to fetch for [gameId].
+  Future<bool> _isStored(
     String owner,
-    String gameId, {
-    AnalysisStage? staleStage,
-  }) async {
-    if (staleStage != null) {
-      _emit(WorkflowStaleEvent(gameId));
+    String gameId,
+    AnalysisWorkflow workflow,
+  ) async {
+    final ready = workflow.readyRunIds;
+    if (ready.isEmpty) {
+      return true;
     }
-    await _untrack(owner, gameId, state: WorkflowState.failed);
+    final stored = await _db.analysisCacheDao.get(owner, gameId);
+    if (_disposed || owner != _owner) {
+      return true;
+    }
+    if (stored == null) {
+      return false;
+    }
+    final known = _runIdsOf(stored);
+    if (workflow.coachReady) {
+      final coachId = ready[AnalysisStage.coaching];
+      return stored.source == AnalysisSource.coach &&
+          (coachId == null || known[AnalysisStage.coaching] == coachId);
+    }
+    // A coach document is better than any assembly and is never replaced by
+    // one, so there is nothing more to fetch while it is there.
+    if (stored.source == AnalysisSource.coach) {
+      return true;
+    }
+    final deepId = ready[AnalysisStage.deepEvaluation];
+    if (deepId != null) {
+      return known[AnalysisStage.deepEvaluation] == deepId;
+    }
+    final baseId = ready[AnalysisStage.baseEvaluation];
+    return baseId == null || known[AnalysisStage.baseEvaluation] == baseId;
   }
 
   /// Writes the pipeline next to the cached game whenever it changed, so that
@@ -633,17 +580,6 @@ class WorkflowTracker {
     }
     final took = finished.difference(run.requestedAt);
     return took.isNegative ? null : took;
-  }
-
-  AnalysisStage? _staleStageUpTo(
-    AnalysisWorkflow workflow,
-    AnalysisStage target,
-  ) {
-    for (final stage in AnalysisStage.pipeline) {
-      if (stage.order > target.order) break;
-      if (workflow.stateOf(stage) == AnalysisStageState.stale) return stage;
-    }
-    return null;
   }
 
   // ---- Artifacts ----
@@ -849,73 +785,6 @@ class WorkflowTracker {
     }
   }
 
-  // ---- The chain ----
-
-  /// Returns whether a stage command went out.
-  Future<bool> _chain(
-    String owner,
-    String gameId,
-    AnalysisWorkflow workflow,
-    AnalysisStage target, {
-    required bool restarted,
-  }) async {
-    if (workflow.anyActive || _starting.contains(gameId)) {
-      return false;
-    }
-    final next = workflow.nextRunnableStage;
-    if (next == null ||
-        !next.isEngineStage ||
-        next.order > target.order ||
-        !(workflow.stageOf(next)?.runnable ?? false)) {
-      return false;
-    }
-    _starting.add(gameId);
-    final RequestAnalysisOutcome outcome;
-    try {
-      outcome = await switch (next) {
-        AnalysisStage.baseEvaluation => _api.runBaseEvaluation(gameId),
-        AnalysisStage.baseClassification => _api.runBaseClassification(gameId),
-        _ => _api.runDeepEvaluation(gameId),
-      };
-    } finally {
-      _starting.remove(gameId);
-    }
-    if (_disposed || owner != _owner || !_targets.containsKey(gameId)) {
-      return true;
-    }
-    _outcomes[gameId] = outcome;
-    switch (outcome) {
-      case AnalysisAccepted():
-        // Poll again straight away rather than guessing a state: the server
-        // now reports the stage queued, and `startChain` resolves only after
-        // that, so the screen swaps the button for the strip at the moment
-        // the tap is answered instead of three seconds later.
-        _justStarted.add(gameId);
-        _emit(StageStartedEvent(gameId, next, chained: !restarted));
-      case AnalysisRateLimited(:final retryAfter):
-        // Fair use on the engine commands. Wait what the server asked for,
-        // then carry on where we left off.
-        _floor = retryAfter;
-        _log.debug('$gameId: rate limited, waiting ${retryAfter.inSeconds} s');
-      case AnalysisPrerequisiteMissing():
-      case AnalysisLimitReached():
-      case AnalysisQueueFull():
-      case AnalysisEmailNotVerified():
-      case AnalysisAiConsentRequired():
-      case AnalysisRequestFailed():
-        // Nothing the tracker can do about it; the user has to ask again.
-        _emit(StageFailedEvent(gameId, next, failureCode: _codeOf(outcome)));
-        await _untrack(owner, gameId, state: WorkflowState.failed);
-    }
-    return true;
-  }
-
-  static String? _codeOf(RequestAnalysisOutcome outcome) => switch (outcome) {
-    AnalysisPrerequisiteMissing() => 'stage_input_missing',
-    AnalysisRequestFailed() => null,
-    _ => null,
-  };
-
   // ---- Bookkeeping ----
 
   /// Stops watching [gameId]: either the row is deleted (the game is gone) or
@@ -926,7 +795,8 @@ class WorkflowTracker {
     WorkflowState state = WorkflowState.done,
     bool remove = false,
   }) async {
-    _targets.remove(gameId);
+    _tracked.remove(gameId);
+    _idle.remove(gameId);
     if (remove && _workflows.value.containsKey(gameId)) {
       _workflows.value = {..._workflows.value}..remove(gameId);
     }

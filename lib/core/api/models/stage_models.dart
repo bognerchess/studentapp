@@ -78,6 +78,106 @@ enum AnalysisStage {
   ];
 }
 
+/// The whole pipeline of one game as one state, which is all a client with
+/// one button needs.
+///
+/// The server derives it; a value this build does not know reads as [unknown]
+/// and is derived from the stage states instead ([fromStages]), so a newer
+/// server can never leave the card blank.
+enum AnalysisWorkflowState {
+  /// Nothing has run for these moves.
+  idle('IDLE'),
+
+  /// A stage is queued or running; `progress` says how far.
+  analysing('ANALYSING'),
+
+  /// Nothing runs and there is something current to open, with or without the
+  /// coach's text.
+  ready('READY'),
+
+  /// The moves changed since the stored analysis was computed.
+  stale('STALE'),
+
+  /// The last attempt failed and nothing is running. Analysing again resumes
+  /// at the stage that failed.
+  failed('FAILED'),
+
+  unknown(null);
+
+  const AnalysisWorkflowState(this.wire);
+
+  final String? wire;
+
+  /// Something is happening, so the poller keeps asking.
+  bool get isActive => this == analysing;
+
+  static AnalysisWorkflowState fromWire(Object? value) {
+    if (value is! String) return unknown;
+    for (final state in values) {
+      if (state.wire == value) return state;
+    }
+    return unknown;
+  }
+
+  /// The one state read off the four stage states.
+  ///
+  /// The fallback for everything that does not carry the server's own word:
+  /// a library row written before WP-61, and a server that sends a state this
+  /// build does not know.
+  static AnalysisWorkflowState fromStages(
+    AnalysisStageState Function(AnalysisStage stage) stateOf,
+  ) {
+    var ready = false;
+    var stale = false;
+    var failed = false;
+    for (final stage in AnalysisStage.pipeline) {
+      switch (stateOf(stage)) {
+        case AnalysisStageState.queued:
+        case AnalysisStageState.running:
+        case AnalysisStageState.unknown:
+          return analysing;
+        case AnalysisStageState.stale:
+          stale = true;
+        case AnalysisStageState.failed:
+          failed = true;
+        case AnalysisStageState.ready:
+          ready = true;
+        case AnalysisStageState.notRun:
+          break;
+      }
+    }
+    if (stale) return AnalysisWorkflowState.stale;
+    if (failed) return AnalysisWorkflowState.failed;
+    return ready ? AnalysisWorkflowState.ready : idle;
+  }
+}
+
+/// Why a chained analysis stops short of the coach.
+///
+/// Never an error of `analyseGame`: the engine result is produced anyway, and
+/// this is what the app explains instead. A value this build does not know
+/// reads as [unknown], which is explained in one generic line.
+enum AnalysisTargetReason {
+  limitReached('LIMIT_REACHED'),
+  queueFull('QUEUE_FULL'),
+  rateLimited('RATE_LIMITED'),
+  emailNotVerified('EMAIL_NOT_VERIFIED'),
+  aiConsentRequired('AI_CONSENT_REQUIRED'),
+  unknown(null);
+
+  const AnalysisTargetReason(this.wire);
+
+  final String? wire;
+
+  static AnalysisTargetReason fromWire(Object? value) {
+    if (value is! String) return unknown;
+    for (final reason in values) {
+      if (reason.wire == value) return reason;
+    }
+    return unknown;
+  }
+}
+
 /// Where one stage of one game stands.
 ///
 /// [stale] means the stage finished but what it was computed from has moved
@@ -294,10 +394,33 @@ class AnalysisWorkflow {
     required this.gameId,
     required this.stages,
     required this.isComplete,
+    this.state = AnalysisWorkflowState.unknown,
+    this.progress,
+    this.targetStage,
+    this.targetReason,
     this.nextRunnableStage,
   });
 
   final String gameId;
+
+  /// The pipeline as one state, which is what the one button reads. Reported
+  /// by the server; [workflowState] falls back to the stage states for a
+  /// value this build does not know.
+  final AnalysisWorkflowState state;
+
+  /// How far the chain has come, 0 to 1, while [state] is
+  /// [AnalysisWorkflowState.analysing]; null otherwise, and null while the
+  /// server has nothing to report, which means an indeterminate bar.
+  final double? progress;
+
+  /// How far the newest request set out to go: [AnalysisStage.coaching] when
+  /// the coach was allowed, [AnalysisStage.deepEvaluation] when a gate of the
+  /// coach was closed. Null when the stages were started one by one.
+  final AnalysisStage? targetStage;
+
+  /// Why the chain stops short of the coach, when it does. Null when nothing
+  /// stands in the way.
+  final AnalysisTargetReason? targetReason;
 
   /// The stages in pipeline order, as the server sent them.
   final List<WorkflowStage> stages;
@@ -319,6 +442,13 @@ class AnalysisWorkflow {
   /// [AnalysisStageState.notRun] for a stage the server did not report.
   AnalysisStageState stateOf(AnalysisStage stage) =>
       stageOf(stage)?.state ?? AnalysisStageState.notRun;
+
+  /// [state], or what the stage states say when the server sent a value this
+  /// build does not know.
+  AnalysisWorkflowState get workflowState =>
+      state == AnalysisWorkflowState.unknown
+      ? AnalysisWorkflowState.fromStages(stateOf)
+      : state;
 
   /// Whether any stage is queued or running.
   bool get anyActive => stages.any((s) => s.state.isActive);
@@ -376,22 +506,33 @@ class AnalysisWorkflow {
 /// What the library needs to know about a game's pipeline, small enough to
 /// store next to the cached game row.
 ///
-/// Only the states, so a row written by an older build reads back whatever it
-/// knew; unknown names read as [AnalysisStageState.unknown].
+/// Only names, so a row written by an older build reads back whatever it
+/// knew; unknown names read as [AnalysisStageState.unknown]. A row from before
+/// WP-61 has no [state]: [workflowState] derives one from the stage states,
+/// which is what that row meant.
 @immutable
 class GameWorkflowSummary {
-  const GameWorkflowSummary({required this.states, required this.isComplete});
+  const GameWorkflowSummary({
+    required this.states,
+    required this.isComplete,
+    this.state = AnalysisWorkflowState.unknown,
+    this.targetReason,
+  });
 
   factory GameWorkflowSummary.of(AnalysisWorkflow workflow) =>
       GameWorkflowSummary(
         states: {for (final s in workflow.stages) s.stage: s.state},
         isComplete: workflow.isComplete,
+        state: workflow.state,
+        targetReason: workflow.targetReason,
       );
 
   /// Reads a row written by [toJson]. Never throws: damaged content reads as
   /// "nothing known".
   factory GameWorkflowSummary.fromJson(Map<String, dynamic> json) {
     final raw = json['states'];
+    final state = json['state'];
+    final reason = json['targetReason'];
     return GameWorkflowSummary(
       states: {
         if (raw is Map)
@@ -401,11 +542,32 @@ class GameWorkflowSummary {
               stage: AnalysisStageState.fromWire(value),
       },
       isComplete: json['isComplete'] == true,
+      // Absent on a row from before WP-61, which is what `unknown` means
+      // here: `workflowState` then reads the stage states instead.
+      state: state == null
+          ? AnalysisWorkflowState.unknown
+          : AnalysisWorkflowState.fromWire(state),
+      targetReason: reason == null
+          ? null
+          : AnalysisTargetReason.fromWire(reason),
     );
   }
 
   final Map<AnalysisStage, AnalysisStageState> states;
   final bool isComplete;
+
+  /// The server's own one-state view, as of the last poll.
+  /// [AnalysisWorkflowState.unknown] on a row from before WP-61.
+  final AnalysisWorkflowState state;
+
+  /// Why the chain stopped short of the coach, when it did.
+  final AnalysisTargetReason? targetReason;
+
+  /// [state], or what the stage states say when the row does not carry one.
+  AnalysisWorkflowState get workflowState =>
+      state == AnalysisWorkflowState.unknown
+      ? AnalysisWorkflowState.fromStages(stateOf)
+      : state;
 
   AnalysisStageState stateOf(AnalysisStage stage) =>
       states[stage] ?? AnalysisStageState.notRun;
@@ -436,20 +598,28 @@ class GameWorkflowSummary {
         wire[name] = value.wire ?? 'UNKNOWN';
       }
     }
-    return {'states': wire, 'isComplete': isComplete};
+    return {
+      'states': wire,
+      'isComplete': isComplete,
+      'state': ?state.wire,
+      'targetReason': ?targetReason?.wire,
+    };
   }
 
   @override
   bool operator ==(Object other) =>
       other is GameWorkflowSummary &&
       other.isComplete == isComplete &&
+      other.state == state &&
+      other.targetReason == targetReason &&
       mapEquals(other.states, states);
 
   @override
-  int get hashCode => Object.hash(isComplete, states.length);
+  int get hashCode =>
+      Object.hash(isComplete, states.length, state, targetReason);
 
   @override
   String toString() =>
-      'GameWorkflowSummary('
+      'GameWorkflowSummary(${state.name}, '
       '${states.entries.map((e) => '${e.key.name}:${e.value.name}').join(' ')})';
 }

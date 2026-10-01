@@ -87,10 +87,40 @@ WorkflowStage workflowStageOf(Fragment$WorkflowFields$stages stage) {
   );
 }
 
+AnalysisWorkflowState workflowStateOf(Enum$AnalysisWorkflowState value) =>
+    switch (value) {
+      Enum$AnalysisWorkflowState.IDLE => AnalysisWorkflowState.idle,
+      Enum$AnalysisWorkflowState.ANALYSING => AnalysisWorkflowState.analysing,
+      Enum$AnalysisWorkflowState.READY => AnalysisWorkflowState.ready,
+      Enum$AnalysisWorkflowState.STALE => AnalysisWorkflowState.stale,
+      Enum$AnalysisWorkflowState.FAILED => AnalysisWorkflowState.failed,
+      Enum$AnalysisWorkflowState.$unknown => AnalysisWorkflowState.unknown,
+    };
+
+AnalysisTargetReason targetReasonOf(Enum$AnalysisTargetReason value) =>
+    switch (value) {
+      Enum$AnalysisTargetReason.LIMIT_REACHED =>
+        AnalysisTargetReason.limitReached,
+      Enum$AnalysisTargetReason.QUEUE_FULL => AnalysisTargetReason.queueFull,
+      Enum$AnalysisTargetReason.RATE_LIMITED =>
+        AnalysisTargetReason.rateLimited,
+      Enum$AnalysisTargetReason.EMAIL_NOT_VERIFIED =>
+        AnalysisTargetReason.emailNotVerified,
+      Enum$AnalysisTargetReason.AI_CONSENT_REQUIRED =>
+        AnalysisTargetReason.aiConsentRequired,
+      Enum$AnalysisTargetReason.$unknown => AnalysisTargetReason.unknown,
+    };
+
 AnalysisWorkflow workflowOf(Fragment$WorkflowFields workflow) {
   final next = workflow.nextRunnableStage;
+  final target = workflow.targetStage;
+  final reason = workflow.targetReason;
   return AnalysisWorkflow(
     gameId: workflow.chessGameId,
+    state: workflowStateOf(workflow.state),
+    progress: workflow.progress,
+    targetStage: target == null ? null : stageOf(target),
+    targetReason: reason == null ? null : targetReasonOf(reason),
     stages: List.unmodifiable(workflow.stages.map(workflowStageOf)),
     nextRunnableStage: next == null ? null : stageOf(next),
     isComplete: workflow.isComplete,

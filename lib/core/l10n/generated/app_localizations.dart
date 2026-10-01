@@ -3197,6 +3197,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Run the coach again'**
   String get gameDetailRerunCoach;
+
+  /// Hint under the Analyse button on a game that was never analysed. The numbers come from UsageSummary below it.
+  ///
+  /// In en, this message translates to:
+  /// **'The analysis takes about a minute and is free. The coach\'s comments are limited.'**
+  String get gameDetailAnalyseIntro;
+
+  /// What the app says while the first part of the analysis runs. Deliberately says nothing about engines or steps.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading your game…'**
+  String get gameDetailPhaseReading;
+
+  /// What the app says while the deeper part of the analysis runs.
+  ///
+  /// In en, this message translates to:
+  /// **'Looking at the critical moments…'**
+  String get gameDetailPhaseCritical;
+
+  /// What the app says while the coach writes the comments.
+  ///
+  /// In en, this message translates to:
+  /// **'Your coach is writing…'**
+  String get gameDetailPhaseCoach;
+
+  /// Button on a failed analysis. Analysing again resumes where it stopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get gameDetailTryAgain;
+
+  /// Quiet line on a finished analysis without coach comments. {reason} is one of the gameDetailReason* sentences.
+  ///
+  /// In en, this message translates to:
+  /// **'The coach was not asked: {reason}'**
+  String gameDetailNoCoach(String reason);
+
+  /// Why the coach was not asked: the quota.
+  ///
+  /// In en, this message translates to:
+  /// **'your limit for coach comments is used up.'**
+  String get gameDetailReasonLimit;
+
+  /// Why the coach was not asked: the queue cap.
+  ///
+  /// In en, this message translates to:
+  /// **'too many of your games are being analysed at once.'**
+  String get gameDetailReasonQueue;
+
+  /// Why the coach was not asked: the fair-use limit.
+  ///
+  /// In en, this message translates to:
+  /// **'you asked for a lot in a short time.'**
+  String get gameDetailReasonRateLimited;
+
+  /// Why the coach was not asked: the address is unconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'your e-mail address is not confirmed yet.'**
+  String get gameDetailReasonEmail;
+
+  /// Why the coach was not asked: the AI consent is missing.
+  ///
+  /// In en, this message translates to:
+  /// **'you have not agreed to AI processing yet.'**
+  String get gameDetailReasonConsent;
+
+  /// Why the coach was not asked, for a reason this version of the app does not know.
+  ///
+  /// In en, this message translates to:
+  /// **'the coach is not available right now.'**
+  String get gameDetailReasonOther;
+
+  /// Said together with the reason the coach was not asked, so that nobody thinks the analysis was refused.
+  ///
+  /// In en, this message translates to:
+  /// **'Your analysis is running. Only the coach\'s comments are missing.'**
+  String get gameDetailAnalysisRunsAnyway;
+
+  /// Notice on another screen when the coach's text has arrived.
+  ///
+  /// In en, this message translates to:
+  /// **'Your coach has written about your game.'**
+  String get analysisNoticeCoachReady;
+
+  /// Notice on another screen when the coach's text has arrived; {name} is the opponent.
+  ///
+  /// In en, this message translates to:
+  /// **'Your coach has written about your game against {name}.'**
+  String analysisNoticeCoachReadyOpponent(String name);
+
+  /// Review banner when the analysis stopped. Says nothing about which step.
+  ///
+  /// In en, this message translates to:
+  /// **'The analysis failed.'**
+  String get reviewAnalysisFailed;
 }
 
 class _AppLocalizationsDelegate

@@ -94,8 +94,8 @@ class _AnalysisNoticesState extends ConsumerState<AnalysisNotices> {
       SnackBar(
         content: Text(
           opponent == null
-              ? l10n.analysisNoticeReady
-              : l10n.analysisNoticeReadyOpponent(opponent),
+              ? l10n.analysisNoticeCoachReady
+              : l10n.analysisNoticeCoachReadyOpponent(opponent),
         ),
         duration: const Duration(seconds: 8),
         persist: false,
@@ -119,11 +119,11 @@ class _AnalysisNoticesState extends ConsumerState<AnalysisNotices> {
       ..showSnackBar(snackBar);
   }
 
-  /// The staged pipeline's news. Stages 1 and 2 say nothing: the card and the
-  /// review banner fill in where the user can see them, and a snack bar per
-  /// stage would be four interruptions per game. What is worth saying is that
-  /// there is something to read (the deep evaluation, the coach), and that
-  /// the pipeline stopped.
+  /// The pipeline's news, in the user's words rather than the pipeline's. The
+  /// steps on the way say nothing: a snack bar per step would be four
+  /// interruptions per game, and the user is not supposed to know there are
+  /// steps. What is worth saying is that there is something to read (the
+  /// engine result, then the coach's text) and that the analysis stopped.
   Future<void> _onWorkflowEvent(WorkflowEvent event) async {
     if (!mounted) {
       return;
@@ -150,8 +150,8 @@ class _AnalysisNoticesState extends ConsumerState<AnalysisNotices> {
             }
             final l10n = context.l10n;
             text = opponent == null
-                ? l10n.analysisNoticeEngineReady
-                : l10n.analysisNoticeEngineReadyOpponent(opponent);
+                ? l10n.analysisNoticeReady
+                : l10n.analysisNoticeReadyOpponent(opponent);
             action = l10n.analysisNoticeOpen;
             toReview = true;
           case AnalysisStage.baseEvaluation:
@@ -159,12 +159,8 @@ class _AnalysisNoticesState extends ConsumerState<AnalysisNotices> {
           case AnalysisStage.unknown:
             return;
         }
-      case StageStartedEvent():
-        // Nothing to say: the card and the strip show it where the user is
-        // already looking.
-        return;
       case StageFailedEvent():
-        text = context.l10n.analysisNoticeStageFailed;
+        text = context.l10n.analysisNoticeFailed;
         action = context.l10n.analysisNoticeView;
         toReview = false;
       case WorkflowStaleEvent():
@@ -207,17 +203,12 @@ class _AnalysisNoticesState extends ConsumerState<AnalysisNotices> {
   /// so it is where the stages of every game are counted, whether or not
   /// anything is said about them.
   ///
-  /// A stage the *user* started is counted by whoever asked (the game screen,
-  /// its coach button, the submit queue), which is the only place that knows
-  /// what asked; the tracker's `chained` flag keeps that stage from being
-  /// counted twice here.
+  /// A *request* is counted by whoever made it (the game screen, the submit
+  /// queue), which is the only place that knows what asked. The tracker starts
+  /// nothing, so nothing is counted twice.
   void _record(WorkflowEvent event) {
     final analytics = ref.read(analyticsProvider);
     switch (event) {
-      case StageStartedEvent(:final stage, :final chained):
-        if (chained) {
-          analytics.stageStarted(stage, source: 'chain');
-        }
       case StageReadyEvent(:final stage, :final took):
         analytics.stageReady(stage, took: took);
       case StageFailedEvent(:final stage, :final failureCode):

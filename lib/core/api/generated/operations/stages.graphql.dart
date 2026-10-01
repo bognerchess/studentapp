@@ -581,6 +581,10 @@ const documentNodeFragmentWorkflowRunFields = DocumentNode(
 class Fragment$WorkflowFields {
   Fragment$WorkflowFields({
     required this.chessGameId,
+    required this.state,
+    this.progress,
+    this.targetStage,
+    this.targetReason,
     this.nextRunnableStage,
     required this.isComplete,
     required this.stages,
@@ -588,11 +592,23 @@ class Fragment$WorkflowFields {
 
   factory Fragment$WorkflowFields.fromJson(Map<String, dynamic> json) {
     final l$chessGameId = json['chessGameId'];
+    final l$state = json['state'];
+    final l$progress = json['progress'];
+    final l$targetStage = json['targetStage'];
+    final l$targetReason = json['targetReason'];
     final l$nextRunnableStage = json['nextRunnableStage'];
     final l$isComplete = json['isComplete'];
     final l$stages = json['stages'];
     return Fragment$WorkflowFields(
       chessGameId: (l$chessGameId as String),
+      state: fromJson$Enum$AnalysisWorkflowState((l$state as String)),
+      progress: (l$progress as num?)?.toDouble(),
+      targetStage: l$targetStage == null
+          ? null
+          : fromJson$Enum$EngineStage((l$targetStage as String)),
+      targetReason: l$targetReason == null
+          ? null
+          : fromJson$Enum$AnalysisTargetReason((l$targetReason as String)),
       nextRunnableStage: l$nextRunnableStage == null
           ? null
           : fromJson$Enum$EngineStage((l$nextRunnableStage as String)),
@@ -609,6 +625,14 @@ class Fragment$WorkflowFields {
 
   final String chessGameId;
 
+  final Enum$AnalysisWorkflowState state;
+
+  final double? progress;
+
+  final Enum$EngineStage? targetStage;
+
+  final Enum$AnalysisTargetReason? targetReason;
+
   final Enum$EngineStage? nextRunnableStage;
 
   final bool isComplete;
@@ -619,6 +643,18 @@ class Fragment$WorkflowFields {
     final _resultData = <String, dynamic>{};
     final l$chessGameId = chessGameId;
     _resultData['chessGameId'] = l$chessGameId;
+    final l$state = state;
+    _resultData['state'] = toJson$Enum$AnalysisWorkflowState(l$state);
+    final l$progress = progress;
+    _resultData['progress'] = l$progress;
+    final l$targetStage = targetStage;
+    _resultData['targetStage'] = l$targetStage == null
+        ? null
+        : toJson$Enum$EngineStage(l$targetStage);
+    final l$targetReason = targetReason;
+    _resultData['targetReason'] = l$targetReason == null
+        ? null
+        : toJson$Enum$AnalysisTargetReason(l$targetReason);
     final l$nextRunnableStage = nextRunnableStage;
     _resultData['nextRunnableStage'] = l$nextRunnableStage == null
         ? null
@@ -633,11 +669,19 @@ class Fragment$WorkflowFields {
   @override
   int get hashCode {
     final l$chessGameId = chessGameId;
+    final l$state = state;
+    final l$progress = progress;
+    final l$targetStage = targetStage;
+    final l$targetReason = targetReason;
     final l$nextRunnableStage = nextRunnableStage;
     final l$isComplete = isComplete;
     final l$stages = stages;
     return Object.hashAll([
       l$chessGameId,
+      l$state,
+      l$progress,
+      l$targetStage,
+      l$targetReason,
       l$nextRunnableStage,
       l$isComplete,
       Object.hashAll(l$stages.map((v) => v)),
@@ -655,6 +699,26 @@ class Fragment$WorkflowFields {
     final l$chessGameId = chessGameId;
     final lOther$chessGameId = other.chessGameId;
     if (l$chessGameId != lOther$chessGameId) {
+      return false;
+    }
+    final l$state = state;
+    final lOther$state = other.state;
+    if (l$state != lOther$state) {
+      return false;
+    }
+    final l$progress = progress;
+    final lOther$progress = other.progress;
+    if (l$progress != lOther$progress) {
+      return false;
+    }
+    final l$targetStage = targetStage;
+    final lOther$targetStage = other.targetStage;
+    if (l$targetStage != lOther$targetStage) {
+      return false;
+    }
+    final l$targetReason = targetReason;
+    final lOther$targetReason = other.targetReason;
+    if (l$targetReason != lOther$targetReason) {
       return false;
     }
     final l$nextRunnableStage = nextRunnableStage;
@@ -696,6 +760,34 @@ const fragmentDefinitionWorkflowFields = FragmentDefinitionNode(
     selections: [
       FieldNode(
         name: NameNode(value: 'chessGameId'),
+        alias: null,
+        arguments: [],
+        directives: [],
+        selectionSet: null,
+      ),
+      FieldNode(
+        name: NameNode(value: 'state'),
+        alias: null,
+        arguments: [],
+        directives: [],
+        selectionSet: null,
+      ),
+      FieldNode(
+        name: NameNode(value: 'progress'),
+        alias: null,
+        arguments: [],
+        directives: [],
+        selectionSet: null,
+      ),
+      FieldNode(
+        name: NameNode(value: 'targetStage'),
+        alias: null,
+        arguments: [],
+        directives: [],
+        selectionSet: null,
+      ),
+      FieldNode(
+        name: NameNode(value: 'targetReason'),
         alias: null,
         arguments: [],
         directives: [],
@@ -4949,6 +5041,787 @@ class Mutation$RunCoaching$runCoaching$errors$$TechnicalError
       return true;
     }
     if (other is! Mutation$RunCoaching$runCoaching$errors$$TechnicalError ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$message = message;
+    final lOther$message = other.message;
+    if (l$message != lOther$message) {
+      return false;
+    }
+    final l$$__typename = $__typename;
+    final lOther$$__typename = other.$__typename;
+    if (l$$__typename != lOther$$__typename) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Variables$Mutation$AnalyseGame {
+  factory Variables$Mutation$AnalyseGame({
+    required Input$AnalyseGameInput input,
+  }) => Variables$Mutation$AnalyseGame._({r'input': input});
+
+  Variables$Mutation$AnalyseGame._(this._$data);
+
+  factory Variables$Mutation$AnalyseGame.fromJson(Map<String, dynamic> data) {
+    final result$data = <String, dynamic>{};
+    final l$input = data['input'];
+    result$data['input'] = Input$AnalyseGameInput.fromJson(
+      (l$input as Map<String, dynamic>),
+    );
+    return Variables$Mutation$AnalyseGame._(result$data);
+  }
+
+  Map<String, dynamic> _$data;
+
+  Input$AnalyseGameInput get input =>
+      (_$data['input'] as Input$AnalyseGameInput);
+
+  Map<String, dynamic> toJson() {
+    final result$data = <String, dynamic>{};
+    final l$input = input;
+    result$data['input'] = l$input.toJson();
+    return result$data;
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! Variables$Mutation$AnalyseGame ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$input = input;
+    final lOther$input = other.input;
+    if (l$input != lOther$input) {
+      return false;
+    }
+    return true;
+  }
+
+  @override
+  int get hashCode {
+    final l$input = input;
+    return Object.hashAll([l$input]);
+  }
+}
+
+class Mutation$AnalyseGame {
+  Mutation$AnalyseGame({required this.analyseGame});
+
+  factory Mutation$AnalyseGame.fromJson(Map<String, dynamic> json) {
+    final l$analyseGame = json['analyseGame'];
+    return Mutation$AnalyseGame(
+      analyseGame: Mutation$AnalyseGame$analyseGame.fromJson(
+        (l$analyseGame as Map<String, dynamic>),
+      ),
+    );
+  }
+
+  final Mutation$AnalyseGame$analyseGame analyseGame;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$analyseGame = analyseGame;
+    _resultData['analyseGame'] = l$analyseGame.toJson();
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$analyseGame = analyseGame;
+    return Object.hashAll([l$analyseGame]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! Mutation$AnalyseGame || runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$analyseGame = analyseGame;
+    final lOther$analyseGame = other.analyseGame;
+    if (l$analyseGame != lOther$analyseGame) {
+      return false;
+    }
+    return true;
+  }
+}
+
+const documentNodeMutationAnalyseGame = DocumentNode(
+  definitions: [
+    OperationDefinitionNode(
+      type: OperationType.mutation,
+      name: NameNode(value: 'AnalyseGame'),
+      variableDefinitions: [
+        VariableDefinitionNode(
+          variable: VariableNode(name: NameNode(value: 'input')),
+          type: NamedTypeNode(
+            name: NameNode(value: 'AnalyseGameInput'),
+            isNonNull: true,
+          ),
+          defaultValue: DefaultValueNode(value: null),
+          directives: [],
+        ),
+      ],
+      directives: [],
+      selectionSet: SelectionSetNode(
+        selections: [
+          FieldNode(
+            name: NameNode(value: 'analyseGame'),
+            alias: null,
+            arguments: [
+              ArgumentNode(
+                name: NameNode(value: 'input'),
+                value: VariableNode(name: NameNode(value: 'input')),
+              ),
+            ],
+            directives: [],
+            selectionSet: SelectionSetNode(
+              selections: [
+                FieldNode(
+                  name: NameNode(value: 'gameAnalysisWorkflow'),
+                  alias: null,
+                  arguments: [],
+                  directives: [],
+                  selectionSet: SelectionSetNode(
+                    selections: [
+                      FragmentSpreadNode(
+                        name: NameNode(value: 'WorkflowFields'),
+                        directives: [],
+                      ),
+                    ],
+                  ),
+                ),
+                FieldNode(
+                  name: NameNode(value: 'errors'),
+                  alias: null,
+                  arguments: [],
+                  directives: [],
+                  selectionSet: SelectionSetNode(
+                    selections: [
+                      FieldNode(
+                        name: NameNode(value: '__typename'),
+                        alias: null,
+                        arguments: [],
+                        directives: [],
+                        selectionSet: null,
+                      ),
+                      InlineFragmentNode(
+                        typeCondition: TypeConditionNode(
+                          on: NamedTypeNode(
+                            name: NameNode(value: 'RateLimitedError'),
+                            isNonNull: false,
+                          ),
+                        ),
+                        directives: [],
+                        selectionSet: SelectionSetNode(
+                          selections: [
+                            FieldNode(
+                              name: NameNode(value: 'message'),
+                              alias: null,
+                              arguments: [],
+                              directives: [],
+                              selectionSet: null,
+                            ),
+                            FieldNode(
+                              name: NameNode(value: 'retryAfterSeconds'),
+                              alias: null,
+                              arguments: [],
+                              directives: [],
+                              selectionSet: null,
+                            ),
+                          ],
+                        ),
+                      ),
+                      InlineFragmentNode(
+                        typeCondition: TypeConditionNode(
+                          on: NamedTypeNode(
+                            name: NameNode(value: 'BusinessError'),
+                            isNonNull: false,
+                          ),
+                        ),
+                        directives: [],
+                        selectionSet: SelectionSetNode(
+                          selections: [
+                            FieldNode(
+                              name: NameNode(value: 'message'),
+                              alias: null,
+                              arguments: [],
+                              directives: [],
+                              selectionSet: null,
+                            ),
+                          ],
+                        ),
+                      ),
+                      InlineFragmentNode(
+                        typeCondition: TypeConditionNode(
+                          on: NamedTypeNode(
+                            name: NameNode(value: 'InputValidationError'),
+                            isNonNull: false,
+                          ),
+                        ),
+                        directives: [],
+                        selectionSet: SelectionSetNode(
+                          selections: [
+                            FieldNode(
+                              name: NameNode(value: 'message'),
+                              alias: null,
+                              arguments: [],
+                              directives: [],
+                              selectionSet: null,
+                            ),
+                            FieldNode(
+                              name: NameNode(value: 'propertyName'),
+                              alias: null,
+                              arguments: [],
+                              directives: [],
+                              selectionSet: null,
+                            ),
+                          ],
+                        ),
+                      ),
+                      InlineFragmentNode(
+                        typeCondition: TypeConditionNode(
+                          on: NamedTypeNode(
+                            name: NameNode(value: 'TechnicalError'),
+                            isNonNull: false,
+                          ),
+                        ),
+                        directives: [],
+                        selectionSet: SelectionSetNode(
+                          selections: [
+                            FieldNode(
+                              name: NameNode(value: 'message'),
+                              alias: null,
+                              arguments: [],
+                              directives: [],
+                              selectionSet: null,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+    fragmentDefinitionWorkflowFields,
+    fragmentDefinitionWorkflowRunFields,
+  ],
+);
+
+class Mutation$AnalyseGame$analyseGame {
+  Mutation$AnalyseGame$analyseGame({this.gameAnalysisWorkflow, this.errors});
+
+  factory Mutation$AnalyseGame$analyseGame.fromJson(Map<String, dynamic> json) {
+    final l$gameAnalysisWorkflow = json['gameAnalysisWorkflow'];
+    final l$errors = json['errors'];
+    return Mutation$AnalyseGame$analyseGame(
+      gameAnalysisWorkflow: l$gameAnalysisWorkflow == null
+          ? null
+          : Fragment$WorkflowFields.fromJson(
+              (l$gameAnalysisWorkflow as Map<String, dynamic>),
+            ),
+      errors: (l$errors as List<dynamic>?)
+          ?.map(
+            (e) => Mutation$AnalyseGame$analyseGame$errors.fromJson(
+              (e as Map<String, dynamic>),
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  final Fragment$WorkflowFields? gameAnalysisWorkflow;
+
+  final List<Mutation$AnalyseGame$analyseGame$errors>? errors;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$gameAnalysisWorkflow = gameAnalysisWorkflow;
+    _resultData['gameAnalysisWorkflow'] = l$gameAnalysisWorkflow?.toJson();
+    final l$errors = errors;
+    _resultData['errors'] = l$errors?.map((e) => e.toJson()).toList();
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$gameAnalysisWorkflow = gameAnalysisWorkflow;
+    final l$errors = errors;
+    return Object.hashAll([
+      l$gameAnalysisWorkflow,
+      l$errors == null ? null : Object.hashAll(l$errors.map((v) => v)),
+    ]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! Mutation$AnalyseGame$analyseGame ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$gameAnalysisWorkflow = gameAnalysisWorkflow;
+    final lOther$gameAnalysisWorkflow = other.gameAnalysisWorkflow;
+    if (l$gameAnalysisWorkflow != lOther$gameAnalysisWorkflow) {
+      return false;
+    }
+    final l$errors = errors;
+    final lOther$errors = other.errors;
+    if (l$errors != null && lOther$errors != null) {
+      if (l$errors.length != lOther$errors.length) {
+        return false;
+      }
+      for (int i = 0; i < l$errors.length; i++) {
+        final l$errors$entry = l$errors[i];
+        final lOther$errors$entry = lOther$errors[i];
+        if (l$errors$entry != lOther$errors$entry) {
+          return false;
+        }
+      }
+    } else if (l$errors != lOther$errors) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Mutation$AnalyseGame$analyseGame$errors {
+  Mutation$AnalyseGame$analyseGame$errors({required this.$__typename});
+
+  factory Mutation$AnalyseGame$analyseGame$errors.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    switch (json["__typename"] as String) {
+      case "RateLimitedError":
+        return Mutation$AnalyseGame$analyseGame$errors$$RateLimitedError.fromJson(
+          json,
+        );
+
+      case "BusinessError":
+        return Mutation$AnalyseGame$analyseGame$errors$$BusinessError.fromJson(
+          json,
+        );
+
+      case "InputValidationError":
+        return Mutation$AnalyseGame$analyseGame$errors$$InputValidationError.fromJson(
+          json,
+        );
+
+      case "TechnicalError":
+        return Mutation$AnalyseGame$analyseGame$errors$$TechnicalError.fromJson(
+          json,
+        );
+
+      default:
+        final l$$__typename = json['__typename'];
+        return Mutation$AnalyseGame$analyseGame$errors(
+          $__typename: (l$$__typename as String),
+        );
+    }
+  }
+
+  final String $__typename;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$$__typename = $__typename;
+    _resultData['__typename'] = l$$__typename;
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$$__typename = $__typename;
+    return Object.hashAll([l$$__typename]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! Mutation$AnalyseGame$analyseGame$errors ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$$__typename = $__typename;
+    final lOther$$__typename = other.$__typename;
+    if (l$$__typename != lOther$$__typename) {
+      return false;
+    }
+    return true;
+  }
+}
+
+extension UtilityExtension$Mutation$AnalyseGame$analyseGame$errors
+    on Mutation$AnalyseGame$analyseGame$errors {
+  _T when<_T>({
+    required _T Function(
+      Mutation$AnalyseGame$analyseGame$errors$$RateLimitedError,
+    )
+    rateLimitedError,
+    required _T Function(Mutation$AnalyseGame$analyseGame$errors$$BusinessError)
+    businessError,
+    required _T Function(
+      Mutation$AnalyseGame$analyseGame$errors$$InputValidationError,
+    )
+    inputValidationError,
+    required _T Function(
+      Mutation$AnalyseGame$analyseGame$errors$$TechnicalError,
+    )
+    technicalError,
+    required _T Function() orElse,
+  }) {
+    switch ($__typename) {
+      case "RateLimitedError":
+        return rateLimitedError(
+          this as Mutation$AnalyseGame$analyseGame$errors$$RateLimitedError,
+        );
+
+      case "BusinessError":
+        return businessError(
+          this as Mutation$AnalyseGame$analyseGame$errors$$BusinessError,
+        );
+
+      case "InputValidationError":
+        return inputValidationError(
+          this as Mutation$AnalyseGame$analyseGame$errors$$InputValidationError,
+        );
+
+      case "TechnicalError":
+        return technicalError(
+          this as Mutation$AnalyseGame$analyseGame$errors$$TechnicalError,
+        );
+
+      default:
+        return orElse();
+    }
+  }
+
+  _T maybeWhen<_T>({
+    _T Function(Mutation$AnalyseGame$analyseGame$errors$$RateLimitedError)?
+    rateLimitedError,
+    _T Function(Mutation$AnalyseGame$analyseGame$errors$$BusinessError)?
+    businessError,
+    _T Function(Mutation$AnalyseGame$analyseGame$errors$$InputValidationError)?
+    inputValidationError,
+    _T Function(Mutation$AnalyseGame$analyseGame$errors$$TechnicalError)?
+    technicalError,
+    required _T Function() orElse,
+  }) {
+    switch ($__typename) {
+      case "RateLimitedError":
+        if (rateLimitedError != null) {
+          return rateLimitedError(
+            this as Mutation$AnalyseGame$analyseGame$errors$$RateLimitedError,
+          );
+        } else {
+          return orElse();
+        }
+
+      case "BusinessError":
+        if (businessError != null) {
+          return businessError(
+            this as Mutation$AnalyseGame$analyseGame$errors$$BusinessError,
+          );
+        } else {
+          return orElse();
+        }
+
+      case "InputValidationError":
+        if (inputValidationError != null) {
+          return inputValidationError(
+            this
+                as Mutation$AnalyseGame$analyseGame$errors$$InputValidationError,
+          );
+        } else {
+          return orElse();
+        }
+
+      case "TechnicalError":
+        if (technicalError != null) {
+          return technicalError(
+            this as Mutation$AnalyseGame$analyseGame$errors$$TechnicalError,
+          );
+        } else {
+          return orElse();
+        }
+
+      default:
+        return orElse();
+    }
+  }
+}
+
+class Mutation$AnalyseGame$analyseGame$errors$$RateLimitedError
+    implements Mutation$AnalyseGame$analyseGame$errors {
+  Mutation$AnalyseGame$analyseGame$errors$$RateLimitedError({
+    required this.message,
+    required this.retryAfterSeconds,
+    this.$__typename = 'RateLimitedError',
+  });
+
+  factory Mutation$AnalyseGame$analyseGame$errors$$RateLimitedError.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$message = json['message'];
+    final l$retryAfterSeconds = json['retryAfterSeconds'];
+    final l$$__typename = json['__typename'];
+    return Mutation$AnalyseGame$analyseGame$errors$$RateLimitedError(
+      message: (l$message as String),
+      retryAfterSeconds: (l$retryAfterSeconds as int),
+      $__typename: (l$$__typename as String),
+    );
+  }
+
+  final String message;
+
+  final int retryAfterSeconds;
+
+  final String $__typename;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$message = message;
+    _resultData['message'] = l$message;
+    final l$retryAfterSeconds = retryAfterSeconds;
+    _resultData['retryAfterSeconds'] = l$retryAfterSeconds;
+    final l$$__typename = $__typename;
+    _resultData['__typename'] = l$$__typename;
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$message = message;
+    final l$retryAfterSeconds = retryAfterSeconds;
+    final l$$__typename = $__typename;
+    return Object.hashAll([l$message, l$retryAfterSeconds, l$$__typename]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! Mutation$AnalyseGame$analyseGame$errors$$RateLimitedError ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$message = message;
+    final lOther$message = other.message;
+    if (l$message != lOther$message) {
+      return false;
+    }
+    final l$retryAfterSeconds = retryAfterSeconds;
+    final lOther$retryAfterSeconds = other.retryAfterSeconds;
+    if (l$retryAfterSeconds != lOther$retryAfterSeconds) {
+      return false;
+    }
+    final l$$__typename = $__typename;
+    final lOther$$__typename = other.$__typename;
+    if (l$$__typename != lOther$$__typename) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Mutation$AnalyseGame$analyseGame$errors$$BusinessError
+    implements Mutation$AnalyseGame$analyseGame$errors {
+  Mutation$AnalyseGame$analyseGame$errors$$BusinessError({
+    required this.message,
+    this.$__typename = 'BusinessError',
+  });
+
+  factory Mutation$AnalyseGame$analyseGame$errors$$BusinessError.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$message = json['message'];
+    final l$$__typename = json['__typename'];
+    return Mutation$AnalyseGame$analyseGame$errors$$BusinessError(
+      message: (l$message as String),
+      $__typename: (l$$__typename as String),
+    );
+  }
+
+  final String message;
+
+  final String $__typename;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$message = message;
+    _resultData['message'] = l$message;
+    final l$$__typename = $__typename;
+    _resultData['__typename'] = l$$__typename;
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$message = message;
+    final l$$__typename = $__typename;
+    return Object.hashAll([l$message, l$$__typename]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! Mutation$AnalyseGame$analyseGame$errors$$BusinessError ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$message = message;
+    final lOther$message = other.message;
+    if (l$message != lOther$message) {
+      return false;
+    }
+    final l$$__typename = $__typename;
+    final lOther$$__typename = other.$__typename;
+    if (l$$__typename != lOther$$__typename) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Mutation$AnalyseGame$analyseGame$errors$$InputValidationError
+    implements Mutation$AnalyseGame$analyseGame$errors {
+  Mutation$AnalyseGame$analyseGame$errors$$InputValidationError({
+    required this.message,
+    required this.propertyName,
+    this.$__typename = 'InputValidationError',
+  });
+
+  factory Mutation$AnalyseGame$analyseGame$errors$$InputValidationError.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$message = json['message'];
+    final l$propertyName = json['propertyName'];
+    final l$$__typename = json['__typename'];
+    return Mutation$AnalyseGame$analyseGame$errors$$InputValidationError(
+      message: (l$message as String),
+      propertyName: (l$propertyName as String),
+      $__typename: (l$$__typename as String),
+    );
+  }
+
+  final String message;
+
+  final String propertyName;
+
+  final String $__typename;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$message = message;
+    _resultData['message'] = l$message;
+    final l$propertyName = propertyName;
+    _resultData['propertyName'] = l$propertyName;
+    final l$$__typename = $__typename;
+    _resultData['__typename'] = l$$__typename;
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$message = message;
+    final l$propertyName = propertyName;
+    final l$$__typename = $__typename;
+    return Object.hashAll([l$message, l$propertyName, l$$__typename]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other
+            is! Mutation$AnalyseGame$analyseGame$errors$$InputValidationError ||
+        runtimeType != other.runtimeType) {
+      return false;
+    }
+    final l$message = message;
+    final lOther$message = other.message;
+    if (l$message != lOther$message) {
+      return false;
+    }
+    final l$propertyName = propertyName;
+    final lOther$propertyName = other.propertyName;
+    if (l$propertyName != lOther$propertyName) {
+      return false;
+    }
+    final l$$__typename = $__typename;
+    final lOther$$__typename = other.$__typename;
+    if (l$$__typename != lOther$$__typename) {
+      return false;
+    }
+    return true;
+  }
+}
+
+class Mutation$AnalyseGame$analyseGame$errors$$TechnicalError
+    implements Mutation$AnalyseGame$analyseGame$errors {
+  Mutation$AnalyseGame$analyseGame$errors$$TechnicalError({
+    required this.message,
+    this.$__typename = 'TechnicalError',
+  });
+
+  factory Mutation$AnalyseGame$analyseGame$errors$$TechnicalError.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final l$message = json['message'];
+    final l$$__typename = json['__typename'];
+    return Mutation$AnalyseGame$analyseGame$errors$$TechnicalError(
+      message: (l$message as String),
+      $__typename: (l$$__typename as String),
+    );
+  }
+
+  final String message;
+
+  final String $__typename;
+
+  Map<String, dynamic> toJson() {
+    final _resultData = <String, dynamic>{};
+    final l$message = message;
+    _resultData['message'] = l$message;
+    final l$$__typename = $__typename;
+    _resultData['__typename'] = l$$__typename;
+    return _resultData;
+  }
+
+  @override
+  int get hashCode {
+    final l$message = message;
+    final l$$__typename = $__typename;
+    return Object.hashAll([l$message, l$$__typename]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! Mutation$AnalyseGame$analyseGame$errors$$TechnicalError ||
         runtimeType != other.runtimeType) {
       return false;
     }

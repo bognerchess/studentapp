@@ -23,7 +23,7 @@ type Query {
   "The current engine stage runs of one of the caller's games: the newest run of each stage that is stored or still working, newest first. A superseded run (one whose stage was run again) is left out, so this is what a UI shows for the game."
   engineStageRunsForGame(chessGameId: ID!): [EngineStageRun!]!
     @cost(weight: "10")
-  "The analysis pipeline of one of the caller's games: the four stages in order, what each one is doing and which one can be started next. This is the query an analysis screen polls; it deliberately does not carry the artifacts, which are fetched with `engineStageRun`."
+  "The analysis pipeline of one of the caller's games: the four stages in order, what each one is doing and which one can be started next, plus the one-state view (`state`, `progress`, `targetStage`, `targetReason`) a single-button client reads. This is the query an analysis screen polls; it deliberately does not carry the artifacts, which are fetched with `engineStageRun`."
   gameAnalysisWorkflow(chessGameId: ID!): GameAnalysisWorkflow!
     @cost(weight: "10")
   "The caller's games, newest first (games without a date last). `search` is a case-insensitive \"contains\" on opponent, white player, black player and event name; `playedFrom` and `playedTo` are inclusive and leave out games without a date."
@@ -91,6 +91,8 @@ type Mutation {
     @cost(weight: "10")
   "Stage 4. Writes the comments and assembles the analysis document from the stored deep evaluation. **The only stage that calls a model**, so this one alone needs a verified email and AI consent, passes the rate limit and queue cap, and counts against the analysis quota. Needs stages 1 to 3 stored for the same moves."
   runCoaching(input: RunCoachingInput!): RunCoachingPayload! @cost(weight: "10")
+  "The whole pipeline in one request. Queues the first stage that is not stored for the current moves and lets the server run the stages after it, up to the coach when the caller may ask the coach now, else up to the deep evaluation. A closed gate of the coach (quota, queue cap, rate limit, unverified email, missing AI consent) is never an error here: the engine result is produced anyway and `targetReason` says why there is no coach text. Calling it again while a stage runs changes nothing; calling it after a failure resumes at the failed stage. Passes the fair-use rate limit of the stage commands."
+  analyseGame(input: AnalyseGameInput!): AnalyseGamePayload! @cost(weight: "10")
   "First-party product analytics, at most 50 events per call. Events counted as `rejected` (unknown name, oversized props, withdrawn analytics consent) are dropped for good; do not retry them."
   trackMobileEvents(input: TrackMobileEventsInput!): TrackMobileEventsPayload!
     @cost(weight: "10")
@@ -125,6 +127,11 @@ type AiConsentStatus {
   acceptedVersion: Int
   "True until the caller has accepted `currentVersion`; analysis requests are refused meanwhile."
   required: Boolean!
+}
+
+type AnalyseGamePayload {
+  gameAnalysisWorkflow: GameAnalysisWorkflow
+  errors: [AnalyseGameError!]
 }
 
 type AnalysisJob {
@@ -403,7 +410,7 @@ type GameAnalysisStageRun {
   progressTotal: Int
   "Coach character of a coaching run; null on the engine stages."
   persona: String
-  "Language of a coaching run; null on the engine stages."
+  "Language of a coaching run, and of the engine stages of a chained analysis, which hand it on to the coach; null on an engine stage started on its own."
   language: String
   requestedAt: DateTime!
   startedAt: DateTime
@@ -422,6 +429,14 @@ type GameAnalysisWorkflow {
   nextRunnableStage: EngineStage
   "True when all four stages are ready, so the analysis document is stored."
   isComplete: Boolean!
+  "The pipeline as one state, for a client that shows a single button: IDLE, ANALYSING, READY, STALE or FAILED. `analyseGame` moves it to ANALYSING; READY means there is something current to open, with or without the coach."
+  state: AnalysisWorkflowState!
+  "How far the chain has come, 0 to 1, while `state` is ANALYSING; null otherwise. Finished stages count by their typical share of the wall clock, the running one by its own counter."
+  progress: Float
+  "The last stage the newest `analyseGame` request set out to reach: COACHING when the coach was allowed, DEEP_EVALUATION when a gate of the coach was closed. Null when the stages were started one by one."
+  targetStage: EngineStage
+  "Why the chain stops short of the coach, when it does: the quota, the queue cap, the rate limit, an unverified email or missing AI consent. Null when nothing stands in the way. Read it with `myAnalysisUsage` to tell the user when the coach is available again."
+  targetReason: AnalysisTargetReason
 }
 
 "One stage of the pipeline for one game."
@@ -598,6 +613,12 @@ interface Error {
   message: String!
 }
 
+union AnalyseGameError =
+  | RateLimitedError
+  | BusinessError
+  | InputValidationError
+  | TechnicalError
+
 union DeleteChessGameError =
   | TechnicalError
   | BusinessError
@@ -682,6 +703,14 @@ union UnregisterMobileDeviceError =
   | BusinessError
   | InputValidationError
   | TechnicalError
+
+input AnalyseGameInput {
+  chessGameId: ID!
+  "Coach language, should the chain reach the coach; one of `mobileConfig.supportedCoachLanguages`."
+  language: String! = "en"
+  "Coach character, should the chain reach the coach. Null is the house voice."
+  persona: String
+}
 
 input DeleteChessGameInput {
   chessGameId: ID!
@@ -831,6 +860,27 @@ enum AnalysisStageState {
   "Done, but what it was computed from has moved on: the moves changed, or an earlier stage was re-run after it. The artifact is still readable; run the stage again before building on it."
   STALE
   "The last attempt failed; `run.failureCode` says why. Running it again is the way forward."
+  FAILED
+}
+
+enum AnalysisTargetReason {
+  LIMIT_REACHED
+  QUEUE_FULL
+  RATE_LIMITED
+  EMAIL_NOT_VERIFIED
+  AI_CONSENT_REQUIRED
+}
+
+enum AnalysisWorkflowState {
+  "Nothing has run for these moves."
+  IDLE
+  "A stage is queued or running; watch `progress`."
+  ANALYSING
+  "Nothing runs and at least one stage is stored for the current moves. `targetStage` says how far the chain was meant to go and `targetReason` why it stopped short of the coach, if it did."
+  READY
+  "The moves changed since the stored analysis was computed; analyse again."
+  STALE
+  "The last attempt of a stage failed and nothing is running; `analyseGame` again resumes there."
   FAILED
 }
 

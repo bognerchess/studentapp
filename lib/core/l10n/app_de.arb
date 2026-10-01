@@ -515,5 +515,21 @@
   "reviewStageRetry": "Noch einmal versuchen",
   "reviewSummaryNoCoach": "Der Coach hat noch nichts geschrieben.",
   "libraryStatusEngineReady": "Engine-Analyse",
-  "gameDetailRerunCoach": "Coach noch einmal fragen"
+  "gameDetailRerunCoach": "Coach noch einmal fragen",
+  "gameDetailAnalyseIntro": "Die Analyse dauert etwa eine Minute und ist kostenlos. Die Kommentare des Coachs sind begrenzt.",
+  "gameDetailPhaseReading": "Deine Partie wird gelesen…",
+  "gameDetailPhaseCritical": "Die kritischen Momente werden angeschaut…",
+  "gameDetailPhaseCoach": "Dein Coach schreibt…",
+  "gameDetailTryAgain": "Noch einmal versuchen",
+  "gameDetailNoCoach": "Der Coach wurde nicht gefragt: {reason}",
+  "gameDetailReasonLimit": "dein Limit für Coach-Kommentare ist aufgebraucht.",
+  "gameDetailReasonQueue": "es werden gerade zu viele deiner Partien gleichzeitig analysiert.",
+  "gameDetailReasonRateLimited": "du hast in kurzer Zeit viel angefordert.",
+  "gameDetailReasonEmail": "deine E-Mail-Adresse ist noch nicht bestätigt.",
+  "gameDetailReasonConsent": "du hast der KI-Verarbeitung noch nicht zugestimmt.",
+  "gameDetailReasonOther": "der Coach ist im Moment nicht verfügbar.",
+  "gameDetailAnalysisRunsAnyway": "Deine Analyse läuft. Es fehlen nur die Kommentare des Coachs.",
+  "analysisNoticeCoachReady": "Dein Coach hat über deine Partie geschrieben.",
+  "analysisNoticeCoachReadyOpponent": "Dein Coach hat über deine Partie gegen {name} geschrieben.",
+  "reviewAnalysisFailed": "Die Analyse ist fehlgeschlagen."
 }
