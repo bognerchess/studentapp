@@ -806,10 +806,13 @@ class MockBackend {
   }
 
   /// One step of a running chain: with nothing in flight, the first stage up to
-  /// the target that is not stored is queued. A failure or a change of the
-  /// moves ends the chain, which is what makes `analyseGame` the only thing
-  /// that can resume it.
-  void _advanceChain(_Workflow workflow) {
+  /// the target that is not stored is queued.
+  ///
+  /// A failure or a change of the moves ends the chain, which is what makes
+  /// `analyseGame` the only thing that can resume it — and with [resume] that
+  /// is exactly what it does: a failed or out-of-date stage is started again
+  /// rather than stopping the chain before it begins.
+  void _advanceChain(_Workflow workflow, {bool resume = false}) {
     final target = workflow.chainTarget;
     if (target == null) {
       return;
@@ -824,7 +827,11 @@ class MockBackend {
           return;
         case 'FAILED':
         case 'STALE':
-          workflow.chainTarget = null;
+          if (!resume) {
+            workflow.chainTarget = null;
+            return;
+          }
+          _startRun(workflow, stages[index]);
           return;
         default:
           _startRun(workflow, stages[index]);
@@ -1293,7 +1300,7 @@ class MockBackend {
       return state == 'QUEUED' || state == 'RUNNING';
     });
     if (!busy) {
-      _advanceChain(workflow);
+      _advanceChain(workflow, resume: true);
     }
     return {
       'analyseGame': {

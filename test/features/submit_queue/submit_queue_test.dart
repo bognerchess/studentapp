@@ -161,8 +161,10 @@ void main() {
         expect(call.source, ImportSource.share);
         expect(h.stages.started.single, 'game-1');
         // The row the workflow tracker watches, written before the mutation.
+        // A one-button analysis aims at the coach; how far the chain actually
+        // gets is the server's decision.
         final pending = h.wait(h.db.pendingWorkflowsDao.get(alice, 'game-1'))!;
-        expect(pending.targetStage, 'DEEP_EVALUATION');
+        expect(pending.targetStage, 'COACHING');
         expect(h.libraryRefreshes, 1);
 
         final event = h.events.single as GameUploaded;
@@ -334,10 +336,10 @@ void main() {
         h.wait(h.queue.kick());
 
         expect(h.draft(draft.id).state, DraftState.submitted);
-        // The row went in before the command and stays: whoever polls next
-        // fires the stage, and an app kill in between resumes the pipeline.
+        // The row went in before the command and stays: whoever starts the
+        // tracker next watches the game, and the user can ask again.
         final pending = h.wait(h.db.pendingWorkflowsDao.get(alice, 'game-1'))!;
-        expect(pending.targetStage, 'DEEP_EVALUATION');
+        expect(pending.targetStage, 'COACHING');
         expect(pending.state, WorkflowState.running);
       });
     });
